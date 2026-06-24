@@ -1,0 +1,113 @@
+// 마이홈포털(국토교통부) 공공임대 모집공고 수집기 — data.go.kr 15108420
+//   base: http://apis.data.go.kr/1613000/HWSPR02 · op: rsdtRcritNtcList (표준 getList, JSON)
+//   응답: response.body.item[] (items 래핑 없음). totalCount/pageNo/numOfRows.
+//   공급기관(suplyInsttNm): LH·부산도시공사·경북/경남개발공사 등. LH는 lh-collect가 더 풍부히 수집중이라 기본 제외(--include-lh로 포함).
+//   → 마이홈은 LH 사각지대(지방 도시·개발공사 임대)만 보강. SH/GH는 자체시스템 운영으로 미포함될 수 있음(커버리지 한계).
+//   소득·자산 요건은 구조화 미제공 → 공고문 PDF(pcUrl) 추출 후속(LH식 파이프라인 재사용).
+// 사용: node myhome-collect.mjs [--since=2026-05-01] [--include-lh] [--probe]
+import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
+
+const BASE = 'http://apis.data.go.kr/1613000/HWSPR02';
+const LIST_OP = 'rsdtRcritNtcList';
+const ROOT = new URL('./data/', import.meta.url);
+const RAW = new URL('raw/myhome/', ROOT);
+const DERIVED = new URL('derived/myhome/', ROOT);
+const IDX = new URL('index.json', ROOT);
+
+const argv = process.argv.slice(2);
+const getArg = (k, d) => (argv.find(a => a.startsWith(`--${k}=`)) || `--${k}=${d}`).split('=')[1];
+const PROBE = argv.includes('--probe');
+const INCLUDE_LH = argv.includes('--include-lh');   // 기본은 LH 제외(lh-collect가 담당)
+const SINCE = getArg('since', '2026-05-01');
+
+let KEY = process.env.DATA_GO_KR_SERVICE_KEY || '';
+try { for (const line of readFileSync(new URL('.env', import.meta.url), 'utf8').split('\n')) { const m = line.match(/^DATA_GO_KR_SERVICE_KEY=(.*)$/); if (m) KEY = m[1].trim(); } } catch {}
+if (!KEY) { console.error('❌ .env 의 DATA_GO_KR_SERVICE_KEY 가 비어있음'); process.exit(1); }
+const SERVICE_KEY = /%[0-9A-Fa-f]{2}/.test(KEY) ? decodeURIComponent(KEY) : KEY;
+
+const dwell = ms => new Promise(r => setTimeout(r, ms));
+const TODAY = new Date().toISOString().slice(0, 10);
+const dnorm = s => { const d = (s || '').replace(/\D/g, ''); return d.length === 8 ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}` : null; };
+const numOrNull = v => { const n = Number(String(v ?? '').replace(/[^\d]/g, '')); return Number.isFinite(n) && n > 0 ? n : null; };
+function statusOf(b, e) { if (b && TODAY < b) return '접수예정'; if (e && TODAY > e) return '접수마감'; if (b && e) return '접수중'; return null; }
+function loadIndex() { try { return JSON.parse(readFileSync(IDX, 'utf8')); } catch { return {}; } }
+
+async function fetchPage(pageNo, numOfRows) {
+  const qs = new URLSearchParams({ serviceKey: SERVICE_KEY, pageNo: String(pageNo), numOfRows: String(numOfRows), type: 'json' });
+  const res = await fetch(`${BASE}/${LIST_OP}?${qs}`, { headers: { Accept: 'application/json' } });
+  const text = await res.text();
+  if (/Forbidden|NOT_REGISTERED|등록되지/.test(text)) throw new Error(`활용신청 미승인/전파대기 (HTTP ${res.status}): ${text.slice(0, 120)}`);
+  let j; try { j = JSON.parse(text); } catch { throw new Error(`비JSON HTTP ${res.status}: ${text.slice(0, 160)}`); }
+  const b = j?.response?.body || {};
+  let items = b.item ?? b.items?.item ?? []; if (items && !Array.isArray(items)) items = [items];
+  return { items: items || [], total: Number(b.totalCount || 0) };
+}
+
+// 실측 스키마(2026-06-24) → 통합 envelope(SCHEMA §0)
+function toEnvelope(it) {
+  const b = dnorm(it.beginDe), e = dnorm(it.endDe);
+  const 보증금 = numOrNull(it.rentGtn), 월세 = numOrNull(it.mtRntchrg);
+  return {
+    panId: `mh-${it.pblancId}-${it.houseSn ?? 1}`, source: 'myhome', 상품군: '임대',
+    공고명: it.pblancNm, 유형: it.suplyTyNm, 상품구조: it.suplyTyNm, 공급기관: it.suplyInsttNm,
+    지역: [it.brtcNm, it.signguNm].filter(Boolean).join(' '), 주소: it.fullAdres,
+    공고일: dnorm(it.rcritPblancDe), 접수시작: b, 마감일: e, 상태: statusOf(b, e),
+    당첨자발표: dnorm(it.przwnerPresnatnDe), 공고구분: it.sttusNm,
+    단지: [{ 단지명: it.hsmpNm, 주소: it.fullAdres, 총공급세대: numOrNull(it.totHshldCo) }],
+    공급형: (보증금 || 월세) ? [{ 형명: it.houseTyNm || null, 임대료: [{ 구분: '기본', 임대보증금: 보증금 || 0, 월임대료: 월세 || 0 }] }] : [],
+    선정방식: '순위', 선정방식상세: `${it.suplyInsttNm} ${it.suplyTyNm} — 자격·순위·소득/자산 컷은 공고문 확인.`,
+    자격요건: {
+      무주택: '무주택세대구성원(유형별 상이 — 공고문 확인)',
+      소득기준: { 종류: '공고문미기재', 기본퍼센트: null, 가구원수별: null, 가산규칙: '', 비고: '마이홈 API 소득기준 미제공 — 공고문 PDF 확인' },
+      자산상한: '공고문미기재', 자동차상한: '공고문미기재', 청약요건: '공고문미기재', 대상계층: ['일반'], 계층별: null,
+    },
+    순위규칙: [], 배점표: [], 우선배정: [],
+    원문링크: { 상세페이지: it.pcUrl || null, 공급기관: it.url || null },
+    _검증노트: ['소득·자산기준 API미제공 → 공고문 PDF(pcUrl) 추출 필요(LH식 파이프라인)'],
+  };
+}
+
+// ── 실행 ───────────────────────────────────────────────────
+if (PROBE) {
+  const { items, total } = await fetchPage(1, 5);
+  console.log(`✅ totalCount=${total} · 받은 ${items.length}`);
+  if (items[0]) { console.log(`키(${Object.keys(items[0]).length}): ${Object.keys(items[0]).join(', ')}`); console.log('\nenvelope 샘플:\n' + JSON.stringify(toEnvelope(items[0]), null, 1)); }
+  process.exit(0);
+}
+
+const index = loadIndex();
+let isNew = 0, kept = 0, skippedOld = 0, skippedLh = 0;
+const byInstt = {};
+try {
+  for (let page = 1; ; page++) {
+    const { items, total } = await fetchPage(page, 300);
+    if (!items.length) break;
+    for (const it of items) {
+      if (!INCLUDE_LH && it.suplyInsttNm === 'LH') { skippedLh++; continue; }   // LH는 lh-collect가 담당
+      const env = toEnvelope(it);
+      if (env.공고일 && env.공고일 < SINCE) { skippedOld++; continue; }
+      kept++; byInstt[env.공급기관] = (byInstt[env.공급기관] || 0) + 1;
+      const idxKey = env.panId, slug = `${it.pblancId}-${it.houseSn ?? 1}`;
+      // 마이홈은 LLM 추출 없음(메타 구조화) → envelope가 곧 requirements.json. derive 폴딩·결정론·멱등.
+      const ddir = new URL(`${slug}/`, DERIVED);
+      mkdirSync(ddir, { recursive: true });
+      writeFileSync(new URL('requirements.json', ddir), JSON.stringify(env, null, 2));
+      if (index[idxKey]?.done) { Object.assign(index[idxKey], { 상태: env.상태, 마감일: env.마감일 }); continue; }
+      const dir = new URL(`${slug}/`, RAW);
+      mkdirSync(dir, { recursive: true });
+      if (!existsSync(new URL('item.json', dir))) writeFileSync(new URL('item.json', dir), JSON.stringify(it, null, 2));
+      writeFileSync(new URL('meta.json', dir), JSON.stringify(env, null, 2));
+      index[idxKey] = { source: 'myhome', title: env.공고명, region: env.지역, type: env.유형, 공급기관: env.공급기관, 상태: env.상태, 마감일: env.마감일, done: true };
+      isNew++;
+      if (isNew <= 30) console.log(`  ✅ ${env.panId} ${(env.공고명 || '').slice(0, 26)} · ${env.공급기관} · ${env.지역} · ${env.상태 || '?'}`);
+    }
+    if (page * 300 >= total) break;
+    await dwell(150);
+  }
+} catch (e) { console.error(`❌ ${e.message}`); process.exit(1); }
+
+mkdirSync(ROOT, { recursive: true });
+writeFileSync(IDX, JSON.stringify(index, null, 2));
+console.log(`\n신규 ${isNew} · 유지 ${kept} · LH제외 ${skippedLh} · 기간밖 ${skippedOld}`);
+console.log(`공급기관 분포(수집분): ${JSON.stringify(byInstt)}`);
+console.log(`myhome index ${Object.keys(index).filter(k => k.startsWith('mh-')).length}건. 소득·자산은 공고문 PDF 추출 후속.`);

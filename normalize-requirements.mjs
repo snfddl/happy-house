@@ -108,8 +108,20 @@ function normTargetList(arr) {
 
 // ── 한 공고 정규화 ────────────────────────────────────────────
 function normalizeReq(r) {
+  // 통합 envelope 스탬프(SCHEMA.md §4): LH derived는 전부 임대. id=panId, source=lh, 상품군=임대. 멱등.
+  const envBefore = `${r.source}|${r.상품군}`;
+  if (r.no && !r.panId) { r.panId = r.no; delete r.no; }
+  r.source = 'lh'; r.상품군 = '임대';
+  // 일부 추출이 접수/마감을 top-level(접수시작·마감일) 대신 `일정` 객체에 자유문장으로만 둠 → 매처(req.마감일=D-day)가 읽도록 hoist(멱등)
+  let dateHoisted = false;
+  if (r.마감일 == null && r.일정 && typeof r.일정 === 'object') {
+    const txt = r.일정.접수 || r.일정.신청접수 || r.일정.신청 || r.일정.청약접수 || '';
+    const ds = [...String(txt).matchAll(/(\d{4})[.\-](\d{2})[.\-](\d{2})/g)].map(m => `${m[1]}-${m[2]}-${m[3]}`);
+    if (ds.length) { r.접수시작 = r.접수시작 ?? ds[0]; r.마감일 = ds[ds.length - 1]; dateHoisted = true; }
+  }
+  const envChanged = dateHoisted || `${r.source}|${r.상품군}` !== envBefore;
   const zq = r.자격요건;
-  if (!zq || typeof zq !== 'object') return { changed: false };
+  if (!zq || typeof zq !== 'object') return { changed: envChanged };
   const before = JSON.stringify(zq);
   if (zq.계층별 && typeof zq.계층별 === 'object' && !Array.isArray(zq.계층별)) zq.계층별 = normalizeCb(zq.계층별);
   if (Array.isArray(zq.대상계층)) zq.대상계층 = normTargetList(zq.대상계층);
@@ -118,7 +130,7 @@ function normalizeReq(r) {
     const p = parseAmt(zq[f]);
     zq[f] = typeof p === 'number' ? p : p === '없음' ? '없음' : '공고문미기재';
   }
-  return { changed: JSON.stringify(zq) !== before };
+  return { changed: envChanged || JSON.stringify(zq) !== before };
 }
 
 // ── 실행 ──────────────────────────────────────────────────────

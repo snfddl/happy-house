@@ -12,7 +12,7 @@ export function createMatcher(P, todayStr) {
   //   → LH는 공고문 PDF(lhFile.do, GET 검증됨), 분양(청약홈)은 상세페이지가 GET 정상.
   function pickLink(req) {
     const ln = req.원문링크 || {};
-    if (req.상품구조 === '분양') return ln.상세페이지 ? { url: ln.상세페이지, label: '원문 공고 보기' } : { url: null, label: null };
+    if (req.상품구조 === '분양' || req.상품군 === '분양') return ln.상세페이지 ? { url: ln.상세페이지, label: '원문 공고 보기' } : { url: null, label: null };
     if (ln.공고문PDF) return { url: ln.공고문PDF, label: '공고문 PDF(원문)' };
     const pdf = (ln.첨부 || []).find(a => a.ext === '.pdf');
     if (pdf) return { url: pdf.다운로드, label: '공고문 PDF(원문)' };
@@ -427,16 +427,32 @@ export function createMatcher(P, todayStr) {
       ({ fails, checks, 참고, 배점, gp } = evalNHT(req));
     } else {
       fails = []; checks = []; 참고 = [];
-      const gH = gateHousing();
-      const gS = P.청약저축?.가입 === true ? { s: 'pass', m: '청약통장 가입' }
-        : P.청약저축?.가입 === false ? { s: 'fail', m: '청약통장 미가입' } : { s: 'check', m: '청약통장 미입력' };
-      if (gH.s === 'fail') fails.push(`무주택:${gH.m}`); else if (gH.s === 'check') checks.push(`무주택:${gH.m}`);
-      if (gS.s === 'fail') fails.push(`청약:${gS.m}`); else if (gS.s === 'check') checks.push(`청약:${gS.m}`);
-      if (!민영) checks.push('소득·자산:공공분양 일반공급 컷 원문확인');
-      gp = 민영 ? 가점Calc() : null;
-      배점 = 민영
-        ? `가점 ${gp.total}/84${gp.known ? '' : '(일부미입력)'} [무주택기간 ${gp.무주택점 ?? '?'}·부양 ${gp.부양점}(${gp.부양수}명)·통장 ${gp.통장점 ?? '?'}]`
-        : `순차제(저축 ${won(P.청약저축?.저축총액)}·납입 ${P.청약저축?.납입횟수 ?? '?'}회)`;
+      const 추첨 = req.선정방식 === '추첨';
+      const 무주택무관 = /제한없음|누구나|무관/.test(req.자격요건?.무주택 || '');
+      if (추첨 && 무주택무관) {
+        // 오피스텔/도시형/생숙·임의공급: 만 19세 이상 추첨, 무주택·청약통장 무관
+        gp = null;
+        배점 = '추첨제 — 만 19세 이상 추첨(무주택·청약통장 무관)';
+        참고.push('오피스텔/생숙/임의공급류 — 추첨제. 세부 청약자격·재당첨제한은 공고문 확인');
+      } else {
+        const gH = gateHousing();
+        if (gH.s === 'fail') fails.push(`무주택:${gH.m}`); else if (gH.s === 'check') checks.push(`무주택:${gH.m}`);
+        if (추첨) {
+          // 무순위/잔여: 무주택(해당지역) 요건, 청약통장 무관
+          gp = null;
+          배점 = '추첨제 — 무주택 요건 충족 시 추첨(청약통장 무관)';
+          참고.push('무순위/잔여세대 — 추첨제. 거주지 제한·재당첨제한 등은 공고문 확인');
+        } else {
+          const gS = P.청약저축?.가입 === true ? { s: 'pass', m: '청약통장 가입' }
+            : P.청약저축?.가입 === false ? { s: 'fail', m: '청약통장 미가입' } : { s: 'check', m: '청약통장 미입력' };
+          if (gS.s === 'fail') fails.push(`청약:${gS.m}`); else if (gS.s === 'check') checks.push(`청약:${gS.m}`);
+          if (!민영) checks.push('소득·자산:공공분양 일반공급 컷 원문확인');
+          gp = 민영 ? 가점Calc() : null;
+          배점 = 민영
+            ? `가점 ${gp.total}/84${gp.known ? '' : '(일부미입력)'} [무주택기간 ${gp.무주택점 ?? '?'}·부양 ${gp.부양점}(${gp.부양수}명)·통장 ${gp.통장점 ?? '?'}]`
+            : `순차제(저축 ${won(P.청약저축?.저축총액)}·납입 ${P.청약저축?.납입횟수 ?? '?'}회)`;
+        }
+      }
     }
 
     for (const g of (req._갭 || [])) {
@@ -456,7 +472,7 @@ export function createMatcher(P, todayStr) {
     if (특공.length) 참고.push(`특공 해당(${특공.map(s => s.split('(')[0]).join('·')}) — 자격컷(소득·자산·거주) 원문확인`);
 
     return {
-      panId: req.no, 유형: req.유형, 공고명: req.공고명, 지역: req.지역,
+      panId: req.panId ?? req.no, 유형: req.유형, 공고명: req.공고명, 지역: req.지역,
       상태: req.상태, 마감일: req.마감일, dday, 판정,
       공급형태: '분양', 공급형태설명: `분양 · 분양가 ${분양가 || '?'} · 특공해당 ${특공.length ? 특공.join(',') : '없음/확인'}`,
       분양전환: false,
@@ -473,7 +489,7 @@ export function createMatcher(P, todayStr) {
   }
 
   function evaluate(req) {
-    if (req.상품구조 === '분양') return evaluateSale(req);
+    if (req.상품군 === '분양' || req.상품구조 === '분양') return evaluateSale(req);
     const gates = {
       무주택: gateHousing(), 소득: gateIncome(req),
       자산: tierLimit(req, req.자격요건?.자산상한, '자산상한', '총자산', P.총자산),

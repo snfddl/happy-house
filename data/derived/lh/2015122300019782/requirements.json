@@ -345,5 +345,7 @@
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66429507"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

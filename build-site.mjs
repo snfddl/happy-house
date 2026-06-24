@@ -4,7 +4,7 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 
 const ROOT = new URL('./data/', import.meta.url);
-const SRC = [['lh', new URL('derived/lh/', ROOT)], ['applyhome', new URL('derived/applyhome/', ROOT)]];
+const SRC = [['lh', new URL('derived/lh/', ROOT)], ['applyhome', new URL('derived/applyhome/', ROOT)], ['myhome', new URL('derived/myhome/', ROOT)]];
 const TODAY = new Date().toISOString().slice(0, 10);
 
 // 수집기(lh-collect)가 매 실행 갱신하는 최신 상태/마감일. 빌드 때 requirements에 덮어써 신선도 유지(접수중 필터·D-day).

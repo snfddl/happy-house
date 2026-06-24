@@ -56,48 +56,74 @@ function cdName(disposition, fallback) {
 function loadIndex() { try { return JSON.parse(readFileSync(IDX, 'utf8')); } catch { return {}; } }
 const index = loadIndex();
 
-// ── 1) 세션 ────────────────────────────────────────────────
+// ── 1) 세션 (상세/PDF 다운로드용 쿠키) ─────────────────────
 await req(`${BASE}/apply/wt/wrtanc/selectWrtancList.do?mi=1026`);
 
-// ── 2) 지역×유형 루프로 목록 수집 ──────────────────────────
+// ── 2) 공식 OpenAPI로 목록 수집 (B552555/lhLeaseNoticeInfo1) ─
+// 과거 목록 스크래핑(selectWrtancList.do HTML 파싱)을 대체. 실시간(사이트와 동일 DB·지연 없음 실측).
+// 메타+DTL_URL은 API가, 상세/PDF 본문은 여전히 사이트(selectWrtancInfo.do·lhFile.do)에서 — 하이브리드.
 const today = new Date();
 const fmt = d => d.toISOString().slice(0, 10);
 // 초기 백필 범위. 이후 실행은 index.json diff로 신규만 추가됨. --since=YYYY-MM-DD 로 조정
 const startDt = (argv.find(a => a.startsWith('--since=')) || '--since=2026-05-01').split('=')[1];
 
-let found = [], isNew = 0;
-const newPending = [];
-for (const cnpCd of REGIONS) {
-  for (const [upp, ais] of TYPES) {
-    const body = new URLSearchParams({
-      panId: '', ccrCnntSysDsCd: '', srchUppAisTpCd: upp, uppAisTpCd: upp, aisTpCd: ais, srchAisTpCd: ais,
-      prevListCo: '', mi: '1026', currPage: '1', srchY: 'Y', indVal: 'N', viewType: '', netbgn: '',
-      srchFilter: 'Y', mvinQf: '0', cnpCd, panSs: '', schTy: '0', startDt, endDt: fmt(today), panNm: '', listCo: '100',
-    });
-    const r = await req(`${BASE}/apply/wt/wrtanc/selectWrtancList.do`, { method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Origin: 'https://apply.lh.or.kr', Referer: `${BASE}/apply/wt/wrtanc/selectWrtancList.do?mi=1026` }, body });
-    const html = await r.text();
-    // 행(<tr>) 단위 파싱: 셀 순서 = 번호·유형·공고명·지역·첨부·게시일·마감일·상태·조회수
-    const rows = [];
-    for (const tr of html.split(/<tr[\s>]/).slice(1)) {
-      const a = tr.match(/<a[^>]*\bdata-id1="(\d+)"[^>]*\bdata-id3="(\d+)"[^>]*\bdata-id4="(\d+)"[^>]*class="wrtancInfoBtn"[^>]*>([\s\S]*?)<\/a>/);
-      if (!a) continue;
-      const dates = [...tr.matchAll(/(\d{4})\.(\d{2})\.(\d{2})/g)].map(m => `${m[1]}-${m[2]}-${m[3]}`);
-      const status = (tr.match(/접수중|공고중|접수마감|정정공고중/) || [])[0] || null;
-      rows.push({
-        panId: a[1], upp: a[2], ais: a[3], cnpCd,
-        title: a[4].replace(/<!--[\s\S]*?-->/g, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')
-          .replace(/\s*(NEW|new|신규|\d+일전|오늘)\s*$/, '').trim(),
-        게시일: dates[0] || null, 마감일: dates[1] || null, 상태: status,
-      });
-    }
-    found.push(...rows);
-    console.log(`[${REGION_LABEL[cnpCd] || cnpCd} · ${TYPE_LABEL[`${upp}/${ais}`] || `${upp}/${ais}`}] ${rows.length}건`);
-    await dwell(300);
+// data.go.kr 서비스키(.env, 인코딩/디코딩 무관 — applyhome-collect와 동일 규칙)
+let API_KEY = process.env.DATA_GO_KR_SERVICE_KEY || '';
+try { for (const line of readFileSync(new URL('.env', import.meta.url), 'utf8').split('\n')) { const m = line.match(/^DATA_GO_KR_SERVICE_KEY=(.*)$/); if (m) API_KEY = m[1].trim(); } } catch {}
+const SERVICE_KEY = /%[0-9A-Fa-f]{2}/.test(API_KEY) ? decodeURIComponent(API_KEY) : API_KEY;
+if (!SERVICE_KEY) { console.error('❌ .env 의 DATA_GO_KR_SERVICE_KEY 가 비어있음 (LH 공식 API 호출 불가)'); process.exit(1); }
+const LH_API = 'https://apis.data.go.kr/B552555/lhLeaseNoticeInfo1/lhLeaseNoticeInfo1';
+
+// CNP_CD 코드는 응답에 없고 CNP_CD_NM(전체 도명, "… 외" 멀티지역 포함)만 옴 → 코드 역매핑
+const NM2CNP = [['서울','11'],['부산','26'],['대구','27'],['인천','28'],['광주','29'],['대전','30'],['울산','31'],['세종','36110'],['경기','41'],['강원','51'],['충청북','43'],['충북','43'],['충청남','44'],['충남','44'],['전라북','52'],['전북','52'],['전라남','46'],['전남','46'],['경상북','47'],['경북','47'],['경상남','48'],['경남','48'],['제주','50']];
+const cnpOf = nm => (NM2CNP.find(([k]) => (nm || '').includes(k)) || [, null])[1];
+const dotDate = s => (s ? s.replace(/\./g, '-') : null);
+
+// UPP_AIS_TP_CD 단위로 페이징(PG_SZ/PAGE). PAN_ST_DT~PAN_ED_DT=게시일 서버측 기간필터(실동작).
+async function fetchLhList(upp) {
+  const rows = []; const PG = 500;
+  for (let page = 1; ; page++) {
+    const qs = new URLSearchParams({ serviceKey: SERVICE_KEY, PG_SZ: String(PG), PAGE: String(page),
+      PAN_ST_DT: startDt.replace(/-/g, ''), PAN_ED_DT: fmt(today).replace(/-/g, ''), UPP_AIS_TP_CD: upp });
+    const res = await fetch(`${LH_API}?${qs}`, { headers: { Accept: 'application/json' } });
+    const text = await res.text();
+    let j; try { j = JSON.parse(text); } catch { throw new Error(`LH API 비JSON HTTP ${res.status}: ${text.slice(0, 150)}`); }
+    const dl = (Array.isArray(j) ? (j.find(x => x.dsList) || {}).dsList : null) || [];
+    rows.push(...dl);
+    const total = Number(dl[0]?.ALL_CNT || rows.length);
+    if (!dl.length || rows.length >= total) break;
+    await dwell(150);
   }
+  return rows;
 }
 
-// 중복 제거(같은 공고가 여러 지역코드에 잡힐 수 있음)
+const UPPS = [...new Set(TYPES.map(([u]) => u))];          // 질의할 상위유형(06 임대 / 13 주거복지 / 39 신혼희망)
+const TYPESET = new Set(TYPES.map(([u, a]) => `${u}/${a}`)); // 현행 유형 화이트리스트 유지
+const regionFilter = regions.length ? new Set(REGIONS) : null;
+
+let found = [], isNew = 0;
+const newPending = [];
+for (const upp of UPPS) {
+  const rows = await fetchLhList(upp);
+  let kept = 0;
+  for (const r of rows) {
+    const key = `${r.UPP_AIS_TP_CD}/${r.AIS_TP_CD}`;
+    if (!TYPESET.has(key)) continue;                      // 화이트리스트 외(가정어린이집 등) 제외
+    const cnpCd = cnpOf(r.CNP_CD_NM);
+    if (regionFilter && !regionFilter.has(cnpCd)) continue;
+    found.push({
+      panId: r.PAN_ID, upp: r.UPP_AIS_TP_CD, ais: r.AIS_TP_CD, cnpCd,
+      ccr: r.CCR_CNNT_SYS_DS_CD || '03',                  // 상세 POST용 — 행별 실제값(과거 하드코딩 '03' 대체)
+      title: (r.PAN_NM || '').replace(/\s+/g, ' ').trim(),
+      게시일: dotDate(r.PAN_NT_ST_DT), 마감일: dotDate(r.CLSG_DT), 상태: r.PAN_SS || null,
+    });
+    kept++;
+  }
+  console.log(`[UPP ${upp} · ${TYPE_LABEL[`${upp}/${rows[0]?.AIS_TP_CD}`] || ''}] API ${rows.length}건 → 대상 ${kept}건`);
+  await dwell(150);
+}
+
+// 중복 제거(여러 유형 질의에 같은 공고가 잡힐 일은 없으나 안전망)
 const uniq = [...new Map(found.map(x => [x.panId, x])).values()];
 console.log(`\n총 공고 ${uniq.length}건 (신규만 상세/다운로드)`);
 
@@ -123,7 +149,7 @@ for (const n of uniq) {
 
   const dRes = await req(`${BASE}/apply/wt/wrtanc/selectWrtancInfo.do`, { method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', Referer: `${BASE}/apply/wt/wrtanc/selectWrtancList.do?mi=1026` },
-    body: new URLSearchParams({ panId: n.panId, ccrCnntSysDsCd: '03', uppAisTpCd: n.upp, aisTpCd: n.ais, mi: '1026' }) });
+    body: new URLSearchParams({ panId: n.panId, ccrCnntSysDsCd: n.ccr || '03', uppAisTpCd: n.upp, aisTpCd: n.ais, mi: '1026' }) });
   const detail = await dRes.text();
   if (/잘못된 경로|페이지가 삭제/.test(detail)) { console.log(`  ⚠️ ${n.panId} 상세 실패`); continue; }
   writeFileSync(new URL('detail.html', dir), detail);
