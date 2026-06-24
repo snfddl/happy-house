@@ -19,6 +19,13 @@ export function createMatcher(P, todayStr) {
     return { url: LH_LIST, label: 'LH 공고목록에서 검색' };
   }
 
+  // 수급·한부모·차상위·장애 등 '자격증명 갈음/순위전용' 대상 여부(소득심사 갈음 공고 판정용)
+  const has취약자격 = () =>
+    (P.수급자 && P.수급자 !== '해당없음') ||
+    P.혼인상태 === '한부모' ||
+    (P.특수자격 || []).some(s => /차상위|장애|국가유공|보훈|위안부|북한이탈|아동복지|한부모|수급/.test(s)) ||
+    (P.공급계층선택 || []).some(s => /수급|차상위|한부모|장애/.test(s));
+
   // ── 게이트(임대) ──────────────────────────────────────────
   function gateHousing() {
     if (P.무주택 === true) return { s: 'pass', m: '무주택' };
@@ -28,7 +35,13 @@ export function createMatcher(P, todayStr) {
   function gateIncome(req) {
     const sg = req.자격요건?.소득기준;
     if (!sg || typeof sg !== 'object') return { s: 'check', m: '소득기준 형태 불명 → 원문확인' };
-    if (sg.종류 === '없음' || sg.종류 === '자격증명갈음') return { s: 'pass', m: `소득심사 ${sg.종류}` };
+    if (sg.종류 === '없음') return { s: 'pass', m: '소득심사 없음' };
+    if (sg.종류 === '자격증명갈음') {   // 수급·한부모·차상위 등 자격으로 소득심사 갈음 = 그 자격 보유자 대상 공고
+      if (has취약자격()) return { s: 'pass', m: '소득심사 자격증명 갈음(해당 자격 보유)' };
+      if (!P.수급자 || P.수급자 === '해당없음')
+        return { s: 'fail', m: '자격증명 갈음 공고 — 수급/한부모/차상위 등 해당 자격 없음' };
+      return { s: 'check', m: '자격증명 갈음 — 본인 해당 자격 확인필요' };
+    }
     // 자격완화 등으로 소득요건 배제: 쓸 표가 없고 비고에 배제/심사없음이 명시된 경우(추출이 종류='없음'을 못 잡은 케이스 보정)
     const noTable = !sg.가구원수별 || !Object.keys(sg.가구원수별).length;
     // '소득요건 배제/제한 없음/심사 없음/미적용' 등 한 문장 내 표현을 포괄(자격완화로 소득 배제했는데 종류가 '없음'으로 정규화 안 된 경우 보정)
@@ -37,11 +50,20 @@ export function createMatcher(P, todayStr) {
     if (P.월평균소득 == null || P.세대원수 == null) return { s: 'check', m: '소득/세대원수 미입력' };
     const row = sg.가구원수별?.[`${P.세대원수}인`];
     if (!row || typeof row !== 'object') return { s: 'check', m: `${P.세대원수}인 소득표 없음(기본 ${sg.기본퍼센트 ?? '?'}%) → 원문확인` };
-    const [pct, limit] = Object.entries(row)[0];
-    if (typeof limit !== 'number') return { s: 'check', m: '소득 상한 수치 없음' };
-    return P.월평균소득 <= limit
-      ? { s: 'pass', m: `소득 ${won(P.월평균소득)} ≤ ${pct} ${won(limit)}` }
-      : { s: 'fail', m: `소득초과 ${won(P.월평균소득)} > ${pct} ${won(limit)}` };
+    const nums = Object.entries(row).filter(([, v]) => typeof v === 'number');
+    if (!nums.length) return { s: 'check', m: '소득 상한 수치 없음' };
+    const sorted = nums.slice().sort((a, b) => a[1] - b[1]);
+    const [basePct, baseLimit] = sorted[0];                  // 최저(기본) 상한
+    const [topPct, topLimit] = sorted[sorted.length - 1];    // 최고(맞벌이/상위구간) 상한
+    if (P.맞벌이 && sorted.length > 1)   // 표에 맞벌이 상위구간(예: 90%) 수록 → 그 상한 적용
+      return P.월평균소득 <= topLimit
+        ? { s: 'pass', m: `소득 ${won(P.월평균소득)} ≤ 맞벌이 ${topPct} ${won(topLimit)}` }
+        : { s: 'fail', m: `소득초과 ${won(P.월평균소득)} > 맞벌이 ${topPct} ${won(topLimit)}` };
+    if (P.맞벌이 && P.월평균소득 > baseLimit)   // 단일구간만 수록 → 맞벌이 가산 한도 미수록 → 단정 탈락 금지
+      return { s: 'check', m: `소득 ${won(P.월평균소득)} > 기본 ${basePct}(${won(baseLimit)}) — 맞벌이 가산 한도 미수록 → 원문확인` };
+    return P.월평균소득 <= baseLimit
+      ? { s: 'pass', m: `소득 ${won(P.월평균소득)} ≤ ${basePct} ${won(baseLimit)}` }
+      : { s: 'fail', m: `소득초과 ${won(P.월평균소득)} > ${basePct} ${won(baseLimit)}` };
   }
   function gateLimit(val, mine, label, via) {
     const suf = via ? ` (${via} 기준)` : '';
@@ -88,10 +110,33 @@ export function createMatcher(P, todayStr) {
   }
   function gateSubscription(req) {
     const c = req.자격요건?.청약요건;
-    if (!c || c === '없음' || /없음|불필요|미적용/.test(c)) return { s: 'pass', m: '청약통장 불필요' };
-    if (P.청약저축?.가입 === true) return { s: 'check', m: '청약통장 필요(가입O, 회차/금액은 원문확인)' };
-    if (P.청약저축?.가입 === false) return { s: 'fail', m: '청약통장 필요(미가입)' };
+    if (c == null || typeof c !== 'string' || !c.trim()) return { s: 'pass', m: '청약통장 불필요' };
+    // 혼합문장("A계층 필요, B계층 없음" / "필수요건 아님…가점") 오매칭 방지: 필요/면제를 분리 판정
+    const 필요 = /가입.{0,8}(증명|필요|확인)|가입사실|청약(저축|종합저축|통장)\S{0,14}(필요|증명)/.test(c);
+    const 면제 = /필수\s*(요건)?\s*아니|필수\s*아님|가점|불필요|미적용/.test(c);
+    const none = /없음/.test(c) && !필요;
+    if (면제 && !필요) return { s: 'pass', m: '청약통장 불필요(가점요소·면제)' };
+    if (none) return { s: 'pass', m: '청약통장 불필요' };
+    const 회차요구 = /\d+\s*회|\d+\s*개월|납입.{0,4}(횟수|인정)|예치|금액|총액/.test(c);
+    const g = P.청약저축?.가입;
+    if (g === false) return { s: 'fail', m: '청약통장 필요(미가입)' };
+    if (g === true) return 회차요구
+      ? { s: 'check', m: '청약통장 필요 — 가입O(회차·금액 충족여부 원문확인)' }
+      : { s: 'pass', m: '청약통장 가입(가입사실 요건 충족)' };
     return { s: 'check', m: '청약통장 보유 여부 미입력 → 입력하면 판정' };
+  }
+  // 거주지(사업대상지역) 절대 제한 게이트 — "○○에 주민등록 등재/해당 구·군에만 신청/사업대상지역"
+  function gateResidence(req) {
+    const t = `${req.자격요건?.무주택 || ''} ${req.공고명 || ''}`;
+    const restrictive = /(주민등록[이\s]*등재|해당\s*[구군시][^.]{0,6}에만\s*신청|사업대상지역)/.test(t);
+    if (!restrictive) return { s: 'pass', m: '' };
+    const sgg = P.거주지?.시군구, sd = P.거주지?.시도;
+    if (!sgg && !sd) return { s: 'check', m: '거주지 제한 공고 — 거주지 미입력' };
+    if ((sgg && t.includes(sgg)) || (sd && t.includes(sd))) return { s: 'pass', m: '거주지 제한 충족' };
+    const strong = /[구군시][^.]{0,4}에만\s*신청|만\s*신청\s*가능/.test(t);
+    return strong
+      ? { s: 'fail', m: '거주지 미해당 — 공고는 특정 지역 주민등록자만 신청' }
+      : { s: 'check', m: `거주지 제한 공고 — 본인 거주지(${sgg || sd}) 해당여부 원문확인` };
   }
   function gateTier(req) {
     const t = req.유형 || '', name = req.공고명 || '', 계층 = (req.자격요건?.대상계층 || []).join(' ');
@@ -331,7 +376,7 @@ export function createMatcher(P, todayStr) {
       무주택: gateHousing(), 소득: gateIncome(req),
       자산: tierLimit(req, req.자격요건?.자산상한, '자산상한', '총자산', P.총자산),
       자동차: tierLimit(req, req.자격요건?.자동차상한, '자동차상한', '차량가액', P.자동차가액),
-      청약: gateSubscription(req), 계층: gateTier(req),
+      청약: gateSubscription(req), 거주지: gateResidence(req), 계층: gateTier(req),
     };
     const fails = Object.entries(gates).filter(([, g]) => g.s === 'fail');
     const checks = Object.entries(gates).filter(([, g]) => g.s === 'check');
