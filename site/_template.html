@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>내 집 찾기 · 공공임대·분양 매칭</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --surface:#fff; --surface-2:#fbfcfd; --line:#e7e9ee; --line-2:#eef0f4;
+    --ink:#161a20; --ink-2:#3d4450; --muted:#727a87; --faint:#9aa1ad;
+    --accent:#4338ca; --accent-soft:#eef0fe; --accent-ink:#3730a3;
+    --ok:#047857; --ok-bg:#ecfdf5; --ok-line:#a7f3d0;
+    --warn:#b45309; --warn-bg:#fff8ec; --warn-line:#fcdf9e;
+    --no:#b42318; --no-bg:#fef3f2; --no-line:#fdd5cf;
+    --sale:#4338ca; --sale-bg:#eef0fe; --rent:#0f766e; --rent-bg:#effaf7;
+    --shadow:0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+    --shadow-lg:0 12px 32px -8px rgba(16,24,40,.18), 0 4px 12px -4px rgba(16,24,40,.08);
+    --radius:16px; --radius-sm:10px;
+    --mono:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic","Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--ink);
+    -webkit-font-smoothing:antialiased;line-height:1.5;letter-spacing:-.01em}
+  a{color:inherit}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+
+  header.top{background:linear-gradient(180deg,#fff,#fbfcfe);border-bottom:1px solid var(--line);
+    position:sticky;top:0;z-index:30;backdrop-filter:saturate(1.2) blur(6px)}
+  .top-in{display:flex;align-items:center;gap:16px;padding:14px 0}
+  .brand{display:flex;align-items:center;gap:11px;min-width:0}
+  .logo{width:36px;height:36px;border-radius:10px;flex:0 0 auto;
+    background:radial-gradient(120% 120% at 30% 20%,#6366f1,#4338ca 60%,#3730a3);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 2px 8px rgba(67,56,202,.35);
+    display:grid;place-items:center;color:#fff;font-size:18px}
+  .brand h1{font-size:16.5px;font-weight:760;margin:0;letter-spacing:-.02em}
+  .brand p{margin:1px 0 0;font-size:12px;color:var(--muted);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .top-spacer{flex:1}
+  .profile-chip{display:flex;align-items:center;gap:8px;background:var(--surface);
+    border:1px solid var(--line);border-radius:999px;padding:6px 7px 6px 12px;box-shadow:var(--shadow);
+    font-size:12.5px;color:var(--ink-2);font-weight:560;white-space:nowrap}
+  .profile-chip b{font-weight:700;color:var(--ink)}
+  .profile-chip .dot{width:6px;height:6px;border-radius:50%;background:var(--ok)}
+  .profile-chip button{border:0;background:var(--accent);color:#fff;font-weight:650;font-size:11.5px;
+    border-radius:999px;padding:6px 12px;cursor:pointer;font-family:inherit;display:inline-flex;gap:5px;align-items:center}
+  .profile-chip button:hover{background:var(--accent-ink)}
+  .profile-chip button.ghost{background:var(--accent-soft);color:var(--accent-ink)}
+  .profile-chip button.ghost:hover{background:#e2e6fd}
+
+  .hero{padding:26px 0 6px}
+  .hero h2{font-size:23px;font-weight:780;margin:0 0 4px;letter-spacing:-.03em}
+  .hero .sub{color:var(--muted);font-size:13.5px;margin:0 0 18px}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:15px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden;cursor:pointer;transition:.15s}
+  .stat:hover{border-color:#d3d7e0;transform:translateY(-1px)}
+  .stat.active{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .stat .n{font-size:27px;font-weight:780;font-family:var(--mono);letter-spacing:-.03em;line-height:1}
+  .stat .l{font-size:12.5px;color:var(--muted);margin-top:6px;font-weight:560}
+  .stat .bar{position:absolute;left:0;top:0;bottom:0;width:4px}
+  .stat.s-all .bar{background:var(--accent)} .stat.s-all .n{color:var(--accent-ink)}
+  .stat.s-ok .bar{background:var(--ok)} .stat.s-ok .n{color:var(--ok)}
+  .stat.s-warn .bar{background:var(--warn)} .stat.s-warn .n{color:var(--warn)}
+  .stat.s-no .bar{background:var(--no)} .stat.s-no .n{color:var(--no)}
+
+  .controls{position:sticky;top:65px;z-index:20;margin:18px 0 4px;padding:12px 0;
+    background:linear-gradient(180deg,var(--bg) 70%,rgba(246,247,249,0))}
+  .ctrl-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .search{flex:1;min-width:200px;position:relative}
+  .search input{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:11px;
+    padding:11px 14px 11px 38px;font-size:14px;font-family:inherit;color:var(--ink);box-shadow:var(--shadow)}
+  .search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint)}
+  select.sel{appearance:none;border:1px solid var(--line);background:var(--surface)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23727a87' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 11px center;
+    border-radius:11px;padding:11px 32px 11px 13px;font-size:13.5px;font-family:inherit;color:var(--ink-2);
+    font-weight:560;cursor:pointer;box-shadow:var(--shadow)}
+  select.sel:focus{outline:none;border-color:var(--accent)}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+  .chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 13px;
+    font-size:12.5px;font-weight:600;color:var(--ink-2);cursor:pointer;box-shadow:var(--shadow);transition:.12s;
+    display:inline-flex;align-items:center;gap:6px}
+  .chip:hover{border-color:#d3d7e0}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(67,56,202,.28)}
+  .chip .c{font-family:var(--mono);font-size:11px;opacity:.8}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin:14px 0 12px;gap:12px;flex-wrap:wrap}
+  .count{font-size:13px;color:var(--muted);font-weight:560}
+  .count b{color:var(--ink);font-weight:740}
+
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding-bottom:40px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;
+    box-shadow:var(--shadow);cursor:pointer;transition:.16s;display:flex;flex-direction:column;gap:11px;position:relative}
+  .card:hover{border-color:#d0d4de;box-shadow:var(--shadow-lg);transform:translateY(-2px)}
+  .card.j-지원불가{opacity:.72}
+  .card-top{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .badge{font-size:11.5px;font-weight:740;border-radius:7px;padding:4px 9px;border:1px solid;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:5px}
+  .badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .b-지원가능{color:var(--ok);background:var(--ok-bg);border-color:var(--ok-line)}
+  .b-확인필요{color:var(--warn);background:var(--warn-bg);border-color:var(--warn-line)}
+  .b-지원불가{color:var(--no);background:var(--no-bg);border-color:var(--no-line)}
+  .tag{font-size:11px;font-weight:680;border-radius:6px;padding:4px 8px;letter-spacing:-.01em}
+  .tag.sale{color:var(--sale);background:var(--sale-bg)}
+  .tag.rent{color:var(--rent);background:var(--rent-bg)}
+  .tag.conv{color:#9a3412;background:#fff1e6}
+  .dday{margin-left:auto;font-size:11.5px;font-weight:720;font-family:var(--mono);color:var(--ink-2);
+    background:var(--surface-2);border:1px solid var(--line-2);border-radius:7px;padding:3px 8px}
+  .dday.soon{color:var(--no);background:var(--no-bg);border-color:var(--no-line)}
+  .dday.closed{color:var(--faint)}
+  .card h3{font-size:15.5px;font-weight:720;margin:0;letter-spacing:-.02em;line-height:1.32;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .loc{font-size:12.5px;color:var(--muted);font-weight:560;display:flex;align-items:center;gap:5px;margin-top:-3px}
+  .price{background:var(--surface-2);border:1px solid var(--line-2);border-radius:var(--radius-sm);padding:11px 13px}
+  .price .k{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:3px}
+  .price .v{font-size:16.5px;font-weight:740;font-family:var(--mono);letter-spacing:-.02em;color:var(--ink)}
+  .price .v small{font-size:11.5px;font-weight:600;color:var(--muted);font-family:var(--sans)}
+  .facts{display:flex;flex-direction:column;gap:5px}
+  .fact{display:flex;gap:8px;font-size:12.5px;align-items:baseline}
+  .fact .fk{color:var(--faint);font-weight:600;flex:0 0 52px}
+  .fact .fv{color:var(--ink-2);font-weight:560;min-width:0}
+  .fact .fv.hl{color:var(--accent-ink);font-weight:680}
+  .reasons{display:flex;flex-wrap:wrap;gap:5px}
+  .rchip{font-size:11px;font-weight:560;border-radius:6px;padding:3px 7px;line-height:1.3;max-width:100%;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rchip.no{color:var(--no);background:var(--no-bg)}
+  .rchip.warn{color:var(--warn);background:var(--warn-bg)}
+  .rchip.ok{color:var(--ok);background:var(--ok-bg)}
+  .card-foot{margin-top:auto;padding-top:10px;border-top:1px solid var(--line-2);
+    display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted)}
+  .card-foot .src{display:inline-flex;align-items:center;gap:5px;font-weight:560}
+  .card-foot a{color:var(--accent-ink);font-weight:650;text-decoration:none}
+  .card-foot a:hover{text-decoration:underline}
+
+  .empty{text-align:center;padding:80px 20px;color:var(--muted)}
+  .empty .big{font-size:40px;margin-bottom:8px}
+
+  /* Modal */
+  .ov{position:fixed;inset:0;background:rgba(16,24,40,.42);z-index:50;display:none;
+    align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto;backdrop-filter:blur(2px)}
+  .ov.show{display:flex}
+  .modal{background:var(--surface);border-radius:20px;max-width:680px;width:100%;box-shadow:var(--shadow-lg);overflow:hidden;animation:pop .18s ease}
+  @keyframes pop{from{transform:translateY(10px) scale(.98);opacity:0}to{transform:none;opacity:1}}
+  /* 첫 방문 단계별 마법사(카드뉴스식) */
+  .wiz{background:var(--surface);border-radius:22px;max-width:480px;width:100%;box-shadow:var(--shadow-lg);
+    overflow:hidden;animation:pop .2s ease;display:flex;flex-direction:column;max-height:90vh}
+  .wiz-top{display:flex;align-items:center;gap:12px;padding:16px 18px 0}
+  .wiz-prog{display:flex;gap:5px;flex:1;flex-wrap:wrap}
+  .wiz-prog .dot{width:9px;height:9px;border-radius:50%;background:var(--line);transition:.2s}
+  .wiz-prog .dot.done{background:var(--accent-soft)}
+  .wiz-prog .dot.on{background:var(--accent);transform:scale(1.3)}
+  .wiz-skip{border:0;background:none;color:var(--muted);font-size:12.5px;font-weight:560;cursor:pointer;
+    font-family:inherit;white-space:nowrap;padding:4px}
+  .wiz-skip:hover{color:var(--ink-2)}
+  .wiz-body{padding:24px 26px 8px;overflow:auto;text-align:center}
+  .wiz-sectag{display:inline-block;font-size:11.5px;font-weight:680;color:var(--accent-ink);
+    background:var(--accent-soft);border-radius:999px;padding:5px 12px;margin-bottom:14px}
+  .wiz-emoji{font-size:46px;line-height:1;margin-bottom:12px}
+  .wiz-q{font-size:21px;font-weight:780;letter-spacing:-.03em;margin:0 0 8px;line-height:1.35}
+  .wiz-sub{color:var(--muted);font-size:13.5px;line-height:1.65;margin:0 auto 20px;max-width:38ch}
+  .wiz-fields{text-align:left;max-width:340px;margin:0 auto}
+  .wiz .field input,.wiz .field select{font-size:16px;padding:12px 13px;border-radius:11px}
+  .wiz .field>label{font-size:13.5px;margin-bottom:7px}
+  .wiz .field .bool{padding:12px 14px;border:1px solid var(--line);border-radius:11px;background:var(--surface-2)}
+  .wiz .field .bool>label{font-size:15px;font-weight:600}
+  .wiz .field .hint{font-size:12px}
+  .wiz-foot{display:flex;gap:10px;padding:8px 26px 6px}
+  .wiz-back{flex:0 0 auto;border:1px solid var(--line);background:#fff;color:var(--ink-2);border-radius:12px;
+    padding:13px 18px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+  .wiz-back:hover{background:var(--bg)}
+  .wiz-next{flex:1;border:0;background:var(--accent);color:#fff;border-radius:12px;padding:13px;
+    font-size:15px;font-weight:720;cursor:pointer;font-family:inherit}
+  .wiz-next:hover{filter:brightness(1.06)}
+  .wiz-peek{display:block;width:100%;border:0;background:none;color:var(--muted);font-size:12.5px;
+    font-weight:560;cursor:pointer;font-family:inherit;padding:8px 26px 18px;text-decoration:underline}
+  .wiz-peek:hover{color:var(--ink-2)}
+  .m-head{padding:22px 24px 18px;border-bottom:1px solid var(--line);position:relative;background:linear-gradient(180deg,#fff,var(--surface-2))}
+  .m-head .row1{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:11px}
+  .m-head h2{font-size:19px;font-weight:760;margin:0;letter-spacing:-.025em;line-height:1.3}
+  .m-head .mloc{font-size:13px;color:var(--muted);margin-top:5px;font-weight:560}
+  .m-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:9px;border:1px solid var(--line);
+    background:#fff;cursor:pointer;font-size:17px;color:var(--muted);display:grid;place-items:center}
+  .m-close:hover{background:var(--bg);color:var(--ink)}
+  .m-body{padding:20px 24px 24px;max-height:62vh;overflow:auto}
+  .verdict{border-radius:12px;padding:13px 15px;margin-bottom:18px;border:1px solid;font-size:13px;font-weight:560}
+  .verdict.v-지원가능{background:var(--ok-bg);border-color:var(--ok-line);color:#065f46}
+  .verdict.v-확인필요{background:var(--warn-bg);border-color:var(--warn-line);color:#92400e}
+  .verdict.v-지원불가{background:var(--no-bg);border-color:var(--no-line);color:#991b1b}
+  .verdict .vt{font-weight:740;font-size:13.5px;margin-bottom:5px;display:flex;align-items:center;gap:6px}
+  .verdict ul{margin:6px 0 0;padding-left:18px} .verdict li{margin:2px 0}
+  .sec{margin-bottom:20px}
+  .sec h4{font-size:12px;font-weight:720;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 9px}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:13px}
+  .kv dt{color:var(--muted);font-weight:560} .kv dd{margin:0;font-weight:600;color:var(--ink-2)}
+  /* 표 — 보더·정렬·줄무늬 명확히 */
+  .tbl-wrap{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  table.units{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
+  table.units th,table.units td{padding:9px 11px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid var(--line-2)}
+  table.units thead th{background:var(--surface-2);color:var(--muted);font-weight:680;font-size:11px;border-bottom:1px solid var(--line)}
+  table.units th:first-child,table.units td:first-child{text-align:left;width:30%}
+  table.units tbody td{font-family:var(--mono);color:var(--ink-2)}
+  table.units tbody td:first-child{font-family:var(--sans);font-weight:650;color:var(--ink)}
+  table.units tbody tr:nth-child(even){background:var(--surface-2)}
+  table.units tbody tr:last-child td{border-bottom:0}
+  .tbl-note{font-size:11px;color:var(--faint);margin-top:6px}
+  .spct{display:flex;flex-wrap:wrap;gap:6px}
+  .spct span{font-size:12px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:7px;padding:5px 9px;font-weight:560;color:var(--ink-2)}
+  .spct span b{font-family:var(--mono);color:var(--accent-ink)}
+  .m-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+  .m-links a{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;text-decoration:none;font-size:13px;font-weight:650;border-radius:10px;padding:10px 16px}
+  .m-links a:hover{background:var(--accent-ink)}
+  .note{font-size:11.5px;color:var(--faint);margin-top:14px;line-height:1.5}
+
+  /* Drawer (프로필 편집) */
+  .drawer{position:fixed;top:0;right:0;bottom:0;width:400px;max-width:94vw;background:#fff;z-index:60;
+    box-shadow:-14px 0 44px rgba(16,24,40,.2);transform:translateX(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);
+    overflow:auto;display:flex;flex-direction:column}
+  .drawer.show{transform:none}
+  .drawer-h{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);padding:18px 22px;
+    display:flex;justify-content:space-between;align-items:center;z-index:2}
+  .drawer-h h3{margin:0;font-size:16px;font-weight:760}
+  .drawer-h p{margin:2px 0 0;font-size:11.5px;color:var(--muted)}
+  .drawer-b{padding:18px 22px 32px;flex:1}
+  .drawer-f{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line);padding:12px 22px;display:flex;gap:8px}
+  .drawer-f button{flex:1;border:0;border-radius:10px;padding:11px;font-size:13.5px;font-weight:680;cursor:pointer;font-family:inherit}
+  .btn-primary{background:var(--accent);color:#fff} .btn-primary:hover{background:var(--accent-ink)}
+  .btn-ghost{background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line)!important}
+  .form-sec{font-size:14px;font-weight:760;color:var(--ink);letter-spacing:-.02em;
+    margin:4px 0 16px;padding:12px 14px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line-2)}
+  .form-sec small{display:block;font-size:11.5px;font-weight:500;color:var(--muted);margin-top:3px;letter-spacing:0}
+  .form-sec.want{background:var(--accent-soft);border-color:transparent;color:var(--accent-ink);margin-top:24px}
+  .form-sec.want small{color:var(--accent-ink);opacity:.8}
+  .fgrp{margin-bottom:20px}
+  .fgrp h5{font-size:11px;font-weight:720;color:var(--accent-ink);text-transform:uppercase;letter-spacing:.04em;
+    margin:0 0 11px;padding-bottom:7px;border-bottom:1px solid var(--line-2)}
+  .field{margin-bottom:12px}
+  .field>label{font-size:12px;color:var(--ink-2);font-weight:600;display:block;margin-bottom:5px}
+  .field input,.field select{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;
+    font-family:inherit;font-size:13.5px;color:var(--ink);background:#fff}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .field .suf{position:relative}
+  .field .suf::after{content:attr(data-suf);position:absolute;right:11px;top:50%;transform:translateY(-50%);
+    font-size:11.5px;color:var(--faint);pointer-events:none}
+  .field .bool{display:flex;align-items:center;justify-content:space-between}
+  .field .bool>label{margin:0}
+  .field .hint{font-size:11px;color:var(--faint);margin-top:5px;line-height:1.45}
+  .region-add{display:flex;gap:6px;align-items:center}
+  .region-add select{flex:1;width:auto;min-width:0}
+  .radd{flex:0 0 auto;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:9px;
+    padding:9px 14px;font-family:inherit;font-size:13px;font-weight:650;cursor:pointer;white-space:nowrap}
+  .radd:hover{filter:brightness(1.06)}
+  .hopechips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .hopechip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;
+    background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:4px 5px 4px 11px}
+  .hopechip button{border:none;background:rgba(67,56,202,.16);color:var(--accent-ink);width:17px;height:17px;
+    border-radius:50%;cursor:pointer;font-size:13px;line-height:1;display:inline-flex;align-items:center;justify-content:center;padding:0}
+  .hopechip button:hover{background:rgba(67,56,202,.32)}
+  .hopechip-empty{font-size:11.5px;color:var(--faint)}
+  .sw{width:42px;height:24px;border-radius:999px;background:#d6dae2;position:relative;cursor:pointer;transition:.2s;flex:0 0 auto}
+  .sw.on{background:var(--accent)}
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .sw.on::after{transform:translateX(18px)}
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .drawer-ov{position:fixed;inset:0;background:rgba(16,24,40,.42);z-index:55;display:none;backdrop-filter:blur(2px)}
+  .drawer-ov.show{display:block}
+
+  footer{border-top:1px solid var(--line);background:var(--surface);margin-top:20px}
+  .foot-in{padding:24px 0 32px;font-size:12px;color:var(--muted);line-height:1.65}
+  .foot-in .srcs{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:10px}
+  .foot-in .srcs b{color:var(--ink-2)}
+  .disc{background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;padding:12px 14px;color:var(--ink-2);font-size:11.5px}
+
+  @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:600px){.grid{grid-template-columns:1fr}.hero h2{font-size:20px}
+    .profile-chip span.full{display:none}.controls{top:60px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap top-in">
+    <div class="brand">
+      <div class="logo">🏠</div>
+      <div><h1>내 집 찾기</h1><p>공공임대 · 분양 매칭</p></div>
+    </div>
+    <div class="top-spacer"></div>
+    <div class="profile-chip">
+      <span class="dot"></span>
+      <span id="profileText">—</span>
+      <button class="ghost" id="howBtn">판정 기준</button>
+      <button id="editBtn">⚙ 내 조건 수정</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <h2>내 조건에 맞는 공고</h2>
+    <p class="sub" id="heroSub">—</p>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <section class="controls">
+    <div class="ctrl-row">
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input id="q" type="search" placeholder="공고명 · 지역 검색" autocomplete="off">
+      </div>
+      <select class="sel" id="supplySel">
+        <option value="">전체 공급형태</option>
+        <option value="분양">분양</option>
+        <option value="실물">임대(실물공급)</option>
+        <option value="지원형">임대(전세지원형)</option>
+      </select>
+      <select class="sel" id="typeSel"><option value="">전체 유형</option></select>
+      <select class="sel" id="sortSel">
+        <option value="smart">추천순</option>
+        <option value="dday">마감임박순</option>
+        <option value="gajeom">가점 높은순(분양)</option>
+        <option value="new">공고 최신순</option>
+      </select>
+    </div>
+    <div class="chips" id="chips"></div>
+  </section>
+
+  <div class="toolbar"><div class="count" id="count">—</div></div>
+  <section class="grid" id="list"></section>
+  <div class="empty" id="empty" style="display:none"><div class="big">🔍</div><div>조건에 맞는 공고가 없습니다.</div></div>
+</main>
+
+<div class="ov" id="ov"><div class="modal" id="modal"></div></div>
+
+<div class="ov" id="wizard"><div class="wiz">
+  <div class="wiz-top">
+    <div class="wiz-prog" id="wizProg"></div>
+    <button class="wiz-skip" id="wizSkip" type="button">건너뛰고 전체 보기 ✕</button>
+  </div>
+  <div class="wiz-body" id="wizBody"></div>
+  <div class="wiz-foot">
+    <button class="wiz-back" id="wizBack" type="button">← 이전</button>
+    <button class="wiz-next" id="wizNext" type="button">다음 →</button>
+  </div>
+  <button class="wiz-peek" id="wizPeek" type="button">지금까지 입력한 걸로 목록 보기</button>
+</div></div>
+
+<div class="drawer-ov" id="drawerOv"></div>
+<aside class="drawer" id="drawer">
+  <div class="drawer-h">
+    <div><h3>내 조건 수정</h3><p>바꾸면 즉시 다시 매칭됩니다 · 이 기기에 저장</p></div>
+    <button class="m-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-b" id="form"></div>
+  <div class="drawer-f">
+    <button class="btn-ghost" id="resetBtn">기본값 초기화</button>
+    <button class="btn-primary" onclick="closeDrawer()">완료</button>
+  </div>
+</aside>
+
+<footer><div class="wrap foot-in">
+  <div class="srcs" id="footSrcs"></div>
+  <div class="disc" id="footDisc"></div>
+</div></footer>
+
+<script>const DATA = /*__DATA__*/ {meta:{},profile:{},reqs:[]};</script>
+<script>/*__CORE__*/</script>
+<script>
+(function(){
+  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+  const M=DATA.meta||{};
+  const esc=s=>(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const baseYear=Number((M.기준일||'2026-01-01').slice(0,4));
+
+  // 프로필: localStorage 우선, 없으면 빌드된 기본
+  const LSKEY='happyhouse.profile';
+  let P;
+  try{ P=JSON.parse(localStorage.getItem(LSKEY))||structuredClone(DATA.profile); }
+  catch{ P=structuredClone(DATA.profile); }
+  const saveP=()=>{ try{ localStorage.setItem(LSKEY,JSON.stringify(P)); }catch{} };
+
+  // ── 포맷 ──
+  const eok=manwon=>{ if(manwon==null) return null; const e=Math.floor(manwon/10000),m=Math.round(manwon%10000);
+    return (e?e+'억 ':'')+(m?m.toLocaleString()+'만':(e?'':'0'))||'0'; };
+  const won=n=>n==null?null:(Math.round(n/1e4)).toLocaleString()+'만';
+  const area=n=>n==null?'-':(+n).toFixed(2).replace(/\.?0+$/,'');
+  const rng=(arr,fmt)=>{ if(!arr||arr[0]==null) return null; const lo=fmt(arr[0]),hi=fmt(arr[1]); return lo===hi?lo:lo+' ~ '+hi; };
+  const minmax=vals=>{ const v=vals.filter(x=>x!=null&&x>0); return v.length?[Math.min(...v),Math.max(...v)]:null; };
+
+  // ── req → 표시값(분양가/임대료/공급형/특공/일정) ──
+  function extras(req){
+    const 분양=req.상품구조==='분양';
+    const e={ 공고일:req.공고일||null, 접수기간:[req.접수시작||null, req.마감일||null],
+      당첨발표:req.당첨자발표||null, 단지주소:(req.단지&&req.단지[0]&&req.단지[0].주소)||null };
+    if(분양){
+      const rows=(req.공급형||[]).map(f=>({형명:f.형명,전용:f.전용면적,분양가만원:f.분양가만원,일반:f.일반공급호수,특공:f.특별공급&&f.특별공급.합계}));
+      const 특공={}; (req.공급형||[]).forEach(f=>Object.entries(f.특별공급||{}).forEach(([k,v])=>{ if(k!=='합계'&&v>0) 특공[k]=(특공[k]||0)+v; }));
+      const ym=req.입주예정;
+      return Object.assign(e,{분양가:minmax(rows.map(r=>r.분양가만원)),공급형:rows,특공,
+        입주예정: ym&&/^\d{6}$/.test(ym)?ym.slice(0,4)+'.'+ym.slice(4):(ym||null)});
+    }
+    const bo=[],wo=[],rows=[];
+    (req.공급형||[]).forEach(f=>{ const fr=(f.임대료||[])[0]||{};
+      rows.push({형명:f.형명,전용:f.전용면적,보증금:fr.임대보증금,월세:fr.월임대료,세대:f.금회모집호수});
+      (f.임대료||[]).forEach(r=>{ if(r.임대보증금)bo.push(r.임대보증금); if(r.월임대료)wo.push(r.월임대료); }); });
+    const hl=req.주택목록&&req.주택목록.임대조건;
+    if(hl&&hl.보증금&&hl.보증금.최소!=null){bo.push(hl.보증금.최소,hl.보증금.최대);}
+    if(hl&&hl.월임대료&&hl.월임대료.최소!=null){wo.push(hl.월임대료.최소,hl.월임대료.최대);}
+    return Object.assign(e,{보증금:minmax(bo),월세:minmax(wo),공급형:rows});
+  }
+
+  // ── 매칭 계산 ──
+  let LIST=[];
+  function compute(){
+    const matcher=createMatcher(P, M.기준일);
+    LIST=DATA.reqs.map(req=>{
+      const r=matcher.evaluate(req);
+      return Object.assign(r,{id:req.__id,source:req.__src,상품구조:req.상품구조||(r.공급형태==='분양'?'분양':'임대')}, extras(req));
+    });
+  }
+
+  function priceBlock(x){
+    if(x.상품구조==='분양'){ const r=rng(x.분양가,eok); return {k:'분양가',v:r||'공고 확인',unit:''}; }
+    if(x.공급형태==='지원형') return {k:'전세보증금 지원형',v:'한도 내 지원',unit:''};
+    const b=rng(x.보증금,won), m=rng(x.월세,won);
+    if(b&&x.월세&&x.월세[1]>0) return {k:'보증금 / 월세',v:b,unit:'· 월 '+m};
+    if(b) return {k:(x.월세&&x.월세[1]>0)?'보증금':'전세 보증금',v:b,unit:''};
+    return {k:'임대조건',v:'공고 확인',unit:''};
+  }
+  function ddayHtml(x){
+    if(x.dday==null) return '';
+    if(x.상태==='접수마감'||x.dday<0) return '<span class="dday closed">마감</span>';
+    if(x.dday===0) return '<span class="dday soon">D-DAY</span>';
+    return '<span class="'+(x.dday<=3?'dday soon':'dday')+'">D-'+x.dday+'</span>';
+  }
+  function typeTag(x){
+    const conv=x.분양전환?'<span class="tag conv">분양전환</span>':'';
+    return '<span class="tag '+(x.상품구조==='분양'?'sale':'rent')+'">'+esc(x.유형)+'</span>'+conv;
+  }
+  function reasonChips(x){
+    let h='';
+    (x.실격사유||[]).slice(0,2).forEach(r=>h+='<span class="rchip no" title="'+esc(r)+'">✕ '+esc(r)+'</span>');
+    (x.확인필요||[]).slice(0,2).forEach(r=>h+='<span class="rchip warn" title="'+esc(r)+'">? '+esc(r)+'</span>');
+    if(!x.실격사유.length&&!x.확인필요.length&&x.판정==='지원가능') h+='<span class="rchip ok">✓ 자격요건 충족(확정 항목)</span>';
+    return h;
+  }
+  const srcLabel=s=>s==='applyhome'?'청약홈':'LH';
+
+  function card(x){
+    const pb=priceBlock(x);
+    const facts=[];
+    if(x.면적) facts.push(['면적',x.면적,x.면적.startsWith('맞음')]);
+    if(x.거주지순위) facts.push(['순위',x.거주지순위,false]);
+    if(x.예상배점) facts.push([x.유형==='민영분양'?'가점':'배점',x.예상배점,x.상품구조==='분양']);
+    const factsH=facts.map(f=>'<div class="fact"><span class="fk">'+f[0]+'</span><span class="fv'+(f[2]?' hl':'')+'">'+esc(f[1])+'</span></div>').join('');
+    return '<article class="card j-'+x.판정+'" data-id="'+esc(x.id)+'">'
+      +'<div class="card-top"><span class="badge b-'+x.판정+'">'+x.판정+'</span>'+typeTag(x)+ddayHtml(x)+'</div>'
+      +'<h3>'+esc(x.공고명)+'</h3>'
+      +'<div class="loc">📍 '+esc(x.지역||'-')+(x.희망지역매칭?' · <b style="color:var(--accent-ink)">희망지역</b>':'')+'</div>'
+      +'<div class="price"><div class="k">'+pb.k+'</div><div class="v">'+esc(pb.v)+(pb.unit?' <small>'+esc(pb.unit)+'</small>':'')+'</div></div>'
+      +(factsH?'<div class="facts">'+factsH+'</div>':'')
+      +'<div class="reasons">'+reasonChips(x)+'</div>'
+      +'<div class="card-foot"><span class="src">'+(x.상품구조==='분양'?'🏗️':'🔑')+' '+srcLabel(x.source)+' · '+esc(x.선정방식||'')+'</span>'
+      +(x.링크?'<a href="'+esc(x.링크)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">원문 ↗</a>':'')+'</div>'
+      +'</article>';
+  }
+
+  function modal(x){
+    const pb=priceBlock(x);
+    let unitsT='';
+    if(x.공급형&&x.공급형.length){
+      const isSale=x.상품구조==='분양';
+      unitsT='<div class="tbl-wrap"><table class="units"><thead><tr><th>주택형</th><th>전용㎡</th>'
+        +(isSale?'<th>분양가</th><th>일반</th><th>특공</th>':'<th>보증금</th><th>월세</th><th>세대</th>')
+        +'</tr></thead><tbody>'
+        +x.공급형.slice(0,16).map(u=>isSale
+          ?'<tr><td>'+esc(u.형명||'-')+'</td><td>'+area(u.전용)+'</td><td>'+(u.분양가만원!=null?eok(u.분양가만원):'-')+'</td><td>'+(u.일반??'-')+'</td><td>'+(u.특공??'-')+'</td></tr>'
+          :'<tr><td>'+esc(u.형명||'-')+'</td><td>'+area(u.전용)+'</td><td>'+(u.보증금!=null?won(u.보증금):'-')+'</td><td>'+(u.월세!=null?won(u.월세):'-')+'</td><td>'+(u.세대??'-')+'</td></tr>'
+        ).join('')+'</tbody></table></div>'
+        +(x.공급형.length>16?'<div class="tbl-note">…외 '+(x.공급형.length-16)+'개 주택형</div>':'');
+    }
+    const spctEntries=x.특공?Object.entries(x.특공).filter(([k,v])=>v>0):[];
+    const spctH=spctEntries.length?'<div class="sec"><h4>특별공급 배분</h4><div class="spct">'
+      +spctEntries.map(([k,v])=>'<span>'+esc(k)+' <b>'+v+'</b></span>').join('')+'</div></div>':'';
+    const sched=[];
+    if(x.공고일) sched.push(['모집공고일',x.공고일]);
+    if(x.접수기간&&x.접수기간[0]) sched.push(['청약/신청 접수',x.접수기간.filter(Boolean).join(' ~ ')]);
+    if(x.당첨발표) sched.push(['당첨자발표',x.당첨발표]);
+    if(x.입주예정) sched.push(['입주예정',x.입주예정]);
+    const schedH=sched.length?'<div class="sec"><h4>일정</h4><dl class="kv">'+sched.map(s=>'<dt>'+s[0]+'</dt><dd>'+esc(s[1])+'</dd>').join('')+'</dl></div>':'';
+    const vItems=[]; (x.실격사유||[]).forEach(r=>vItems.push('✕ '+r));(x.확인필요||[]).forEach(r=>vItems.push('? '+r));(x.참고||[]).forEach(r=>vItems.push('· '+r));
+    const vmsg=x.판정==='지원가능'?'확정 가능한 자격요건을 모두 충족합니다.':x.판정==='지원불가'?'아래 사유로 신청 자격이 안 됩니다.':'아래 항목은 시스템이 단정할 수 없어 원문 확인이 필요합니다.';
+    const verdictH='<div class="verdict v-'+x.판정+'"><div class="vt">'+(x.판정==='지원가능'?'✅':x.판정==='지원불가'?'⛔':'⚠️')+' '+x.판정+'</div>'+vmsg
+      +(vItems.length?'<ul>'+vItems.map(i=>'<li>'+esc(i)+'</li>').join('')+'</ul>':'')+'</div>';
+    const meta=[];
+    if(x.공급형태설명) meta.push(['공급형태',x.공급형태설명]);
+    if(x.선정방식) meta.push(['선정방식',x.선정방식]);
+    if(x.거주지순위) meta.push(['청약순위/지역',x.거주지순위]);
+    if(x.예상배점) meta.push([x.유형==='민영분양'?'내 가점':'예상배점',x.예상배점]);
+    if(x.단지주소) meta.push(['위치',x.단지주소]);
+    const metaH='<div class="sec"><h4>매칭 상세</h4><dl class="kv">'+meta.map(m=>'<dt>'+m[0]+'</dt><dd>'+esc(m[1])+'</dd>').join('')+'</dl></div>';
+    const links=x.링크?'<div class="m-links"><a href="'+esc(x.링크)+'" target="_blank" rel="noopener">'+esc(x.링크라벨||'원문 보기')+' ↗</a></div>':'';
+    $('#modal').innerHTML=
+      '<div class="m-head"><button class="m-close" onclick="closeModal()">✕</button>'
+      +'<div class="row1"><span class="badge b-'+x.판정+'">'+x.판정+'</span>'+typeTag(x)+ddayHtml(x)+'</div>'
+      +'<h2>'+esc(x.공고명)+'</h2><div class="mloc">📍 '+esc(x.지역||'-')+' · '+srcLabel(x.source)+'</div></div>'
+      +'<div class="m-body">'+verdictH
+      +'<div class="sec"><h4>'+pb.k+'</h4><div class="price" style="display:inline-block;min-width:200px"><div class="v" style="font-size:20px">'+esc(pb.v)+(pb.unit?' <small>'+esc(pb.unit)+'</small>':'')+'</div></div></div>'
+      +metaH+schedH+(unitsT?'<div class="sec"><h4>주택형별</h4>'+unitsT+'</div>':'')+spctH+links
+      +'<div class="note">⚠ 자동 매칭 결과입니다. 최종 신청자격·일정·금액은 반드시 원문 공고로 확인하세요. "확인필요/참고/추정"은 시스템이 단정하지 않은 항목입니다.</div></div>';
+    $('#ov').classList.add('show'); document.body.style.overflow='hidden';
+  }
+  window.closeModal=()=>{ $('#ov').classList.remove('show'); document.body.style.overflow=''; };
+  $('#ov').addEventListener('click',e=>{ if(e.target===$('#ov')) closeModal(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModal(); closeDrawer(); closeWizard(); } });
+
+  // ── 필터/정렬 ──
+  const state={판정:'',supply:'',type:'',q:'',sort:'smart',regionOnly:false,분양류:false,activeOnly:true};
+  const ACTIVE=new Set(['접수중','공고중','정정공고중','접수예정']);
+  const isActive=x=>ACTIVE.has(x.상태)&&(x.dday==null||x.dday>=0);
+  function apply(){
+    let r=LIST.slice();
+    if(state.activeOnly) r=r.filter(isActive);
+    if(state.판정) r=r.filter(x=>x.판정===state.판정);
+    if(state.supply) r=r.filter(x=>x.공급형태===state.supply);
+    if(state.type) r=r.filter(x=>x.유형===state.type);
+    if(state.regionOnly) r=r.filter(x=>x.희망지역매칭===true);
+    if(state.분양류) r=r.filter(x=>x.공급형태==='분양'||x.분양전환===true);
+    if(state.q){ const q=state.q.toLowerCase(); r=r.filter(x=>(x.공고명+' '+x.지역+' '+x.유형).toLowerCase().includes(q)); }
+    const ord={지원가능:0,확인필요:1,지원불가:2};
+    const cmp={
+      smart:(a,b)=>(ord[a.판정]-ord[b.판정])||((b.희망지역매칭===true)-(a.희망지역매칭===true))||((a.dday??9999)-(b.dday??9999)),
+      dday:(a,b)=>(a.dday??9999)-(b.dday??9999),
+      gajeom:(a,b)=>(b.가점??-1)-(a.가점??-1),
+      new:(a,b)=>String(b.공고일||'').localeCompare(String(a.공고일||'')),
+    }[state.sort];
+    r.sort(cmp); render(r);
+  }
+  function render(r){
+    $('#list').innerHTML=r.map(card).join('');
+    $('#empty').style.display=r.length?'none':'block';
+    $('#list').style.display=r.length?'':'none';
+    const total=LIST.filter(x=>!state.activeOnly||isActive(x)).length;
+    $('#count').innerHTML='<b>'+r.length+'</b>건'+(r.length!==total?' / 전체 '+total+'건':'');
+    $$('.card').forEach(c=>c.onclick=()=>{ const x=LIST.find(y=>y.id===c.dataset.id); if(x) modal(x); });
+  }
+
+  function buildStats(){
+    const base=LIST.filter(isActive);
+    const c={all:base.length,지원가능:0,확인필요:0,지원불가:0}; base.forEach(x=>c[x.판정]++);
+    const items=[['','s-all',c.all,'접수중·예정'],['지원가능','s-ok',c.지원가능,'지원가능'],['확인필요','s-warn',c.확인필요,'확인필요'],['지원불가','s-no',c.지원불가,'지원불가']];
+    $('#stats').innerHTML=items.map(i=>'<div class="stat '+i[1]+(state.판정===i[0]&&i[0]?' active':'')+'" data-v="'+i[0]+'"><span class="bar"></span><div class="n">'+i[2]+'</div><div class="l">'+i[3]+'</div></div>').join('');
+    $$('.stat').forEach(s=>s.onclick=()=>{ state.판정=(state.판정===s.dataset.v)?'':s.dataset.v; buildStats(); apply(); });
+  }
+  function buildControls(){
+    const types=[...new Set(LIST.map(x=>x.유형))].sort();
+    const cur=$('#typeSel').value;
+    $('#typeSel').innerHTML='<option value="">전체 유형</option>'+types.map(t=>'<option'+(t===cur?' selected':'')+'>'+esc(t)+'</option>').join('');
+    const chips=[
+      {id:'regionOnly',label:'희망지역만',c:LIST.filter(x=>x.희망지역매칭).length},
+      {id:'분양류',label:'분양(전환)',c:LIST.filter(x=>x.공급형태==='분양'||x.분양전환===true).length},
+      {id:'activeOnly',label:'접수중·예정만'},
+    ];
+    $('#chips').innerHTML=chips.map(c=>'<button class="chip'+(state[c.id]?' on':'')+'" data-id="'+c.id+'">'+c.label+(c.c!=null?' <span class="c">'+c.c+'</span>':'')+'</button>').join('');
+    $$('#chips .chip').forEach(btn=>btn.onclick=()=>{ state[btn.dataset.id]=!state[btn.dataset.id]; btn.classList.toggle('on',state[btn.dataset.id]); apply(); });
+  }
+
+  // ── 프로필 편집 폼 ──
+  const gp=(o,path)=>path.split('.').reduce((a,k)=>a==null?undefined:a[k],o);
+  const sp=(o,path,v)=>{ const ks=path.split('.'); let a=o; for(let i=0;i<ks.length-1;i++){ if(a[ks[i]]==null)a[ks[i]]={}; a=a[ks[i]]; } a[ks[ks.length-1]]=v; };
+  // 행정구역(시·도→시·군·구) — 거주지/희망지역 콤보박스용. 시·도는 매칭 호환 위해 짧은 이름 유지.
+  const KR_REGIONS={
+    '서울':['종로구','중구','용산구','성동구','광진구','동대문구','중랑구','성북구','강북구','도봉구','노원구','은평구','서대문구','마포구','양천구','강서구','구로구','금천구','영등포구','동작구','관악구','서초구','강남구','송파구','강동구'],
+    '부산':['중구','서구','동구','영도구','부산진구','동래구','남구','북구','해운대구','사하구','금정구','강서구','연제구','수영구','사상구','기장군'],
+    '대구':['중구','동구','서구','남구','북구','수성구','달서구','달성군','군위군'],
+    '인천':['중구','동구','미추홀구','연수구','남동구','부평구','계양구','서구','강화군','옹진구'],
+    '광주':['동구','서구','남구','북구','광산구'],
+    '대전':['동구','중구','서구','유성구','대덕구'],
+    '울산':['중구','남구','동구','북구','울주군'],
+    '세종':['세종시'],
+    '경기':['수원시','성남시','의정부시','안양시','부천시','광명시','평택시','동두천시','안산시','고양시','과천시','구리시','남양주시','오산시','시흥시','군포시','의왕시','하남시','용인시','파주시','이천시','안성시','김포시','화성시','광주시','양주시','포천시','여주시','연천군','가평군','양평군'],
+    '강원':['춘천시','원주시','강릉시','동해시','태백시','속초시','삼척시','홍천군','횡성군','영월군','평창군','정선군','철원군','화천군','양구군','인제군','고성군','양양군'],
+    '충북':['청주시','충주시','제천시','보은군','옥천군','영동군','증평군','진천군','괴산군','음성군','단양군'],
+    '충남':['천안시','공주시','보령시','아산시','서산시','논산시','계룡시','당진시','금산군','부여군','서천군','청양군','홍성군','예산군','태안군'],
+    '전북':['전주시','군산시','익산시','정읍시','남원시','김제시','완주군','진안군','무주군','장수군','임실군','순창군','고창군','부안군'],
+    '전남':['목포시','여수시','순천시','나주시','광양시','담양군','곡성군','구례군','고흥군','보성군','화순군','장흥군','강진군','해남군','영암군','무안군','함평군','영광군','장성군','완도군','진도군','신안군'],
+    '경북':['포항시','경주시','김천시','안동시','구미시','영주시','영천시','상주시','문경시','경산시','의성군','청송군','영양군','영덕군','청도군','고령군','성주군','칠곡군','예천군','봉화군','울진군','울릉군'],
+    '경남':['창원시','진주시','통영시','사천시','김해시','밀양시','거제시','양산시','의령군','함안군','창녕군','고성군','남해군','하동군','산청군','함양군','거창군','합천군'],
+    '제주':['제주시','서귀포시'],
+  };
+  const sidoOptions=(cur,blank)=>'<option value="">'+esc(blank)+'</option>'
+    +Object.keys(KR_REGIONS).map(s=>'<option value="'+esc(s)+'"'+(s===cur?' selected':'')+'>'+esc(s)+'</option>').join('');
+  const sggOptions=(sido,cur)=>'<option value="">'+(sido?'전체':'시·도 먼저 선택')+'</option>'
+    +(KR_REGIONS[sido]||[]).map(s=>'<option value="'+esc(s)+'"'+(s===cur?' selected':'')+'>'+esc(s)+'</option>').join('');
+  const FORM=[
+    {g:'기본 정보',f:[
+      {k:'생년월일',t:'date'},
+      {k:'무주택',t:'bool',label:'무주택 세대',hint:'분양권·입주권 보유도 주택으로 봅니다'},
+      {k:'세대원수',t:'num',suf:'인',hint:'주민등록표상 세대원(태아 포함)'},
+      {k:'월평균소득',t:'man',suf:'만원/월',label:'월평균소득(세전)',hint:'세금·공제 전 총소득. 상여·수당 포함, 세대 구성원 합산(공공주택 소득기준은 모두 세전 기준)'},
+      {k:'총자산',t:'man',suf:'만원',hint:'부동산+금융+기타 자산에서 부채 차감(세대 합산)'},
+      {k:'자동차가액',t:'man',suf:'만원',hint:'보유 차량 중 최고가(보험개발원 기준)'},
+    ]},
+    {g:'거주',f:[
+      {k:'거주지.시도',t:'sido',label:'시·도',row:1},{k:'거주지.시군구',t:'sigungu',label:'시·군·구',row:1},
+      {k:'거주개월',t:'num',suf:'개월',label:'현 주소 연속거주'},
+    ]},
+    {g:'가구 / 자녀',f:[
+      {k:'혼인상태',t:'sel',opts:['미혼','혼인중','예비','한부모']},
+      {k:'혼인신고일',t:'date'},
+      {k:'__미성년자녀수',t:'num',suf:'명',label:'미성년 자녀 수'},
+      {k:'__신생아',t:'bool',label:'2년내 출생/임신 자녀'},
+      {k:'부양가족.직계존속',t:'num',suf:'명',label:'부양 직계존속(3년+ 동일등본)'},
+    ]},
+    {g:'청약통장',f:[
+      {k:'청약저축.가입',t:'bool',label:'청약통장 보유',hint:'주택청약종합저축 등. ‘보유 여부’만 정확하면 충분합니다 — 아래 항목은 모르면 비워두세요(자동으로 ‘확인필요’로만 표시되고, 지원불가로 떨어지지 않습니다).'},
+      {k:'청약저축.가입일',t:'month',label:'통장 만든 시기(연·월)',hint:'가입기간(개월)은 이 날짜로 자동 계산됩니다. 모르면 비워두세요. 정확한 값은 청약홈 ＞ 청약통장 가입내역 또는 은행 앱에서 확인할 수 있어요.'},
+      {k:'__매달납입',t:'bool',label:'매달 빠짐없이 납입(자동이체)',hint:'자동이체로 매달 넣었다면 ON — 납입횟수가 가입기간과 같게 자동 설정됩니다.'},
+      {k:'청약저축.납입횟수',t:'num',suf:'회',label:'납입횟수(모르면 비움)',row:1},
+      {k:'청약저축.저축총액',t:'man',suf:'만원',label:'저축총액(참고용)',row:1},
+      {k:'무주택기간개월',t:'num',suf:'개월',label:'무주택 기간(가점용)',hint:'만 30세부터(그 전 혼인 시 혼인신고일부터) 무주택 기간. 모르면 비워두세요.'},
+    ]},
+    {g:'자격',f:[
+      {k:'수급자',t:'sel',opts:['해당없음','생계','의료','주거','차상위']},
+    ]},
+    {g:'희망 지역·면적',sec:'want',f:[
+      {k:'희망.지역',t:'region-multi',label:'희망 지역(여러 개 선택 가능)'},
+      {k:'희망.전용면적.min',t:'num',suf:'㎡',label:'전용면적 최소',row:1},
+      {k:'희망.전용면적.max',t:'num',suf:'㎡',label:'전용면적 최대',row:1},
+    ]},
+  ];
+  function curVal(f){
+    if(f.k==='__미성년자녀수') return (P.자녀||[]).length;
+    if(f.k==='__신생아') return (P.자녀||[]).some(c=>c.태아||(c.생년월일&&baseYear-Number(String(c.생년월일).slice(0,4))<=2));
+    if(f.k==='__매달납입') return P.청약저축?.매달납입===true;
+    let v=gp(P,f.k);
+    if(f.t==='man') return v==null?'':Math.round(v/1e4);
+    if(f.t==='csv') return Array.isArray(v)?v.join(', '):'';
+    return v==null?'':v;
+  }
+  function buildForm(){
+    let h='<div class="form-sec">📋 내 자격요건 · 내 정보<small>공고 지원 자격을 판정하는 데 쓰입니다</small></div>';
+    let wantBannerDone=false;
+    for(const grp of FORM){
+      if(grp.sec==='want'&&!wantBannerDone){
+        h+='<div class="form-sec want">🎯 내가 원하는 조건 · 필터<small>자격이 아니라, 이 조건으로 목록을 추려서 보여줍니다</small></div>';
+        wantBannerDone=true;
+      }
+      h+='<div class="fgrp"><h5>'+grp.g+'</h5>';
+      let i=0;
+      while(i<grp.f.length){
+        const f=grp.f[i];
+        if(f.row && grp.f[i+1] && grp.f[i+1].row){ // 2칸 묶음
+          h+='<div class="frow">'+fieldHtml(f)+fieldHtml(grp.f[i+1])+'</div>'; i+=2; continue;
+        }
+        h+=fieldHtml(f); i++;
+      }
+      h+='</div>';
+    }
+    $('#form').innerHTML=h;
+    bindFields('#form');
+  }
+  // 필드 바인딩(드로어·마법사 공용) — root 안의 입력을 commit(root)로 저장.
+  function bindFields(root){
+    $$(root+' [data-k]').forEach(el=>{
+      const k=el.dataset.k, t=el.dataset.t;
+      if(k==='__매달납입'){ el.onclick=()=>{ el.classList.toggle('on'); commit(root); syncPayLock(root); }; }
+      else if(t==='bool'){ el.onclick=()=>{ el.classList.toggle('on'); commit(root); }; }
+      else if(t==='sido'){ el.onchange=()=>{ const sgg=$(root+' [data-k="거주지.시군구"]'); if(sgg) sgg.innerHTML=sggOptions(el.value,''); commit(root); }; }
+      else if(t==='sigungu'){ el.onchange=()=>commit(root); }
+      else el.oninput=()=>commitDebounced(root);
+    });
+    wireHope(root);
+    syncPayLock(root);
+  }
+  // 납입횟수: ‘매달 납입’ ON이면 자동(=가입기간)·비활성
+  function syncPayLock(root){
+    const mEl=$(root+' [data-k="__매달납입"]'), cEl=$(root+' [data-k="청약저축.납입횟수"]');
+    if(!mEl||!cEl) return;
+    const on=mEl.classList.contains('on');
+    cEl.disabled=on; if(on) cEl.value=P.청약저축?.납입횟수??'';
+  }
+  // 희망 지역 다중선택(콤보 추가 → 칩 목록). 희망.지역 배열을 직접 관리(commit 대상 아님).
+  function wireHope(root){
+    const hopeAdd=$(root+' #hopeAdd'); if(!hopeAdd) return;
+    const hSido=$(root+' #hopeSido'), hSgg=$(root+' #hopeSgg');
+    hSido.onchange=()=>{ hSgg.innerHTML='<option value="">'+(hSido.value?'전체':'시·군·구')+'</option>'
+      +(KR_REGIONS[hSido.value]||[]).map(s=>'<option value="'+esc(s)+'">'+esc(s)+'</option>').join(''); };
+    hopeAdd.onclick=()=>{
+      const v=(hSgg.value||hSido.value||'').trim(); if(!v) return;
+      P.희망=P.희망||{}; if(!Array.isArray(P.희망.지역)) P.희망.지역=[];
+      if(!P.희망.지역.includes(v)){ P.희망.지역.push(v); saveP(); refresh(); }
+      renderHopeChips();
+    };
+    renderHopeChips();
+  }
+  function renderHopeChips(){
+    const box=$('#hopeChips'); if(!box) return;
+    const arr=(P.희망&&Array.isArray(P.희망.지역))?P.희망.지역:[];
+    box.innerHTML=arr.length
+      ? arr.map((r,i)=>'<span class="hopechip">'+esc(r)+'<button type="button" data-i="'+i+'" aria-label="삭제">×</button></span>').join('')
+      : '<span class="hopechip-empty">선택한 희망 지역이 없습니다</span>';
+    box.querySelectorAll('.hopechip button').forEach(b=>b.onclick=()=>{ P.희망.지역.splice(Number(b.dataset.i),1); saveP(); refresh(); renderHopeChips(); });
+  }
+  function fieldHtml(f){
+    const id='fld_'+f.k.replace(/[.]/g,'_');
+    const label=f.label||f.k.split('.').pop();
+    const val=curVal(f);
+    const hint=f.hint?'<div class="hint">'+esc(f.hint)+'</div>':'';
+    if(f.t==='bool'){
+      return '<div class="field"><div class="bool"><label>'+esc(label)+'</label><div class="sw'+(val?' on':'')+'" data-k="'+f.k+'" data-t="bool" id="'+id+'"></div></div>'+hint+'</div>';
+    }
+    if(f.t==='sido'){
+      return '<div class="field"><label>'+esc(label)+'</label><select data-k="'+f.k+'" data-t="sido">'+sidoOptions(gp(P,f.k)||'','전체')+'</select>'+hint+'</div>';
+    }
+    if(f.t==='sigungu'){
+      return '<div class="field"><label>'+esc(label)+'</label><select data-k="'+f.k+'" data-t="sigungu">'+sggOptions(gp(P,'거주지.시도')||'',gp(P,f.k)||'')+'</select>'+hint+'</div>';
+    }
+    if(f.t==='region-multi'){
+      const h2=hint||'<div class="hint">시·군·구까지 고르면 정확히 매칭됩니다. 시·도만 골라 추가할 수도 있습니다.</div>';
+      return '<div class="field"><label>'+esc(label)+'</label>'
+        +'<div class="region-add"><select id="hopeSido">'+sidoOptions('','시·도')+'</select>'
+        +'<select id="hopeSgg"><option value="">시·군·구</option></select>'
+        +'<button type="button" id="hopeAdd" class="radd">추가</button></div>'
+        +'<div id="hopeChips" class="hopechips"></div>'+h2+'</div>';
+    }
+    let inner;
+    if(f.t==='sel') inner='<select data-k="'+f.k+'" data-t="sel">'+f.opts.map(o=>'<option'+(o===val?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
+    else{
+      const type=f.t==='date'?'date':f.t==='month'?'month':(f.t==='num'||f.t==='man')?'number':'text';
+      const suf=f.suf?' suf':''; const sufA=f.suf?' data-suf="'+f.suf+'"':'';
+      inner='<div class="'+(suf?'suf':'')+'"'+sufA+'><input type="'+type+'" data-k="'+f.k+'" data-t="'+f.t+'" value="'+esc(val)+'"'+(f.suf?' style="padding-right:'+(f.suf.length*7+14)+'px"':'')+'></div>';
+    }
+    return '<div class="field"><label>'+esc(label)+'</label>'+inner+hint+'</div>';
+  }
+  let dT;
+  const commitDebounced=(root)=>{ clearTimeout(dT); dT=setTimeout(()=>commit(root),250); };
+  function commit(root){
+    root=root||'#form';
+    // 일반 필드(root 범위만)
+    $$(root+' [data-k]').forEach(el=>{
+      const k=el.dataset.k, t=el.dataset.t;
+      if(k.startsWith('__')) return;
+      let v;
+      if(t==='bool') v=el.classList.contains('on');
+      else if(t==='sel') v=el.value;
+      else if(t==='csv') v=el.value.split(',').map(s=>s.trim()).filter(Boolean);
+      else if(t==='num') v=el.value===''?null:Number(el.value);
+      else if(t==='man') v=el.value===''?null:Math.round(Number(el.value)*1e4);
+      else v=el.value||null;
+      sp(P,k,v);
+    });
+    // 자녀(__미성년자녀수 + __신생아) → 해당 입력이 root에 있을 때만 재구성
+    const nEl=$(root+' [data-k="__미성년자녀수"]'), babyEl=$(root+' [data-k="__신생아"]');
+    if(nEl||babyEl){
+      const n=nEl?Math.max(0,Number(nEl.value)||0):0;
+      const baby=babyEl?babyEl.classList.contains('on'):false;
+      const kids=[];
+      for(let i=0;i<Math.max(n,baby?1:0);i++) kids.push({생년월일:(baby&&i===0?(baseYear-1):(baseYear-10))+'-01-01'});
+      P.자녀=kids;
+    }
+    // 청약통장 파생: 가입일(연·월)→가입개월, ‘매달 납입’→납입횟수=가입개월
+    if(P.청약저축){
+      if(P.청약저축.가입일){
+        const [y,mo]=String(P.청약저축.가입일).split('-').map(Number);
+        if(y&&mo){ const b=new Date(M.기준일); P.청약저축.가입개월=Math.max(0,(b.getFullYear()-y)*12+(b.getMonth()+1-mo)); }
+      }
+      const mEl=$(root+' [data-k="__매달납입"]');
+      if(mEl){ const on=mEl.classList.contains('on'); P.청약저축.매달납입=on;
+        if(on&&P.청약저축.가입개월!=null) P.청약저축.납입횟수=P.청약저축.가입개월; }
+    }
+    saveP();
+    refresh();
+    syncProfileChip();
+  }
+  function refresh(){ compute(); buildStats(); buildControls(); apply(); }
+
+  window.openDrawer=()=>{ buildForm(); $('#drawer').classList.add('show'); $('#drawerOv').classList.add('show'); };
+  window.closeDrawer=()=>{ $('#drawer').classList.remove('show'); $('#drawerOv').classList.remove('show'); };
+  $('#editBtn').onclick=openDrawer;
+  $('#drawerOv').onclick=closeDrawer;
+  $('#resetBtn').onclick=()=>{ if(confirm('빌드 시 기본 프로필로 되돌립니다.')){ P=structuredClone(DATA.profile); saveP(); buildForm(); refresh(); syncProfileChip(); } };
+
+  const isIncomplete=()=>!P.생년월일 && P.월평균소득==null;
+  function syncProfileChip(){
+    if(isIncomplete()){
+      $('#profileText').innerHTML='<span style="color:var(--accent-ink);font-weight:700">내 조건 미입력</span>';
+      $('#editBtn').textContent='⚙ 내 조건 입력';
+      return;
+    }
+    const age=P.생년월일?Math.floor((new Date(M.기준일)-new Date(P.생년월일))/(365.25*864e5)):null;
+    const 거주=P.거주지?((P.거주지.시도||'')+' '+(P.거주지.시군구||'')).trim():'';
+    $('#editBtn').textContent='⚙ 내 조건 수정';
+    $('#profileText').innerHTML='<b>'+(age?age+'세':'')+'</b>'+(P.세대원수?' · '+P.세대원수+'인':'')
+      +(거주?' · <span class="full">'+esc(거주)+'</span>':'')+(P.무주택?' · 무주택':' · 유주택');
+  }
+
+  // ── 헤더/푸터 ──
+  $('#heroSub').textContent='LH 청약플러스 · 청약홈(한국부동산원 OpenAPI) 공식 데이터 기반 · 추측 없이 확정 가능한 항목만 판정합니다.';
+  $('#footSrcs').innerHTML='<span>🔑 임대: <b>LH 청약플러스</b> (apply.lh.or.kr)</span>'
+    +'<span>🏗️ 분양: <b>청약홈 / 한국부동산원 OpenAPI</b> (공공데이터포털)</span>'
+    +'<span>기준일: <b>'+esc(M.기준일||'')+'</b></span>';
+  $('#footDisc').innerHTML='🔒 입력한 내 조건은 <b>이 브라우저(localStorage)에만 저장</b>되며 서버로 전송·수집되지 않습니다. 소득·자산은 모두 <b>세전·세대합산</b> 기준입니다. '
+    +'개인 조건으로 자동 계산한 매칭 결과이며, 데이터는 공식 출처에서 수집했으나 공고 정정·마감 등 실시간 변동이 있을 수 있으니 최종 신청자격·금액·일정은 반드시 원문 공고로 확인하세요. ‘확인필요/참고/추정’은 시스템이 단정하지 않은 항목입니다.';
+  $('#howBtn').onclick=()=>alert('판정 기준\n\n✅ 지원가능 — 무주택·소득·자산·청약통장 등 "확정 가능한" 자격요건을 모두 충족.\n\n⚠️ 확인필요 — 공식 데이터에 없거나 자유텍스트라(예: 특공 소득컷, 공공분양 소득·자산) 시스템이 단정할 수 없는 항목이 있음.\n\n⛔ 지원불가 — 무주택/청약통장 등 필수 요건 미충족.\n\n· 분양 가점(민영)은 무주택기간·부양가족수·통장기간으로 계산한 추정치입니다. 가점/추첨 비율·전매제한은 원문 확인.');
+
+  $('#q').addEventListener('input',e=>{ state.q=e.target.value.trim(); apply(); });
+  $('#supplySel').addEventListener('change',e=>{ state.supply=e.target.value; apply(); });
+  $('#typeSel').addEventListener('change',e=>{ state.type=e.target.value; apply(); });
+  $('#sortSel').addEventListener('change',e=>{ state.sort=e.target.value; apply(); });
+
+  // ── 첫 방문 단계별 마법사(카드뉴스식) — 한 번에 하나씩, 모르면 건너뛰기 ──
+  const WIZ_INTRO={intro:true,emoji:'🏠',q:'내 조건으로 딱 맞는 공고 찾기',
+    sub:'몇 가지만 차근차근 여쭤볼게요. 모르는 항목은 건너뛰어도 됩니다. 입력 내용은 이 기기에만 저장되고 서버로 전송되지 않아요.'};
+  const WIZARD=[
+    {emoji:'🎂',q:'생년월일을 알려주세요',sub:'나이로 일부 자격·가점을 계산합니다',fields:[{k:'생년월일',t:'date'}]},
+    {emoji:'🏠',q:'지금 소유한 집이 있나요?',sub:'분양권·입주권도 주택으로 봅니다',fields:[{k:'무주택',t:'bool',label:'무주택 세대입니다'}]},
+    {emoji:'👪',q:'함께 사는 세대원은 몇 명인가요?',sub:'주민등록표상 인원(본인·태아 포함)',fields:[{k:'세대원수',t:'num',suf:'명'}]},
+    {emoji:'📍',q:'어디에 사세요?',sub:'거주지 우선·지역 자격 판정에 쓰입니다',fields:[{k:'거주지.시도',t:'sido',label:'시·도',row:1},{k:'거주지.시군구',t:'sigungu',label:'시·군·구',row:1}]},
+    {emoji:'💰',q:'월평균 소득은 얼마인가요?',sub:'세금 떼기 전, 세대원 합산(상여·수당 포함). 모르면 비워도 됩니다',fields:[{k:'월평균소득',t:'man',suf:'만원/월'}]},
+    {emoji:'🏦',q:'보유 자산은 대략 얼마인가요?',sub:'부동산+금융+기타 − 부채(세대 합산). 모르면 비워두세요',fields:[
+      {k:'총자산',t:'man',suf:'만원',label:'총자산(대략)'},
+      {k:'자동차가액',t:'man',suf:'만원',label:'자동차 가액(대략)',hint:'보유 차량 중 최고가. 우선 대략 적어도 됩니다 — 정확한 값은 보험개발원 차량기준가액으로 확인(추후 모델·연식 자동조회 예정).'}
+    ]},
+    {emoji:'💑',q:'결혼 상태를 알려주세요',sub:'신혼부부·특별공급 판정에 쓰입니다',fields:[{k:'혼인상태',t:'sel',opts:['미혼','혼인중','예비','한부모']}]},
+    {emoji:'🧒',q:'미성년 자녀가 있나요?',sub:'없으면 0으로 두세요',fields:[{k:'__미성년자녀수',t:'num',suf:'명',label:'미성년 자녀 수'},{k:'__신생아',t:'bool',label:'2년 내 출생·임신 자녀가 있어요'}]},
+    {emoji:'🏧',q:'청약통장을 갖고 계신가요?',sub:'보유 여부만 정확하면 충분해요. 나머지는 모르면 비워도 됩니다',fields:[{k:'청약저축.가입',t:'bool',label:'청약통장이 있어요'},{k:'청약저축.가입일',t:'month',label:'통장 만든 시기(연·월)'},{k:'__매달납입',t:'bool',label:'매달 빠짐없이 납입(자동이체)'}]},
+    {emoji:'🎯',sec:'want',q:'관심 있는 지역이 있나요?',sub:'여기서부터는 자격이 아니라, 원하는 공고를 추리는 조건이에요. 여러 곳 추가할 수 있고, 없으면 건너뛰면 전국이 보입니다',fields:[{k:'희망.지역',t:'region-multi',label:'희망 지역'}]},
+    {emoji:'📐',sec:'want',q:'원하는 전용면적이 있나요?',sub:'선택 사항이에요. 비워두면 모든 면적이 보입니다(자격과 무관)',fields:[{k:'희망.전용면적.min',t:'num',suf:'㎡',label:'최소',row:1},{k:'희망.전용면적.max',t:'num',suf:'㎡',label:'최대',row:1}]},
+  ];
+  const WIZ=[WIZ_INTRO,...WIZARD];
+  let wizI=0;
+  function renderFields(fields){
+    let h='',i=0;
+    while(i<fields.length){
+      const f=fields[i];
+      if(f.row&&fields[i+1]&&fields[i+1].row){ h+='<div class="frow">'+fieldHtml(f)+fieldHtml(fields[i+1])+'</div>'; i+=2; continue; }
+      h+=fieldHtml(f); i++;
+    }
+    return h;
+  }
+  function renderWiz(){
+    const step=WIZ[wizI], last=wizI===WIZ.length-1;
+    $('#wizProg').innerHTML=WIZARD.map((_,i)=>'<span class="dot'+(i===wizI-1?' on':i<wizI-1?' done':'')+'"></span>').join('');
+    let h=(step.sec==='want'?'<div class="wiz-sectag">🎯 원하는 조건 · 자격과 별개</div>':'')
+      +'<div class="wiz-emoji">'+step.emoji+'</div><h2 class="wiz-q">'+esc(step.q)+'</h2><p class="wiz-sub">'+esc(step.sub)+'</p>';
+    if(!step.intro) h+='<div class="wiz-fields" id="wizStep">'+renderFields(step.fields)+'</div>';
+    $('#wizBody').innerHTML=h;
+    if(!step.intro) bindFields('#wizStep');
+    $('#wizBack').style.visibility=wizI===0?'hidden':'visible';
+    $('#wizNext').textContent=step.intro?'시작하기 →':last?'내 맞춤 목록 보기 →':'다음 →';
+    $('#wizPeek').style.display=(wizI>=2&&!last)?'block':'none';
+    $('#wizBody').scrollTop=0;
+  }
+  const openWizard=()=>{ wizI=0; $('#wizard').classList.add('show'); document.body.style.overflow='hidden'; renderWiz(); };
+  const closeWizard=()=>{ $('#wizard').classList.remove('show'); document.body.style.overflow=''; };
+  $('#wizNext').onclick=()=>{ if(wizI<WIZ.length-1){ wizI++; renderWiz(); } else closeWizard(); };
+  $('#wizBack').onclick=()=>{ if(wizI>0){ wizI--; renderWiz(); } };
+  $('#wizSkip').onclick=closeWizard;
+  $('#wizPeek').onclick=closeWizard;
+  $('#wizard').addEventListener('click',e=>{ if(e.target===$('#wizard')) closeWizard(); });
+
+  // init
+  const firstVisit=!(()=>{try{return localStorage.getItem(LSKEY);}catch{return null;}})();
+  refresh(); syncProfileChip();
+  if(firstVisit) openWizard();
+})();
+</script>
+</body>
+</html>

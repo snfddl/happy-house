@@ -1,0 +1,16 @@
+# 원본 PDF (724MB·불변·재수집 가능) — 빌드/배포엔 derived만 필요
+data/raw/
+
+# 개인정보(공개 repo 유출 방지) — CI는 --seed 없이 빈 프로필로 빌드
+profile.json
+
+# CI 갱신 모드 산출물(이슈 생성용·임시)
+data/new-pending.json
+
+# 의존성/임시/잡파일
+node_modules/
+scratchpad/
+.env
+dl_*
+*.log
+.DS_Store

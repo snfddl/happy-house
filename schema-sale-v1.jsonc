@@ -1,0 +1,41 @@
+// 분양(청약홈 OpenAPI) requirements 컴팩트 스키마 — SCHEMA.md §6 미러.
+// 소스=한국부동산원 ApplyhomeInfoDetailSvc(구조화 JSON). 결정론 매핑(applyhome-derive.mjs), LLM 미사용.
+// API 미제공 항목은 _갭에 나열 → 매칭시 "확인필요". 임대 schema-v1.jsonc 와 키 호환(상품구조="분양").
+{
+  "no": "string",                       // PBLANC_NO(=HOUSE_MANAGE_NO). index 키 "ah:<no>"
+  "공고명": "string",
+  "상품구조": "분양",
+  "유형": "민영분양|공공분양|신혼희망타운(분양)|무순위잔여",  // HOUSE_DTL_SECD_NM(민영/국민)+맥락
+  "지역": "시도 시군구", "공고일": "YYYY-MM-DD",
+  "접수시작": "YYYY-MM-DD|null", "마감일": "YYYY-MM-DD|null",
+  "상태": "접수예정|접수중|접수마감",
+  "특별공급접수": ["YYYY-MM-DD|null", "YYYY-MM-DD|null"],
+  "당첨자발표": "YYYY-MM-DD|null", "계약기간": ["YYYY-MM-DD|null", "YYYY-MM-DD|null"],
+  "입주예정": "YYYYMM|null",
+  "단지": [{ "단지명": "", "주소": "", "총공급세대": 0 }],
+  "공급형": [{
+    "형명": "059.9928A",               // HOUSE_TY
+    "전용면적": 0.0,                    // HOUSE_TY 접두 숫자
+    "공급면적": 0.0,                    // SUPLY_AR
+    "금회모집호수": 0,                  // 일반+특공
+    "분양가만원": 0,                    // LTTOT_TOP_AMOUNT
+    "일반공급호수": 0,                  // SUPLY_HSHLDCO
+    "특별공급": { "합계": 0, "다자녀": 0, "신혼부부": 0, "신생아": 0, "생애최초": 0,
+                  "노부모부양": 0, "기관추천": 0, "청년": 0, "이전기관": 0, "기타": 0 }
+  }],
+  "선정방식": "가점제|추첨제|혼합",      // 일반공급 (비율은 갭)
+  "가점추첨비율": null,                 // {"가점":0.4,"추첨":0.6} | null(갭)
+  "규제": { "조정대상지역": false, "투기과열지구": false, "분양가상한제": false },
+  "자격요건": {
+    "무주택": "string",                 // 일반/특공별 상이
+    "청약통장": "string",               // 민영=예치금 / 공공=가입기간·납입
+    "거주요건": "string",               // 해당지역 우선(거주기간컷=갭)
+    "소득자산": "string"                // 특공·공공분양 일부(컷=갭)
+  },
+  "순위규칙": [                          // GNRL_RNK 일정 존재여부로 도출(결정론)
+    { "순위": 1, "기준": "지역우선", "조건": ["해당지역"] }
+  ],
+  "전매제한": null, "실거주의무": null,  // 갭(공고문 PDF)
+  "원문링크": { "상세페이지": "https://www.applyhome.co.kr/ai/aia/selectAPTLttotPblancDetail.do?houseManageNo=<no>&pblancNo=<no>" },
+  "_갭": []                             // 미확보 항목 라벨. 예 ["가점추첨비율","전매제한","실거주의무","특공자격컷"]
+}

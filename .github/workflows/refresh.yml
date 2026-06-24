@@ -1,0 +1,70 @@
+name: refresh & deploy
+
+# 결정론 갱신만 CI에서(키 0): 수집기로 상태/마감일 갱신 → 사이트 빌드 → GitHub Pages 배포.
+# 요건추출(LLM)은 CI에서 안 함 — 신규 공고는 이슈로 알리고 로컬 `node pipeline.mjs`로 처리.
+
+on:
+  schedule:
+    - cron: '0 0,8,16 * * *'   # UTC 00·08·16시 = KST 09·17·01시 (하루 3회)
+  workflow_dispatch: {}         # 수동 실행 버튼
+
+permissions:
+  contents: write   # index.json 갱신 커밋
+  pages: write      # Pages 배포
+  id-token: write
+  issues: write     # 신규 공고 알림
+
+concurrency:
+  group: pages-refresh
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 상태/마감일 갱신 (다운로드 없음)
+        run: node lh-collect.mjs --refresh
+
+      - name: 사이트 빌드 (빈 프로필·공유용)
+        run: node build-site.mjs
+
+      - name: 갱신된 index.json 커밋
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/index.json data/derived
+          git diff --staged --quiet || git commit -m "chore: 상태/마감일 자동 갱신 [skip ci]"
+          git push
+
+      - name: 신규 공고 이슈 알림
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -f data/new-pending.json ] || exit 0
+          n=$(node -e "process.stdout.write(String(require('./data/new-pending.json').length))")
+          [ "$n" -gt 0 ] || exit 0
+          open=$(gh issue list --state open --search "신규 공고 미추출 in:title" --json number --jq 'length')
+          [ "$open" = "0" ] || { echo "이미 열린 알림 이슈 있음 — 생략"; exit 0; }
+          body=$(node -e "const a=require('./data/new-pending.json');console.log(a.map(x=>'- '+x.type+' · '+x.title+' ('+(x.region||'')+')').join('\n'))")
+          printf '%s\n\n로컬에서 `node pipeline.mjs` 실행 → 요건추출·정규화 후 커밋하세요.' "$body" \
+            | gh issue create --title "🆕 신규 공고 미추출 ${n}건" --body-file - || true
+
+      - name: Pages 아티팩트 업로드
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
