@@ -25,8 +25,37 @@ try { for (const line of readFileSync(new URL('.env', import.meta.url), 'utf8').
 if (!KEY) { console.error('❌ .env 의 DATA_GO_KR_SERVICE_KEY 가 비어있음'); process.exit(1); }
 const SERVICE_KEY = /%[0-9A-Fa-f]{2}/.test(KEY) ? decodeURIComponent(KEY) : KEY;
 
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36';
+const FILE_DOWN = 'https://www.myhome.go.kr/hws/com/fms/cvplFileDownload.do';
+const SKIP_PAT = /팸플릿|팜플렛|리플렛|리플릿|브로슈어|카탈로그|조감도|평면도/;
+const sani = s => String(s).replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, ' ').trim().slice(0, 120);
 const dwell = ms => new Promise(r => setTimeout(r, ms));
 const TODAY = new Date().toISOString().slice(0, 10);
+
+// 상세페이지(pcUrl) → 공고문 PDF/HWP 첨부 다운로드 (전자정부 cvplFileDownload.do, atchFileId+fileSn GET)
+async function fetchNoticeFiles(pblancId, houseSn, dir) {
+  const url = `https://www.myhome.go.kr/hws/portal/sch/selectRsdtRcritNtcDetailView.do?pblancId=${pblancId}&houseSn=${houseSn}`;
+  const html = await (await fetch(url, { headers: { 'User-Agent': UA } })).text();
+  // <a href="javascript:fnDownFile('atchFileId','fileSn')" >파일명.pdf</a>
+  const pairs = [...html.matchAll(/fnDownFile\('([^']+)',\s*'([^']+)'\)"[^>]*>\s*([^<]+?)\s*<\/a>/g)]
+    .map(m => ({ atchFileId: m[1], fileSn: m[2], name: m[3].trim() }));
+  const files = [];
+  for (const f of pairs) {
+    if (SKIP_PAT.test(f.name)) { files.push({ ...f, skipped: '팸플릿류' }); continue; }
+    if (!/\.(pdf|hwp|hwpx)$/i.test(f.name)) { files.push({ ...f, skipped: '비문서' }); continue; }
+    try {
+      const r = await fetch(`${FILE_DOWN}?atchFileId=${encodeURIComponent(f.atchFileId)}&fileSn=${encodeURIComponent(f.fileSn)}`, { headers: { 'User-Agent': UA, Referer: url } });
+      const buf = Buffer.from(await r.arrayBuffer());
+      if (buf.length < 100 || /<!DOCTYPE html/i.test(buf.subarray(0, 200).toString('latin1'))) { files.push({ ...f, skipped: '다운실패' }); continue; }
+      const ext = (f.name.match(/\.[a-z0-9]+$/i) || ['.pdf'])[0].toLowerCase();
+      mkdirSync(new URL('files/', dir), { recursive: true });
+      writeFileSync(new URL(`files/${f.atchFileId}__${sani(f.name)}`, dir), buf);
+      files.push({ atchFileId: f.atchFileId, fileSn: f.fileSn, name: f.name, ext, bytes: buf.length });
+      await dwell(200);
+    } catch { files.push({ ...f, skipped: '오류' }); }
+  }
+  return files;
+}
 const dnorm = s => { const d = (s || '').replace(/\D/g, ''); return d.length === 8 ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}` : null; };
 const numOrNull = v => { const n = Number(String(v ?? '').replace(/[^\d]/g, '')); return Number.isFinite(n) && n > 0 ? n : null; };
 function statusOf(b, e) { if (b && TODAY < b) return '접수예정'; if (e && TODAY > e) return '접수마감'; if (b && e) return '접수중'; return null; }
@@ -96,8 +125,14 @@ try {
       const dir = new URL(`${slug}/`, RAW);
       mkdirSync(dir, { recursive: true });
       if (!existsSync(new URL('item.json', dir))) writeFileSync(new URL('item.json', dir), JSON.stringify(it, null, 2));
+      // 공고문 PDF 다운로드(소득·자산 추출 입력) — 신규만. 실패는 비치명적.
+      let files = [];
+      try { files = await fetchNoticeFiles(it.pblancId, it.houseSn ?? 1, dir); } catch (e) { /* 상세접근 실패 무시 */ }
+      env.files = files;
       writeFileSync(new URL('meta.json', dir), JSON.stringify(env, null, 2));
-      index[idxKey] = { source: 'myhome', title: env.공고명, region: env.지역, type: env.유형, 공급기관: env.공급기관, 상태: env.상태, 마감일: env.마감일, done: true };
+      writeFileSync(new URL('requirements.json', ddir), JSON.stringify(env, null, 2));   // files 포함 갱신
+      const pdfCnt = files.filter(f => !f.skipped && f.ext === '.pdf').length;
+      index[idxKey] = { source: 'myhome', title: env.공고명, region: env.지역, type: env.유형, 공급기관: env.공급기관, 상태: env.상태, 마감일: env.마감일, files: files.length, done: true };
       isNew++;
       if (isNew <= 30) console.log(`  ✅ ${env.panId} ${(env.공고명 || '').slice(0, 26)} · ${env.공급기관} · ${env.지역} · ${env.상태 || '?'}`);
     }
