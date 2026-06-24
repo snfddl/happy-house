@@ -4,7 +4,8 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 
 const ROOT = new URL('./data/', import.meta.url);
-const SRC = [['lh', new URL('derived/lh/', ROOT)], ['applyhome', new URL('derived/applyhome/', ROOT)], ['myhome', new URL('derived/myhome/', ROOT)]];
+const SRC = [['lh', new URL('derived/lh/', ROOT)], ['applyhome', new URL('derived/applyhome/', ROOT)], ['myhome', new URL('derived/myhome/', ROOT)], ['sh', new URL('derived/sh/', ROOT)], ['gh', new URL('derived/gh/', ROOT)]];
+const LIVE_OVERLAY = new Set(['lh', 'gh']);   // 수집기가 index에 최신 상태·마감일을 갱신하는 소스(빌드때 신선도 덮어쓰기)
 const TODAY = new Date().toISOString().slice(0, 10);
 
 // 수집기(lh-collect)가 매 실행 갱신하는 최신 상태/마감일. 빌드 때 requirements에 덮어써 신선도 유지(접수중 필터·D-day).
@@ -20,7 +21,7 @@ for (const [src, base] of SRC) {
     if (!existsSync(f)) continue;
     const r = JSON.parse(readFileSync(f, 'utf8'));
     if (r.원문링크) delete r.원문링크.로컬PDF; // 개인 절대경로(/Users/…) 공개 site 유출 방지
-    const li = src === 'lh' ? liveIdx[r.panId] : null;
+    const li = LIVE_OVERLAY.has(src) ? liveIdx[r.panId] : null;
     if (li) { if (li.상태) r.상태 = li.상태; if ('마감일' in li) r.마감일 = li.마감일; }
     r.__src = src; r.__id = `${src}:${r.panId || r.no || n}`;
     reqs.push(r);

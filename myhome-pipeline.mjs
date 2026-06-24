@@ -1,21 +1,30 @@
-// myhome-pipeline.mjs — 마이홈(지방공사) 공고문 PDF에서 소득·자산·계층 요건을 추출해 requirements.json 보강.
-//   마이홈 API는 메타만 줌 → myhome-collect가 만든 requirements.json(envelope+임대료)에 PDF 추출분을 MERGE.
+// myhome-pipeline.mjs — 메타만 주는 소스(마이홈/SH/GH)의 공고문 PDF에서 소득·자산·계층 요건을 추출해 requirements.json 보강.
+//   각 수집기가 만든 requirements.json(envelope+메타)에 PDF 추출분을 MERGE. --source 로 소스(raw/derived 디렉터리) 선택.
 //   단계: 슬라이스(slice-notice) → 요건추출(claude -p Sonnet, 신규만) → 계층 정규화(normalize-requirements)
-//   결정론(슬라이스·정규화)은 스크립트, 비결정론(추출)만 Claude Code 헤드리스 — 외부 LLM API 0. (pipeline.mjs의 마이홈판)
-// 사용: node myhome-pipeline.mjs [--force] [--semi] [--conc=3]
+//   결정론(슬라이스·정규화)은 스크립트, 비결정론(추출)만 Claude Code 헤드리스 — 외부 LLM API 0. (pipeline.mjs의 비-LH판)
+// 사용: node myhome-pipeline.mjs [--source=myhome|sh|gh] [--force] [--semi] [--conc=3]
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
 
 const HERE = new URL('./', import.meta.url);
 const ROOT = new URL('./data/', import.meta.url);
-const RAW = new URL('raw/myhome/', ROOT);
-const DERIVED = new URL('derived/myhome/', ROOT);
-const p = u => decodeURIComponent(u.pathname);
 const argv = process.argv.slice(2);
+const SOURCE = (argv.find(a => a.startsWith('--source=')) || '--source=myhome').split('=')[1];
+const RAW = new URL(`raw/${SOURCE}/`, ROOT);
+const DERIVED = new URL(`derived/${SOURCE}/`, ROOT);
+const p = u => decodeURIComponent(u.pathname);
 const FORCE = argv.includes('--force');
 const SEMI = argv.includes('--semi');
 const CONC = Math.max(1, parseInt((argv.find(a => a.startsWith('--conc=')) || '--conc=3').split('=')[1], 10));
 const log = (...a) => console.log(...a);
+const TODAY = new Date().toISOString().slice(0, 10);
+// 추출된 접수시작/마감일로 상태 결정론 재계산. 날짜 없으면 기존 상태 유지(GH/마이홈은 목록값, SH는 '공고중' 가정).
+function statusOf(b, e, prev) {
+  if (e && TODAY > e) return '접수마감';
+  if (b && TODAY < b) return '접수예정';
+  if (e) return '접수중';
+  return prev ?? null;
+}
 
 const V1_SCHEMA = readFileSync(new URL('schema-v1.jsonc', HERE), 'utf8');
 const RULES = readFileSync(new URL('extract-rules.txt', HERE), 'utf8');
@@ -32,7 +41,7 @@ function pickPdf(slug) {
 function buildPrompt(slug, slicedPath, reqPath, meta) {
   return `당신은 한국 공공임대주택 공고문에서 입주 요건을 구조화 추출하는 전문가입니다. 외부 API 없이 주어진 텍스트만 근거로 합니다.
 
-[대상] 마이홈포털 ${meta.공급기관} ${meta.유형} 공고 (panId ${meta.panId})
+[대상] ${meta.공급기관} ${meta.유형} 공고 (panId ${meta.panId})
 
 [작업]
 1) Read 로 기존 requirements.json 을 읽으세요(마이홈 API 메타가 채워져 있음 — 이 envelope는 보존):
@@ -44,6 +53,8 @@ function buildPrompt(slug, slicedPath, reqPath, meta) {
      자격요건.자산상한(원,정수|"없음"|"공고문미기재"), 자격요건.자동차상한, 자격요건.청약요건,
      자격요건.대상계층[], 자격요건.계층별{계층:{소득,자산,연령,무주택,...}}
    - 순위규칙[](있으면), 배점표[](있으면), 선정방식(추첨|배점|순차|혼합), 선정방식상세
+   - **일정(기존 값이 null/비어있을 때만 채움. 이미 값 있으면 보존)**: 접수시작·마감일(YYYY-MM-DD), 당첨자발표(YYYY-MM-DD), 공고일.
+     접수기간이 "2026. 7. 6. ~ 7. 8." 처럼 여러 회차/형식이면 가장 늦은 마감일을 마감일로. 상태(접수중/접수예정 등)는 쓰지 말 것 — 날짜만 채우면 코드가 계산함.
    - _검증노트[]: 본문에서 확정 못한 항목 기록(있던 노트는 갱신)
 4) Write 로 같은 경로에 저장(유효한 단일 JSON, 기존 덮어쓰기). envelope 필드 누락 금지.
 5) 저장 후 한 줄 요약(소득기준 종류·계층 수·자산상한)만 반환.
@@ -56,7 +67,7 @@ ${RULES}`;
 
 // ── 1. 슬라이스 ───────────────────────────────────────────────
 const slicer = p(new URL('slice-notice.mjs', HERE));
-let slugs = []; try { slugs = readdirSync(RAW); } catch { log('raw/myhome 없음 — myhome-collect 먼저'); process.exit(0); }
+let slugs = []; try { slugs = readdirSync(RAW); } catch { log(`raw/${SOURCE} 없음 — ${SOURCE}-collect 먼저`); process.exit(0); }
 const targets = [];
 for (const slug of slugs) {
   const reqPath = new URL(`${slug}/requirements.json`, DERIVED);
@@ -89,7 +100,7 @@ function extractOne(it) {
     const ps = spawn('claude', ['-p', buildPrompt(it.slug, it.slicedPath, it.reqPath, it.meta), '--model', 'sonnet', '--permission-mode', 'acceptEdits', '--allowedTools', 'Read', 'Write'], { cwd: p(HERE), stdio: ['ignore', 'pipe', 'pipe'] });
     let out = ''; ps.stdout.on('data', d => out += d); ps.stderr.on('data', () => {});
     ps.on('close', () => {
-      let ok = false; try { const r = JSON.parse(readFileSync(it.reqPath, 'utf8')); ok = !!r.자격요건; if (ok) { r.__pdf추출 = true; writeFileSync(it.reqPath, JSON.stringify(r, null, 2)); } } catch {}
+      let ok = false; try { const r = JSON.parse(readFileSync(it.reqPath, 'utf8')); ok = !!r.자격요건; if (ok) { r.__pdf추출 = true; r.상태 = statusOf(r.접수시작, r.마감일, r.상태); writeFileSync(it.reqPath, JSON.stringify(r, null, 2)); } } catch {}
       log(`  ${ok ? '✅' : '❌'} ${it.meta.공급기관}:${it.slug} ${out.trim().slice(0, 70)}`);
       resolve({ ...it, ok });
     });

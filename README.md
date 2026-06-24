@@ -14,6 +14,7 @@ LH 등 공공임대주택 공고를 **수집 → 요건 자동 구조화 → 개
 - ✅ **완전자동 파이프라인**: 수집→추출(헤드리스 `claude -p`)→정규화→보강→검증게이트 (`pipeline.mjs`)
 - ✅ **매칭 엔진 v1**: 프로필 × 임대+분양 → 자격게이트·계층(캐논 fallback)·순위·예상배점·면적/지역, 공급형태·분양전환·분양(전환) 필터 (`match.mjs`/`match-core.mjs`)
 - ✅ **분양(청약홈)**: OpenAPI 수집→결정론 매핑→가점 84점·청약순위·지역우선·특공해당 매칭 (민영=가점/공공=순차)
+- ✅ **멀티소스 임대**: 마이홈포털(지방공사 API) + **SH(서울 i-sh.co.kr)·GH(경기 apply.gh.or.kr) 스크래핑** — data.go.kr에 SH/GH 실시간 공고API 없어(정적 fileData뿐) 사이트 직접 수집. 통합 envelope(SCHEMA §0)로 매처·사이트가 단일 형태로 소비. 소득/자산은 공고문 PDF 추출(`myhome-pipeline.mjs --source=sh|gh`)
 - ✅ **웹 UI**: 자체완결 정적 `site/index.html` — 첫 방문 **단계별 마법사**, 시·도→시·군·구 콤보박스, 희망지역 다중선택, **자격/희망 분리**, 청약통장·무주택기간 친화입력, 필터·검색·상세, **브라우저 내 조건수정→실시간 재계산**(총 168건 인라인)
 - ✅ **무료 자동배포**: GitHub Actions cron(하루 3회 상태갱신) + push 트리거(즉시 배포) → GitHub Pages (`.github/workflows/refresh.yml`). 자세히는 `DEPLOY.md`
 - ⏳ **다음**: 알림 레이어. → `ROADMAP.md`
@@ -25,6 +26,9 @@ node pipeline.mjs              # [임대] 신규 공고 수집~추출~정규화~
 node normalize-requirements.mjs # 계층별 메타 캐논 정규화(파이프라인에 포함, 단독 재실행 가능. --report=미저장 점검)
 node match.mjs                 # profile.json 으로 임대+분양 매칭 (로직=match-core.mjs 공유)(--possible/--supply=/--type=)
 node applyhome-collect.mjs     # [분양] 청약홈 OpenAPI 수집 (--since=2026-05-01 / --include-rent)
+node sh-collect.mjs            # [임대] SH 서울주택도시공사 스크래핑(임대 게시판, --include-sale=분양, --probe)
+node gh-collect.mjs            # [임대] GH 경기주택도시공사 스크래핑(임대+매입임대, 상태/마감일 제공, --probe)
+node myhome-pipeline.mjs --source=sh   # [임대] SH/GH/마이홈 공고문 PDF → 소득·자산·계층 추출(헤드리스 Sonnet)
 node applyhome-derive.mjs      # [분양] raw → requirements.json 결정론 매핑(LLM 미사용)
 node build-site.mjs            # [공유용] 조회 페이지 → site/index.html (빈 프로필, 방문자가 입력)
 node build-site.mjs --seed     # [개인용] 내 profile.json을 기본값으로 미리채움

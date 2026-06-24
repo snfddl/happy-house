@@ -23,8 +23,8 @@ const P = JSON.parse(readFileSync(new URL(opt('--profile', 'profile.json'), impo
 const matcher = createMatcher(P, TODAY);
 const won = n => (n == null ? '?' : (n / 1e4).toLocaleString() + '만');
 
-// ── 수집: 임대 + 분양 ─────────────────────────────────────────
-const SOURCES = [DERIVED, new URL('derived/applyhome/', ROOT)];
+// ── 수집: 임대(lh·myhome·sh·gh) + 분양(applyhome) — build-site.mjs와 동일 소스셋 ──
+const SOURCES = ['lh', 'applyhome', 'myhome', 'sh', 'gh'].map(s => new URL(`derived/${s}/`, ROOT));
 let reqs = [];
 for (const dir of SOURCES) {
   if (!existsSync(dir)) continue;
