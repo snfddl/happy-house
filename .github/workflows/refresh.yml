@@ -5,8 +5,15 @@ name: refresh & deploy
 
 on:
   schedule:
-    - cron: '0 0,8,16 * * *'   # UTC 00·08·16시 = KST 09·17·01시 (하루 3회)
-  workflow_dispatch: {}         # 수동 실행 버튼
+    - cron: '0 0,8,16 * * *'   # UTC 00·08·16시 = KST 09·17·01시 (하루 3회) — 상태갱신+배포
+  workflow_dispatch: {}         # 수동 실행 버튼 — 상태갱신+배포
+  push:                         # 코드/데이터 변경 즉시 배포(스크래핑은 생략)
+    branches: [main]
+    paths:
+      - 'site/**'
+      - '*.mjs'
+      - 'data/derived/**'
+      - '.github/workflows/**'
 
 permissions:
   contents: write   # index.json 갱신 커밋
@@ -28,12 +35,14 @@ jobs:
           node-version: 20
 
       - name: 상태/마감일 갱신 (다운로드 없음)
+        if: github.event_name != 'push'   # push 배포 땐 스크래핑 생략(빠르게)
         run: node lh-collect.mjs --refresh
 
       - name: 사이트 빌드 (빈 프로필·공유용)
         run: node build-site.mjs
 
       - name: 갱신된 index.json 커밋
+        if: github.event_name != 'push'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -42,6 +51,7 @@ jobs:
           git push
 
       - name: 신규 공고 이슈 알림
+        if: github.event_name != 'push'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
