@@ -125,14 +125,56 @@
   .rchip.no{color:var(--no);background:var(--no-bg)}
   .rchip.warn{color:var(--warn);background:var(--warn-bg)}
   .rchip.ok{color:var(--ok);background:var(--ok-bg)}
+  /* 핵심 자격요건 블록(승격) */
+  .gates{display:flex;flex-direction:column;gap:5px}
+  .gchip{font-size:12px;font-weight:560;border-radius:7px;padding:5px 9px;line-height:1.36;
+    display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+  .gchip b{font-weight:740;flex:0 0 auto;letter-spacing:-.01em}
+  .gchip>span{min-width:0;color:inherit;opacity:.92}
+  .gchip.no{color:var(--no);background:var(--no-bg)}
+  .gchip.warn{color:var(--warn);background:var(--warn-bg)}
+  .gchip.ok{color:var(--ok);background:var(--ok-bg)}
+  .gchip.muted{background:var(--surface-2);color:var(--faint);font-weight:560}
+  /* 선정방식/배점 블록 */
+  .sel{background:var(--surface-2);border:1px solid var(--line-2);border-radius:var(--radius-sm);padding:9px 12px}
+  .sel-k{font-size:11px;color:var(--muted);font-weight:640;letter-spacing:-.01em}
+  .sel-k small{font-weight:560;color:var(--faint);font-family:var(--sans)}
+  .sel-v{font-size:12.5px;font-weight:620;color:var(--ink-2);margin-top:3px;line-height:1.35}
+  .sel.score .gauge{display:flex;align-items:center;gap:10px;margin-top:6px}
+  .gauge-bar{flex:1;height:7px;background:var(--line);border-radius:99px;overflow:hidden}
+  .gauge-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent-soft),var(--accent));border-radius:99px;transition:width .3s}
+  .gauge-n{font-family:var(--mono);font-size:13px;font-weight:560;color:var(--muted);letter-spacing:-.02em;white-space:nowrap}
+  .gauge-n b{font-size:17.5px;font-weight:780;color:var(--accent-ink)}
+  /* 면적 등 보조 사실 */
+  .cfacts{display:flex;flex-wrap:wrap;gap:4px 16px}
+  .cfact{font-size:12px;color:var(--muted);display:flex;gap:7px;align-items:baseline}
+  .cfact b{font-weight:600;color:var(--ink-2)}
+  .cfact b.hl{color:var(--accent-ink);font-weight:700}
+  /* 가격 한 줄(강등) */
+  .price-line{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:12px;color:var(--muted)}
+  .price-line .pk{font-weight:620;flex:0 0 auto}
+  .price-line .pv{font-family:var(--mono);font-weight:640;color:var(--ink-2);letter-spacing:-.02em;text-align:right}
+  .price-line .pv small{font-family:var(--sans);font-weight:560;color:var(--muted)}
   .card-foot{margin-top:auto;padding-top:10px;border-top:1px solid var(--line-2);
     display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted)}
+  .card-foot .foot-r{display:inline-flex;align-items:center;gap:11px}
+  .card-foot .more{color:var(--muted);font-weight:600}
+  .card:hover .more{color:var(--accent-ink)}
   .card-foot .src{display:inline-flex;align-items:center;gap:5px;font-weight:560}
   .card-foot a{color:var(--accent-ink);font-weight:650;text-decoration:none}
   .card-foot a:hover{text-decoration:underline}
 
   .empty{text-align:center;padding:80px 20px;color:var(--muted)}
   .empty .big{font-size:40px;margin-bottom:8px}
+  /* 핵심항목(무주택·청약통장) 미입력 안내 — 입력 시 자동 사라짐 */
+  .notice-missing{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 14px;
+    background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn);
+    border-radius:var(--radius-sm);padding:12px 15px;font-size:13px;font-weight:560;line-height:1.45}
+  .notice-missing .nm-txt{flex:1;min-width:220px}
+  .notice-missing .nm-txt b{font-weight:760}
+  .notice-missing button{flex:0 0 auto;border:1px solid var(--warn-line);background:var(--surface);
+    color:var(--warn);font-weight:700;font-size:12.5px;border-radius:8px;padding:8px 14px;cursor:pointer;white-space:nowrap}
+  .notice-missing button:hover{filter:brightness(.97)}
 
   /* Modal */
   .ov{position:fixed;inset:0;background:rgba(16,24,40,.42);z-index:50;display:none;
@@ -298,6 +340,8 @@
     <div class="stats" id="stats"></div>
   </section>
 
+  <div class="notice-missing" id="missingNotice" style="display:none" role="alert"></div>
+
   <section class="controls">
     <div class="ctrl-row">
       <div class="search">
@@ -433,31 +477,55 @@
     const conv=x.분양전환?'<span class="tag conv">분양전환</span>':'';
     return '<span class="tag '+(x.상품구조==='분양'?'sale':'rent')+'">'+esc(x.유형)+'</span>'+conv;
   }
-  function reasonChips(x){
+  // 핵심 자격요건 칩: 실격(✕)>확인필요(?)>통과(✓). "키:상세" 분리해 키 강조 + 상세 표기.
+  function gateChips(x){
+    const split=s=>{const i=String(s).indexOf(':');return i<0?['',String(s)]:[s.slice(0,i),s.slice(i+1)];};
+    const chip=(cls,mark,r)=>{const p=split(r);return '<span class="gchip '+cls+'"><b>'+mark+(p[0]?' '+esc(p[0]):'')+'</b>'+(p[1]?'<span>'+esc(p[1])+'</span>':'')+'</span>';};
     let h='';
-    (x.실격사유||[]).slice(0,2).forEach(r=>h+='<span class="rchip no" title="'+esc(r)+'">✕ '+esc(r)+'</span>');
-    (x.확인필요||[]).slice(0,2).forEach(r=>h+='<span class="rchip warn" title="'+esc(r)+'">? '+esc(r)+'</span>');
-    if(!x.실격사유.length&&!x.확인필요.length&&x.판정==='지원가능') h+='<span class="rchip ok">✓ 자격요건 충족(확정 항목)</span>';
+    (x.실격사유||[]).forEach(r=>h+=chip('no','✕',r));
+    const chk=x.확인필요||[];
+    chk.slice(0,3).forEach(r=>h+=chip('warn','?',r));
+    if(chk.length>3) h+='<span class="gchip muted">…확인필요 '+(chk.length-3)+'건 더 (클릭)</span>';
+    if((x.통과||[]).length) h+='<span class="gchip ok"><b>✓ 충족</b><span>'+esc(x.통과.join(' · '))+'</span></span>';
+    else if(!(x.실격사유||[]).length&&!chk.length) h+='<span class="gchip ok"><b>✓ 충족</b><span>확정 자격요건 모두 통과</span></span>';
     return h;
+  }
+  // 선정방식 블록: 배점/가점제면 게이지(got/max), 그 외(추첨·순차·순위)는 방식+순위 텍스트.
+  function selectBlock(x){
+    const sc=x.예상배점?String(x.예상배점).match(/(\d+)\s*\/\s*(\d+)/):null;
+    const 방식=x.선정방식||'';
+    if(sc){
+      const got=+sc[1],max=+sc[2],pct=max?Math.min(100,Math.round(got/max*100)):0;
+      const label=x.유형==='민영분양'?'예상 가점':'예상 배점';
+      const hint=/일부미입력|추정|미입력/.test(x.예상배점)?' · 일부 추정':'';
+      return '<div class="sel score"><div class="sel-k">'+label+' <small>'+esc(방식||'점수제')+hint+'</small></div>'
+        +'<div class="gauge"><div class="gauge-bar"><i style="width:'+pct+'%"></i></div>'
+        +'<div class="gauge-n"><b>'+got+'</b> / '+max+'</div></div></div>';
+    }
+    const 순위=x.거주지순위||'';
+    return '<div class="sel"><div class="sel-k">선정방식 <small>'+esc(방식||'공고 확인')+'</small></div>'
+      +(순위?'<div class="sel-v">'+esc(순위)+'</div>':'')+'</div>';
+  }
+  function priceLine(x){
+    const pb=priceBlock(x);
+    return '<div class="price-line"><span class="pk">'+pb.k+'</span>'
+      +'<span class="pv">'+esc(pb.v)+(pb.unit?' <small>'+esc(pb.unit)+'</small>':'')+'</span></div>';
   }
   const srcLabel=s=>s==='applyhome'?'청약홈':'LH';
 
   function card(x){
-    const pb=priceBlock(x);
-    const facts=[];
-    if(x.면적) facts.push(['면적',x.면적,x.면적.startsWith('맞음')]);
-    if(x.거주지순위) facts.push(['순위',x.거주지순위,false]);
-    if(x.예상배점) facts.push([x.유형==='민영분양'?'가점':'배점',x.예상배점,x.상품구조==='분양']);
-    const factsH=facts.map(f=>'<div class="fact"><span class="fk">'+f[0]+'</span><span class="fv'+(f[2]?' hl':'')+'">'+esc(f[1])+'</span></div>').join('');
+    const 면적H=x.면적?'<div class="cfact"><span>희망면적</span><b class="'+(x.면적.startsWith('맞음')?'hl':'')+'">'+esc(x.면적)+'</b></div>':'';
     return '<article class="card j-'+x.판정+'" data-id="'+esc(x.id)+'">'
       +'<div class="card-top"><span class="badge b-'+x.판정+'">'+x.판정+'</span>'+typeTag(x)+ddayHtml(x)+'</div>'
       +'<h3>'+esc(x.공고명)+'</h3>'
       +'<div class="loc">📍 '+esc(x.지역||'-')+(x.희망지역매칭?' · <b style="color:var(--accent-ink)">희망지역</b>':'')+'</div>'
-      +'<div class="price"><div class="k">'+pb.k+'</div><div class="v">'+esc(pb.v)+(pb.unit?' <small>'+esc(pb.unit)+'</small>':'')+'</div></div>'
-      +(factsH?'<div class="facts">'+factsH+'</div>':'')
-      +'<div class="reasons">'+reasonChips(x)+'</div>'
-      +'<div class="card-foot"><span class="src">'+(x.상품구조==='분양'?'🏗️':'🔑')+' '+srcLabel(x.source)+' · '+esc(x.선정방식||'')+'</span>'
-      +(x.링크?'<a href="'+esc(x.링크)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">원문 ↗</a>':'')+'</div>'
+      +'<div class="gates">'+gateChips(x)+'</div>'
+      +selectBlock(x)
+      +(면적H?'<div class="cfacts">'+면적H+'</div>':'')
+      +priceLine(x)
+      +'<div class="card-foot"><span class="src">'+(x.상품구조==='분양'?'🏗️':'🔑')+' '+srcLabel(x.source)+'</span>'
+      +'<span class="foot-r"><span class="more">주택형별 ▸</span>'
+      +(x.링크?'<a href="'+esc(x.링크)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">원문 ↗</a>':'')+'</span></div>'
       +'</article>';
   }
 
@@ -593,10 +661,13 @@
     +(KR_REGIONS[sido]||[]).map(s=>'<option value="'+esc(s)+'"'+(s===cur?' selected':'')+'>'+esc(s)+'</option>').join('');
   // 무주택 기간 가점 구간(청약 가점표 2~32점, 1년 단위). 첫 원소=자동(만30세·혼인 기준 추정).
   const 무주택구간=['자동(만 30세·혼인 기준)','1년 미만','1~2년','2~3년','3~4년','4~5년','5~6년','6~7년','7~8년','8~9년','9~10년','10~11년','11~12년','12~13년','13~14년','14~15년','15년 이상'];
+  // 무주택은 3-state(미선택=null → '확인필요'). bool 토글은 null을 표현 못 해 추측(기본 무주택) 위험.
+  const 무주택opts=[[null,'아직 선택 안 함'],[true,'무주택 세대입니다'],[false,'주택·분양권·입주권 보유(유주택)']];
+  const 청약opts=[[null,'아직 선택 안 함'],[true,'청약통장이 있어요'],[false,'없어요(미가입)']];
   const FORM=[
     {g:'기본 정보',f:[
       {k:'생년월일',t:'date'},
-      {k:'무주택',t:'bool',label:'무주택 세대',hint:'분양권·입주권 보유도 주택으로 봅니다'},
+      {k:'무주택',t:'tri',opts:무주택opts,label:'주택 소유 여부',hint:'분양권·입주권 보유도 주택으로 봅니다. 선택 전에는 ‘확인필요’로 표시됩니다(추측 안 함).'},
       {k:'무주택기간구간',t:'sel',opts:무주택구간,label:'무주택 기간(분양 가점)',hint:'분양 가점은 1년 단위 구간으로 산정됩니다. 그대로 두면 만 30세(혼인 시 혼인신고일)부터 자동 계산 — 직전에 집을 처분했다면 실제 무주택 기간 구간을 직접 고르세요.'},
       {k:'세대원수',t:'num',suf:'인',hint:'주민등록표상 세대원(태아 포함)'},
       {k:'월평균소득',t:'man',suf:'만원/월',label:'월평균소득(세전)',hint:'세금·공제 전 총소득. 상여·수당 포함, 세대 구성원 합산(공공주택 소득기준은 모두 세전 기준)'},
@@ -615,7 +686,7 @@
       {k:'부양가족.직계존속',t:'num',suf:'명',label:'부양 직계존속(3년+ 동일등본)'},
     ]},
     {g:'청약통장',f:[
-      {k:'청약저축.가입',t:'bool',label:'청약통장 보유',hint:'주택청약종합저축 등. ‘보유 여부’만 정확하면 충분합니다 — 아래 항목은 모르면 비워두세요(자동으로 ‘확인필요’로만 표시되고, 지원불가로 떨어지지 않습니다).'},
+      {k:'청약저축.가입',t:'tri',opts:청약opts,label:'청약통장 보유',hint:'주택청약종합저축 등. ‘보유 여부’만 정확하면 충분합니다 — 선택 전에는 ‘확인필요’로 표시됩니다(추측 안 함). 나머지(가입일·납입)는 모르면 비워두세요.'},
       {k:'청약저축.가입일',t:'month',label:'통장 만든 시기(연·월)',hint:'가입기간(개월)은 이 날짜로 자동 계산됩니다. 모르면 비워두세요. 정확한 값은 청약홈 ＞ 청약통장 가입내역 또는 은행 앱에서 확인할 수 있어요.'},
       {k:'__매달납입',t:'bool',label:'매달 빠짐없이 납입(자동이체)',hint:'자동이체로 매달 넣었다면 ON — 납입횟수가 가입기간과 같게 자동 설정됩니다.'},
       {k:'청약저축.납입횟수',t:'num',suf:'회',label:'납입횟수(모르면 비움)',row:1},
@@ -669,6 +740,7 @@
       else if(t==='bool'){ el.onclick=()=>{ el.classList.toggle('on'); commit(root); }; }
       else if(t==='sido'){ el.onchange=()=>{ const sgg=$(root+' [data-k="거주지.시군구"]'); if(sgg) sgg.innerHTML=sggOptions(el.value,''); commit(root); }; }
       else if(t==='sigungu'){ el.onchange=()=>commit(root); }
+      else if(t==='tri'){ el.onchange=()=>commit(root); }
       else el.oninput=()=>commitDebounced(root);
     });
     wireHope(root);
@@ -711,6 +783,11 @@
     if(f.t==='bool'){
       return '<div class="field"><div class="bool"><label>'+esc(label)+'</label><div class="sw'+(val?' on':'')+'" data-k="'+f.k+'" data-t="bool" id="'+id+'"></div></div>'+hint+'</div>';
     }
+    if(f.t==='tri'){
+      const cur=gp(P,f.k);
+      const opts=f.opts.map(o=>'<option value="'+(o[0]===true?'1':o[0]===false?'0':'')+'"'+(o[0]===cur||(o[0]==null&&cur==null)?' selected':'')+'>'+esc(o[1])+'</option>').join('');
+      return '<div class="field"><label>'+esc(label)+'</label><select data-k="'+f.k+'" data-t="tri">'+opts+'</select>'+hint+'</div>';
+    }
     if(f.t==='sido'){
       return '<div class="field"><label>'+esc(label)+'</label><select data-k="'+f.k+'" data-t="sido">'+sidoOptions(gp(P,f.k)||'','전체')+'</select>'+hint+'</div>';
     }
@@ -744,6 +821,7 @@
       if(k.startsWith('__')) return;
       let v;
       if(t==='bool') v=el.classList.contains('on');
+      else if(t==='tri') v=el.value===''?null:(el.value==='1');
       else if(t==='sel') v=el.value;
       else if(t==='csv') v=el.value.split(',').map(s=>s.trim()).filter(Boolean);
       else if(t==='num') v=el.value===''?null:Number(el.value);
@@ -786,7 +864,20 @@
     refresh();
     syncProfileChip();
   }
-  function refresh(){ compute(); buildStats(); buildControls(); apply(); }
+  function refresh(){ compute(); buildStats(); buildControls(); apply(); syncMissingNotice(); }
+  // 무주택·청약통장 보유 여부는 거의 모든 공고의 핵심 게이트 → 미입력이면 상단 안내(둘 다 채우면 자동 숨김).
+  function syncMissingNotice(){
+    const el=$('#missingNotice'); if(!el) return;
+    const miss=[];
+    if(P.무주택==null) miss.push('주택 소유 여부');
+    if(P.청약저축?.가입==null) miss.push('청약통장 보유 여부');
+    if(!miss.length){ el.style.display='none'; return; }
+    el.style.display='flex';
+    el.innerHTML='<span class="nm-txt">⚠ <b>'+miss.join(' · ')+'</b> 미입력 — 거의 모든 공고의 핵심 자격이라, '
+      +'지금은 관련 공고가 <b>‘확인필요’</b>로 표시됩니다. 입력하면 ‘지원가능/불가’로 정확히 판정해요.</span>'
+      +'<button type="button" id="missFix">지금 입력 ⚙</button>';
+    $('#missFix').onclick=openDrawer;
+  }
 
   window.openDrawer=()=>{ buildForm(); $('#drawer').classList.add('show'); $('#drawerOv').classList.add('show'); };
   window.closeDrawer=()=>{ $('#drawer').classList.remove('show'); $('#drawerOv').classList.remove('show'); };
@@ -805,7 +896,7 @@
     const 거주=P.거주지?((P.거주지.시도||'')+' '+(P.거주지.시군구||'')).trim():'';
     $('#editBtn').textContent='⚙ 내 조건 수정';
     $('#profileText').innerHTML='<b>'+(age?age+'세':'')+'</b>'+(P.세대원수?' · '+P.세대원수+'인':'')
-      +(거주?' · <span class="full">'+esc(거주)+'</span>':'')+(P.무주택?' · 무주택':' · 유주택');
+      +(거주?' · <span class="full">'+esc(거주)+'</span>':'')+(P.무주택===true?' · 무주택':P.무주택===false?' · 유주택':'');
   }
 
   // ── 헤더/푸터 ──
@@ -828,7 +919,7 @@
   const WIZARD=[
     {emoji:'🎂',q:'생년월일을 알려주세요',sub:'나이로 일부 자격·가점을 계산합니다',fields:[{k:'생년월일',t:'date'}]},
     {emoji:'🏠',q:'지금 소유한 집이 있나요?',sub:'분양권·입주권도 주택으로 봅니다',fields:[
-      {k:'무주택',t:'bool',label:'무주택 세대입니다'},
+      {k:'무주택',t:'tri',opts:무주택opts,label:'주택 소유 여부'},
       {k:'무주택기간구간',t:'sel',opts:무주택구간,label:'무주택 기간(분양 가점)',hint:'그대로 두면 만 30세·혼인 기준 자동. 직전에 집을 팔았다면 실제 구간을 고르세요.'}
     ]},
     {emoji:'👪',q:'함께 사는 세대원은 몇 명인가요?',sub:'주민등록표상 인원(본인·태아 포함)',fields:[{k:'세대원수',t:'num',suf:'명'}]},
@@ -840,7 +931,7 @@
     ]},
     {emoji:'💑',q:'결혼 상태를 알려주세요',sub:'신혼부부·특별공급 판정에 쓰입니다',fields:[{k:'혼인상태',t:'sel',opts:['미혼','혼인중','예비','한부모']}]},
     {emoji:'🧒',q:'미성년 자녀가 있나요?',sub:'없으면 0으로 두세요',fields:[{k:'__미성년자녀수',t:'num',suf:'명',label:'미성년 자녀 수'},{k:'__신생아',t:'bool',label:'2년 내 출생·임신 자녀가 있어요'}]},
-    {emoji:'🏧',q:'청약통장을 갖고 계신가요?',sub:'보유 여부만 정확하면 충분해요. 나머지는 모르면 비워도 됩니다',fields:[{k:'청약저축.가입',t:'bool',label:'청약통장이 있어요'},{k:'청약저축.가입일',t:'month',label:'통장 만든 시기(연·월)'},{k:'__매달납입',t:'bool',label:'매달 빠짐없이 납입(자동이체)'}]},
+    {emoji:'🏧',q:'청약통장을 갖고 계신가요?',sub:'보유 여부만 정확하면 충분해요. 나머지는 모르면 비워도 됩니다',fields:[{k:'청약저축.가입',t:'tri',opts:청약opts,label:'청약통장 보유 여부'},{k:'청약저축.가입일',t:'month',label:'통장 만든 시기(연·월)'},{k:'__매달납입',t:'bool',label:'매달 빠짐없이 납입(자동이체)'}]},
     {emoji:'🎯',sec:'want',q:'관심 있는 지역이 있나요?',sub:'여기서부터는 자격이 아니라, 원하는 공고를 추리는 조건이에요. 여러 곳 추가할 수 있고, 없으면 건너뛰면 전국이 보입니다',fields:[{k:'희망.지역',t:'region-multi',label:'희망 지역'}]},
     {emoji:'📐',sec:'want',q:'원하는 전용면적이 있나요?',sub:'선택 사항이에요. 비워두면 모든 면적이 보입니다(자격과 무관)',fields:[{k:'희망.전용면적.min',t:'num',suf:'㎡',label:'최소',row:1},{k:'희망.전용면적.max',t:'num',suf:'㎡',label:'최대',row:1}]},
   ];

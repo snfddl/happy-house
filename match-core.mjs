@@ -89,8 +89,9 @@ export function createMatcher(P, todayStr) {
   function gateSubscription(req) {
     const c = req.자격요건?.청약요건;
     if (!c || c === '없음' || /없음|불필요|미적용/.test(c)) return { s: 'pass', m: '청약통장 불필요' };
-    if (P.청약저축?.가입) return { s: 'check', m: '청약통장 필요(가입O, 회차/금액은 원문확인)' };
-    return { s: 'fail', m: '청약통장 필요(미가입)' };
+    if (P.청약저축?.가입 === true) return { s: 'check', m: '청약통장 필요(가입O, 회차/금액은 원문확인)' };
+    if (P.청약저축?.가입 === false) return { s: 'fail', m: '청약통장 필요(미가입)' };
+    return { s: 'check', m: '청약통장 보유 여부 미입력 → 입력하면 판정' };
   }
   function gateTier(req) {
     const t = req.유형 || '', name = req.공고명 || '', 계층 = (req.자격요건?.대상계층 || []).join(' ');

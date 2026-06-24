@@ -28,10 +28,10 @@ for (const [src, base] of SRC) {
 
 // 2) 프로필 — 기본은 빈 스켈레톤(공유용: 방문자가 직접 입력). --seed 면 내 profile.json 주입(개인용)
 const EMPTY_PROFILE = {
-  생년월일: null, 무주택: true, 세대원수: null, 월평균소득: null, 총자산: null, 자동차가액: null,
+  생년월일: null, 무주택: null, 세대원수: null, 월평균소득: null, 총자산: null, 자동차가액: null,
   거주지: { 시도: null, 시군구: null }, 거주개월: null,
   혼인상태: '미혼', 혼인신고일: null, 맞벌이: false, 자녀: [],
-  청약저축: { 가입: false, 종류: '주택청약종합저축', 가입개월: null, 납입횟수: null, 저축총액: null, 예치금: null },
+  청약저축: { 가입: null, 종류: '주택청약종합저축', 가입개월: null, 납입횟수: null, 저축총액: null, 예치금: null },
   무주택기간개월: null, 부양가족: { 직계존속: 0 }, 수급자: '해당없음', 특수자격: [], 공급계층선택: [],
   희망: { 지역: [], 전용면적: { min: null, max: null } },
 };
