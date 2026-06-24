@@ -526,7 +526,10 @@
     const ord={지원가능:0,확인필요:1,지원불가:2};
     const cmp={
       smart:(a,b)=>(ord[a.판정]-ord[b.판정])||((b.희망지역매칭===true)-(a.희망지역매칭===true))||((a.dday??9999)-(b.dday??9999)),
-      dday:(a,b)=>(a.dday??9999)-(b.dday??9999),
+      dday:(a,b)=>{ // 마감임박순 가드: ①신청가능+마감일 ②신청가능+수시 ③지원불가  순 버킷, 그 안에서 d-day 짧은순
+        const rank=x=>x.판정==='지원불가'?2:(x.dday==null?1:0);
+        return (rank(a)-rank(b))||((a.dday??9999)-(b.dday??9999));
+      },
       gajeom:(a,b)=>(b.가점??-1)-(a.가점??-1),
       new:(a,b)=>String(b.공고일||'').localeCompare(String(a.공고일||'')),
     }[state.sort];
