@@ -531,7 +531,17 @@
     return '<div class="price-line"><span class="pk">'+pb.k+'</span>'
       +'<span class="pv">'+esc(pb.v)+(pb.unit?' <small>'+esc(pb.unit)+'</small>':'')+'</span></div>';
   }
-  const srcLabel=s=>s==='applyhome'?'청약홈':'LH';
+  const srcLabel=s=>({lh:'LH',applyhome:'청약홈',myhome:'마이홈',sh:'SH',gh:'GH'}[s]||(s||'').toUpperCase());
+  // 구글 캘린더 '일정 추가' 템플릿 URL — 접수마감일 종일 이벤트(인증·API 불필요, 링크만으로 추가).
+  function gcalUrl(x){
+    if(!x.마감일) return null;
+    const d=new Date(x.마감일+'T00:00:00'); if(isNaN(d)) return null;
+    const f=dt=>''+dt.getFullYear()+String(dt.getMonth()+1).padStart(2,'0')+String(dt.getDate()).padStart(2,'0');
+    const end=new Date(d.getTime()+864e5);   // 종일 이벤트 종료일은 익일(end-exclusive)
+    const text=encodeURIComponent('[청약마감] '+(x.공고명||''));
+    const det=encodeURIComponent([(x.지역||'')+' · '+(x.유형||''), x.상태?('상태: '+x.상태):'', x.상세링크||''].filter(Boolean).join('\n'));
+    return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+text+'&dates='+f(d)+'/'+f(end)+'&details='+det;
+  }
 
   function card(x){
     const 면적H=x.면적?'<div class="cfact"><span>희망면적</span><b class="'+(x.면적.startsWith('맞음')?'hl':'')+'">'+esc(x.면적)+'</b></div>':'';
@@ -583,9 +593,17 @@
     if(x.예상배점) meta.push([x.유형==='민영분양'?'내 가점':'예상배점',x.예상배점]);
     if(x.단지주소) meta.push(['위치',x.단지주소]);
     const metaH='<div class="sec"><h4>매칭 상세</h4><dl class="kv">'+meta.map(m=>'<dt>'+m[0]+'</dt><dd>'+esc(m[1])+'</dd>').join('')+'</dl></div>';
+    // 예상배점 근거: 배점표 항목별 만점·내 점수(자동계산 항목만 채움). 만점 합이 곧 '예상배점'의 분모.
+    const bd=x.배점내역;
+    const scoreH=(bd&&bd.length)?'<div class="sec"><h4>예상 배점 내역'+(x.예상배점?' <small>'+esc(String(x.예상배점).split(' ')[0])+'</small>':'')+'</h4>'
+      +'<div class="tbl-wrap"><table class="units"><thead><tr><th style="text-align:left">배점 항목</th><th>내 점수</th><th>만점</th></tr></thead><tbody>'
+      +bd.map(it=>'<tr><td style="text-align:left">'+esc(it.항목)+'</td><td>'+(it.자동?'<b>'+it.점수+'</b>':'<span class="muted">미입력</span>')+'</td><td>'+it.만점+'</td></tr>').join('')
+      +'<tr><td style="text-align:left"><b>합계</b></td><td><b>'+bd.reduce((s,it)=>s+(it.자동?it.점수:0),0)+'</b></td><td><b>'+bd.reduce((s,it)=>s+it.만점,0)+'</b></td></tr>'
+      +'</tbody></table></div><div class="tbl-note">자동계산은 거주기간·자녀수·청약납입·무주택기간 항목만. 그 외(수급·장애·부양 등)는 해당 시 가산되며 원문 기준 확인.</div></div>':'';
     const linkA=[];
-    if(x.상세링크) linkA.push('<a href="'+esc(x.상세링크)+'" target="_blank" rel="noopener">'+(x.source==='applyhome'?'청약홈 공고':'LH 공고·청약 페이지')+' ↗</a>');
+    if(x.상세링크) linkA.push('<a href="'+esc(x.상세링크)+'" target="_blank" rel="noopener">'+srcLabel(x.source)+(x.source==='applyhome'?' 공고':' 공고·청약 페이지')+' ↗</a>');
     if(x.공고PDF) linkA.push('<a href="'+esc(x.공고PDF)+'" target="_blank" rel="noopener" class="outline">공고문 PDF ↓</a>');
+    const gcal=gcalUrl(x); if(gcal) linkA.push('<a href="'+gcal+'" target="_blank" rel="noopener" class="outline">📅 접수마감 캘린더 추가 ↗</a>');
     const links=linkA.length?'<div class="m-links">'+linkA.join('')+'</div>':'';
     $('#modal').innerHTML=
       '<div class="m-head"><button class="m-close" onclick="closeModal()">✕</button>'
@@ -593,7 +611,7 @@
       +'<h2>'+esc(x.공고명)+'</h2><div class="mloc">📍 '+esc(x.지역||'-')+' · '+srcLabel(x.source)+'</div></div>'
       +'<div class="m-body">'+verdictH
       +'<div class="sec"><h4>'+pb.k+'</h4><div class="price" style="display:inline-block;min-width:200px"><div class="v" style="font-size:20px">'+esc(pb.v)+(pb.unit?' <small>'+esc(pb.unit)+'</small>':'')+'</div></div></div>'
-      +metaH+schedH+(unitsT?'<div class="sec"><h4>주택형별</h4>'+unitsT+'</div>':'')+spctH+links
+      +metaH+scoreH+schedH+(unitsT?'<div class="sec"><h4>주택형별</h4>'+unitsT+'</div>':'')+spctH+links
       +'<div class="note">⚠ 자동 매칭 결과입니다. 최종 신청자격·일정·금액은 반드시 원문 공고로 확인하세요. "확인필요/참고/추정"은 시스템이 단정하지 않은 항목입니다.</div></div>';
     $('#ov').classList.add('show'); document.body.style.overflow='hidden';
   }
@@ -605,16 +623,22 @@
   const state={판정:'',supply:'',type:'',region:'',q:'',sort:'smart',regionOnly:false,분양류:false,activeOnly:true};
   const ACTIVE=new Set(['접수중','공고중','정정공고중','접수예정']);
   const isActive=x=>ACTIVE.has(x.상태)&&(x.dday==null||x.dday>=0);
+  // 단일 필터 판정 — except로 지정한 필터 하나는 건너뜀(faceted 카운트용: 그 필터 빼고 나머지로 거른 모수).
+  const inRegion=x=>(x.시도목록||[]).includes(state.region)||(x.시도목록||[]).includes('전국');
+  function pass(x,except){
+    if(except!=='activeOnly'&&state.activeOnly&&!isActive(x))return false;
+    if(except!=='판정'&&state.판정&&x.판정!==state.판정)return false;
+    if(except!=='supply'&&state.supply&&x.공급형태!==state.supply)return false;
+    if(except!=='type'&&state.type&&x.유형!==state.type)return false;
+    if(except!=='region'&&state.region&&!inRegion(x))return false;
+    if(except!=='regionOnly'&&state.regionOnly&&x.희망지역매칭!==true)return false;
+    if(except!=='분양류'&&state.분양류&&!(x.공급형태==='분양'||x.분양전환===true))return false;
+    if(except!=='q'&&state.q){ const q=state.q.toLowerCase(); if(!(x.공고명+' '+x.지역+' '+x.유형).toLowerCase().includes(q))return false; }
+    return true;
+  }
   function apply(){
-    let r=LIST.slice();
-    if(state.activeOnly) r=r.filter(isActive);
-    if(state.판정) r=r.filter(x=>x.판정===state.판정);
-    if(state.supply) r=r.filter(x=>x.공급형태===state.supply);
-    if(state.type) r=r.filter(x=>x.유형===state.type);
-    if(state.region) r=r.filter(x=>(x.시도목록||[]).includes(state.region)||(x.시도목록||[]).includes('전국'));
-    if(state.regionOnly) r=r.filter(x=>x.희망지역매칭===true);
-    if(state.분양류) r=r.filter(x=>x.공급형태==='분양'||x.분양전환===true);
-    if(state.q){ const q=state.q.toLowerCase(); r=r.filter(x=>(x.공고명+' '+x.지역+' '+x.유형).toLowerCase().includes(q)); }
+    let r=LIST.filter(x=>pass(x,null));
+    buildControls(); buildStats();   // 카운트(칩·셀렉트)·KPI카드를 현재 필터 기준으로 재계산
     const ord={지원가능:0,확인필요:1,지원불가:2};
     const cmp={
       smart:(a,b)=>(ord[a.판정]-ord[b.판정])||((b.희망지역매칭===true)-(a.희망지역매칭===true))||((a.dday??9999)-(b.dday??9999)),
@@ -637,27 +661,31 @@
   }
 
   function buildStats(){
-    const base=LIST.filter(isActive);
+    // 판정 외 활성필터(지역·유형·검색 등)로 거른 모수 기준 — KPI카드도 필터 연동(판정 자신은 제외: 카드가 곧 판정 선택기).
+    const base=LIST.filter(x=>pass(x,'판정'));
     const c={all:base.length,지원가능:0,확인필요:0,지원불가:0}; base.forEach(x=>c[x.판정]++);
     const items=[['','s-all',c.all,'접수중·예정'],['지원가능','s-ok',c.지원가능,'지원가능'],['확인필요','s-warn',c.확인필요,'확인필요'],['지원불가','s-no',c.지원불가,'지원불가']];
     $('#stats').innerHTML=items.map(i=>'<div class="stat '+i[1]+(state.판정===i[0]&&i[0]?' active':'')+'" data-v="'+i[0]+'"><span class="bar"></span><div class="n">'+i[2]+'</div><div class="l">'+i[3]+'</div></div>').join('');
     $$('.stat').forEach(s=>s.onclick=()=>{ state.판정=(state.판정===s.dataset.v)?'':s.dataset.v; buildStats(); apply(); });
   }
   function buildControls(){
-    const types=[...new Set(LIST.map(x=>x.유형))].sort();
+    // 유형 옵션 — 지역 등 다른 활성필터로 거른 모수 기준 건수(faceted). 그 유형 자신만 제외하고 카운트.
+    const tbase=LIST.filter(x=>pass(x,'type')), tcnt={};
+    tbase.forEach(x=>{ if(x.유형) tcnt[x.유형]=(tcnt[x.유형]||0)+1; });
+    const types=[...new Set(LIST.map(x=>x.유형))].filter(Boolean).sort();
     const cur=$('#typeSel').value;
-    $('#typeSel').innerHTML='<option value="">전체 유형</option>'+types.map(t=>'<option'+(t===cur?' selected':'')+'>'+esc(t)+'</option>').join('');
-    // 지역(시·도) 옵션 — 활성 공고에 등장하는 시·도만, 표준 순서·건수 표기. '전국' 공고는 모든 지역에서 노출되므로 옵션서 제외.
-    const base=LIST.filter(isActive), cnt={};
-    base.forEach(x=>(x.시도목록||[]).forEach(s=>{ if(s!=='전국') cnt[s]=(cnt[s]||0)+1; }));
-    const nation=base.filter(x=>(x.시도목록||[]).includes('전국')).length;
+    $('#typeSel').innerHTML='<option value="">전체 유형</option>'+types.map(t=>'<option value="'+esc(t)+'"'+(t===cur?' selected':'')+'>'+esc(t)+' ('+(tcnt[t]||0)+')</option>').join('');
+    // 지역(시·도) 옵션 — 지역 외 활성필터로 거른 모수 기준. '전국' 공고는 모든 지역서 노출되므로 옵션서 제외하되 각 지역 건수에 합산.
+    const rbase=LIST.filter(x=>pass(x,'region')), cnt={};
+    rbase.forEach(x=>(x.시도목록||[]).forEach(s=>{ if(s!=='전국') cnt[s]=(cnt[s]||0)+1; }));
+    const nation=rbase.filter(x=>(x.시도목록||[]).includes('전국')).length;
     const rcur=$('#regionSel').value;
     $('#regionSel').innerHTML='<option value="">전체 지역</option>'
       +SIDO_ORDER.filter(s=>cnt[s]).map(s=>'<option value="'+s+'"'+(s===rcur?' selected':'')+'>'+esc(s)+' ('+(cnt[s]+nation)+')</option>').join('');
     const chips=[
-      {id:'regionOnly',label:'희망지역만',c:LIST.filter(x=>x.희망지역매칭).length},
-      {id:'분양류',label:'분양(전환)',c:LIST.filter(x=>x.공급형태==='분양'||x.분양전환===true).length},
-      {id:'activeOnly',label:'접수중·예정만'},
+      {id:'regionOnly',label:'희망지역만',c:LIST.filter(x=>pass(x,'regionOnly')&&x.희망지역매칭===true).length},
+      {id:'분양류',label:'분양(전환)',c:LIST.filter(x=>pass(x,'분양류')&&(x.공급형태==='분양'||x.분양전환===true)).length},
+      {id:'activeOnly',label:'접수중·예정만',c:LIST.filter(x=>pass(x,'activeOnly')&&isActive(x)).length},
     ];
     $('#chips').innerHTML=chips.map(c=>'<button class="chip'+(state[c.id]?' on':'')+'" data-id="'+c.id+'">'+c.label+(c.c!=null?' <span class="c">'+c.c+'</span>':'')+'</button>').join('');
     $$('#chips .chip').forEach(btn=>btn.onclick=()=>{ state[btn.dataset.id]=!state[btn.dataset.id]; btn.classList.toggle('on',state[btn.dataset.id]); apply(); });
@@ -702,8 +730,8 @@
       {k:'무주택기간구간',t:'sel',opts:무주택구간,label:'무주택 기간(분양 가점)',hint:'분양 가점은 1년 단위 구간으로 산정됩니다. 그대로 두면 만 30세(혼인 시 혼인신고일)부터 자동 계산 — 직전에 집을 처분했다면 실제 무주택 기간 구간을 직접 고르세요.'},
       {k:'세대원수',t:'num',suf:'인',hint:'주민등록표상 세대원(태아 포함)'},
       {k:'월평균소득',t:'man',suf:'만원/월',label:'월평균소득(세전)',hint:'세금·공제 전 총소득. 상여·수당 포함, 세대 구성원 합산(공공주택 소득기준은 모두 세전 기준)'},
-      {k:'총자산',t:'man',suf:'만원',hint:'부동산+금융+기타 자산에서 부채 차감(세대 합산)'},
-      {k:'자동차가액',t:'man',suf:'만원',hint:'보유 차량 중 최고가(보험개발원 기준)'},
+      {k:'총자산',t:'man',suf:'만원',hint:'부동산+금융+기타 자산에서 부채 차감(세대 합산). 자동차 제외 — 아래 별도 입력(공공임대 총자산 기준 비교 시 자동 합산)'},
+      {k:'자동차가액',t:'man',suf:'만원',hint:'보유 차량 중 최고가(보험개발원 기준). 공공임대 총자산 기준엔 이 값이 합산되어 비교됩니다'},
     ]},
     {g:'거주',f:[
       {k:'거주지.시도',t:'sido',label:'시·도',row:1},{k:'거주지.시군구',t:'sigungu',label:'시·군·구',row:1},
@@ -957,8 +985,8 @@
     {emoji:'👪',q:'함께 사는 세대원은 몇 명인가요?',sub:'주민등록표상 인원(본인·태아 포함)',fields:[{k:'세대원수',t:'num',suf:'명'}]},
     {emoji:'📍',q:'어디에 사세요?',sub:'거주지 우선·지역 자격 판정에 쓰입니다',fields:[{k:'거주지.시도',t:'sido',label:'시·도',row:1},{k:'거주지.시군구',t:'sigungu',label:'시·군·구',row:1}]},
     {emoji:'💰',q:'월평균 소득은 얼마인가요?',sub:'세금 떼기 전, 세대원 합산(상여·수당 포함). 모르면 비워도 됩니다',fields:[{k:'월평균소득',t:'man',suf:'만원/월'}]},
-    {emoji:'🏦',q:'보유 자산은 대략 얼마인가요?',sub:'부동산+금융+기타 − 부채(세대 합산). 모르면 비워두세요',fields:[
-      {k:'총자산',t:'man',suf:'만원',label:'총자산(대략)'},
+    {emoji:'🏦',q:'보유 자산은 대략 얼마인가요?',sub:'부동산+금융+기타 − 부채(세대 합산). 자동차는 아래 별도 입력. 모르면 비워두세요',fields:[
+      {k:'총자산',t:'man',suf:'만원',label:'총자산(자동차 제외)'},
       {k:'자동차가액',t:'man',suf:'만원',label:'자동차 가액(대략)',hint:'보유 차량 중 최고가. 우선 대략 적어도 됩니다 — 정확한 값은 보험개발원 차량기준가액으로 확인(추후 모델·연식 자동조회 예정).'}
     ]},
     {emoji:'💑',q:'결혼 상태를 알려주세요',sub:'신혼부부·특별공급 판정에 쓰입니다',fields:[{k:'혼인상태',t:'sel',opts:['미혼','혼인중','예비','한부모']}]},

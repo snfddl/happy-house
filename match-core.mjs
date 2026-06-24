@@ -312,7 +312,7 @@ export function createMatcher(P, todayStr) {
   }
   function estimateScore(req) {
     const tbl = req.배점표 || []; if (!tbl.length) return null;
-    let got = 0, max = 0; const used = [], skipped = [];
+    let got = 0, max = 0; const used = [], skipped = [], items = [];
     // 괄호 부연(예: "대학생 거주지(부모 거주지)")은 제거 후 핵심 라벨만 — 기계적 자르기로 괄호 깨지는 것 방지
     const lbl = s => String(s).replace(/[（(].*$/, '').replace(/\s+/g, ' ').trim().slice(0, 22);
     for (const item of tbl) {
@@ -323,10 +323,11 @@ export function createMatcher(P, todayStr) {
       else if (/자녀/.test(name)) v = 미성년자녀;
       else if (/납입\s*횟수|청약/.test(name)) v = P.청약저축?.납입횟수 ?? 0;
       else if (/무주택\s*기간/.test(name)) v = (P.무주택기간개월 ?? 0) / 12;
-      if (v == null) { skipped.push(lbl(name)); continue; }
+      if (v == null) { skipped.push(lbl(name)); items.push({ 항목: lbl(name), 점수: null, 만점: top, 자동: false }); continue; }
       const sc = pickBand(bands, v); got += sc; used.push(`${lbl(name)}:${sc}`);
+      items.push({ 항목: lbl(name), 점수: sc, 만점: top, 자동: true });
     }
-    return { got, max, used, skipped };
+    return { got, max, used, skipped, items };
   }
 
   // ── 분양: 가점 84점·청약순위·지역우선·특공 ──────────────────
@@ -490,9 +491,12 @@ export function createMatcher(P, todayStr) {
 
   function evaluate(req) {
     if (req.상품군 === '분양' || req.상품구조 === '분양') return evaluateSale(req);
+    // 공공임대 공식 '총자산'은 자동차가액을 포함하는 개념이나, 프로필은 총자산(차량 제외)·자동차가액을 따로 입력받음
+    //   → 자산상한(차량포함 기준)과 비교할 땐 둘을 합산. 자동차상한이 따로 있는 공고는 자동차 게이트가 별도로 또 검사.
+    const 총자산_차량포함 = P.총자산 == null ? null : P.총자산 + (P.자동차가액 || 0);
     const gates = {
       무주택: gateHousing(), 소득: gateIncome(req),
-      자산: tierLimit(req, req.자격요건?.자산상한, '자산상한', '총자산', P.총자산),
+      자산: tierLimit(req, req.자격요건?.자산상한, '자산상한', '총자산(차량포함)', 총자산_차량포함),
       자동차: tierLimit(req, req.자격요건?.자동차상한, '자동차상한', '차량가액', P.자동차가액),
       청약: gateSubscription(req), 거주지: gateResidence(req), 계층: gateTier(req),
       순위자격: gate매입순위(req),
@@ -517,6 +521,7 @@ export function createMatcher(P, todayStr) {
       거주지순위: rank ? (rank.rank ? `${rank.rank}순위` : `해당지역 미명시(최후 ${rank.maxRank}순위 추정)`) : '순위없음/추첨',
       선정방식: req.선정방식,
       예상배점: score ? `${score.got}/${score.max}점(추정)${score.skipped.length ? ` ·미반영:${score.skipped.join(',')}` : ''}` : null,
+      배점내역: score ? score.items : null,
       가점: null,
       면적: area ? (area.ok == null ? '면적정보없음' : area.ok ? `맞음(${area.range[0]}~${area.range[1]}㎡)` : `안맞음(공고 ${area.range[0]}~${area.range[1]}㎡)`) : null,
       지역희망: region ? (region.ok ? `맞음(${region.hit.join(',')})` : '희망지역 아님') : null,
