@@ -3,31 +3,35 @@
 LH 등 공공임대주택 공고를 **수집 → 요건 자동 구조화 → 개인 조건 매칭 → (예정) 알림**하는 개인용 서비스.
 공고문(PDF)을 자격/순위/소득·자산/임대료 스키마로 뽑아, 사용자 프로필을 대입해 "지원가능/순위/예상배점"을 계산한다.
 
-## 현재 상태 (2026-06-22)
+## 현재 상태 (2026-06-24)
 
-데이터·매칭 토대 완성, **개인용으로 동작.** 알림·웹 UI는 미구현.
+데이터·매칭·웹 UI·**무료 자동배포**까지 동작. → **라이브: https://snfddl.github.io/happy-house/**
 
-- ✅ **수집**: LH 청약플러스 전국×전유형 스크래핑, 신규 diff (`lh-collect.mjs`)
-- ✅ **요건추출**: 공고문 PDF → 슬라이스 → Sonnet → 정규 스키마 v1, **110건** (`data/derived/lh/<panId>/requirements.json`)
+- ✅ **수집**: LH 청약플러스 전국×전유형 스크래핑, 신규 diff (`lh-collect.mjs`). `--refresh`=상태/마감일만 갱신(다운로드 없음, CI용)
+- ✅ **요건추출**: 공고문 PDF → 슬라이스 → Sonnet → 정규 스키마 v1, **126건** (`data/derived/lh/<panId>/requirements.json`)
+- ✅ **계층별 메타 정규화**(결정론·멱등): 추출 자유형 → 캐논 키/필드(`normalize-requirements.mjs`, 파이프라인 [3.5])
 - ✅ **결정론 보강**(LLM 미사용): 원문링크(`inject-links.mjs`) · 매입/전세 주택목록 xlsx 파싱(`parse-housing-xlsx.py`)
-- ✅ **완전자동 파이프라인**: 수집→추출(헤드리스 `claude -p`)→보강→검증게이트 (`pipeline.mjs`)
-- ✅ **매칭 엔진 v1**: 프로필 × 임대110+분양42 → 자격게이트·계층·순위·예상배점·면적/지역, 공급형태(지원형/실물/분양)·분양전환 필터 (`match.mjs`)
+- ✅ **완전자동 파이프라인**: 수집→추출(헤드리스 `claude -p`)→정규화→보강→검증게이트 (`pipeline.mjs`)
+- ✅ **매칭 엔진 v1**: 프로필 × 임대+분양 → 자격게이트·계층(캐논 fallback)·순위·예상배점·면적/지역, 공급형태·분양전환·분양(전환) 필터 (`match.mjs`/`match-core.mjs`)
 - ✅ **분양(청약홈)**: OpenAPI 수집→결정론 매핑→가점 84점·청약순위·지역우선·특공해당 매칭 (민영=가점/공공=순차)
-- ✅ **조회 페이지**: `build-site.mjs` → `site/index.html` 자체완결 정적(임대+분양, 필터·검색·상세, **브라우저 내 조건수정→실시간 재계산**, 검증된 원문링크)
+- ✅ **웹 UI**: 자체완결 정적 `site/index.html` — 첫 방문 **단계별 마법사**, 시·도→시·군·구 콤보박스, 희망지역 다중선택, **자격/희망 분리**, 청약통장·무주택기간 친화입력, 필터·검색·상세, **브라우저 내 조건수정→실시간 재계산**(총 168건 인라인)
+- ✅ **무료 자동배포**: GitHub Actions cron(하루 3회 상태갱신) + push 트리거(즉시 배포) → GitHub Pages (`.github/workflows/refresh.yml`). 자세히는 `DEPLOY.md`
 - ⏳ **다음**: 알림 레이어. → `ROADMAP.md`
 
 ## 빠른 실행
 
 ```bash
-node pipeline.mjs          # [임대] 신규 공고 수집~추출~검증 완전자동 (PIPELINE.md 참고)
-node match.mjs             # profile.json 으로 임대110+분양42 매칭 (로직=match-core.mjs 공유)(--possible/--supply=/--type=)
-node applyhome-collect.mjs # [분양] 청약홈 OpenAPI 수집 (--since=2026-05-01 / --include-rent)
-node applyhome-derive.mjs  # [분양] raw → requirements.json 결정론 매핑(LLM 미사용)
-node build-site.mjs        # [공유용] 조회 페이지 → site/index.html (기본프로필 빈값, 방문자가 입력)
-node build-site.mjs --seed # [개인용] 내 profile.json을 기본값으로 미리채움
+node pipeline.mjs              # [임대] 신규 공고 수집~추출~정규화~검증 완전자동 (PIPELINE.md 참고)
+node normalize-requirements.mjs # 계층별 메타 캐논 정규화(파이프라인에 포함, 단독 재실행 가능. --report=미저장 점검)
+node match.mjs                 # profile.json 으로 임대+분양 매칭 (로직=match-core.mjs 공유)(--possible/--supply=/--type=)
+node applyhome-collect.mjs     # [분양] 청약홈 OpenAPI 수집 (--since=2026-05-01 / --include-rent)
+node applyhome-derive.mjs      # [분양] raw → requirements.json 결정론 매핑(LLM 미사용)
+node build-site.mjs            # [공유용] 조회 페이지 → site/index.html (빈 프로필, 방문자가 입력)
+node build-site.mjs --seed     # [개인용] 내 profile.json을 기본값으로 미리채움
+node lh-collect.mjs --refresh  # [CI] 상태/마감일만 갱신(다운로드 없음) + 신규 → new-pending.json
 ```
 
-**배포(공유):** `site/index.html`은 의존성 없는 단일 파일. 정적 호스팅 아무 곳에나 업로드하면 됨(GitHub Pages·Netlify drag&drop·Vercel·Cloudflare Pages). 방문자 조건은 각자 브라우저 localStorage에만 저장(서버 전송 없음). 첫 방문 시 온보딩으로 조건 입력 유도. 데이터 갱신 시 재빌드 후 재업로드.
+**배포:** `site/index.html`은 의존성 없는 단일 파일이라 정적 호스팅 어디든 됨. 이 repo는 **GitHub Actions + Pages로 무료 자동배포** 구성 — push하면 즉시 빌드·배포, cron(하루 3회)이 상태/마감일 갱신. 요건추출(LLM)만 로컬 `node pipeline.mjs`로(외부 API 0). 신규 공고는 CI가 이슈로 알림. **구조·운영법은 `DEPLOY.md` 참고.** 방문자 조건은 각자 브라우저 localStorage에만 저장(서버 전송 없음).
 
 ## 문서 맵
 
@@ -37,7 +41,10 @@ node build-site.mjs --seed # [개인용] 내 profile.json을 기본값으로 미
 | `ROADMAP.md` | 다음 할 일·백로그 |
 | `DECISIONS.md` | 주요 결정과 그 이유 (경량 ADR) |
 | `CLAUDE.md` | 작업 규칙(절대규칙 포함) — 에이전트/기여자용 |
+| `DEPLOY.md` | 무료 자동배포(GitHub Actions + Pages) 구조·운영 런북 |
 | `match-core.mjs` | 매칭 로직 단일 소스(순수 함수) — `match.mjs`·조회페이지 공유 |
+| `normalize-requirements.mjs` | 계층별 메타 캐논 정규화(키/필드 enum·만원→원·멱등) |
+| `.github/workflows/refresh.yml` | CI: cron 상태갱신 + push 자동배포 → Pages |
 | `PIPELINE.md` | 신규 공고 처리 파이프라인 런북 |
 | `SCHEMA.md` | 데이터 스키마(3층: UserProfile·NoticeRequirements·Matching). §6=분양 변형 |
 | `schema-v1.jsonc` / `schema-sale-v1.jsonc` | 임대 / 분양 requirements 컴팩트 스키마 |
