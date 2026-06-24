@@ -32,6 +32,7 @@ const FIELD_SYN = {
   자산상한: ['자산상한', '총자산상한', '총자산', '자산', '가산자산표'],
   자동차상한: ['자동차상한', '자동차'],
   소득기준: ['소득기준', '소득', '소득상한', '소득상한%', '소득상한_기본', '소득상한기준', '소득기준비고'],
+  소득가구원수별: ['소득가구원수별', '소득표', '가구원수별소득'],
   청약요건: ['청약요건', '청약'],
   연령: ['연령', '나이'],
   무주택: ['무주택'],
@@ -62,6 +63,8 @@ function pickAmount(vals) {
 }
 function mergeVals(canon, vals) {
   if (AMOUNT_FIELDS.has(canon)) return pickAmount(vals.map(parseAmt));
+  const obj = vals.find(v => v && typeof v === 'object');   // 구조형 필드(예: 소득가구원수별 표)는 그대로 보존(문자열화 금지)
+  if (obj) return obj;
   const strs = [...new Set(vals.filter(v => v != null && v !== '').map(String))];
   return strs.length ? strs.join(' / ') : (vals[0] ?? null);
 }

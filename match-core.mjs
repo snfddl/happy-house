@@ -48,7 +48,11 @@ export function createMatcher(P, todayStr) {
     if (noTable && /소득[^.]{0,10}(제한\s*없|배제|없음|미적용)/.test(sg.비고 || ''))
       return { s: 'pass', m: '소득심사 없음(자격완화로 배제)' };
     if (P.월평균소득 == null || P.세대원수 == null) return { s: 'check', m: '소득/세대원수 미입력' };
-    const row = sg.가구원수별?.[`${P.세대원수}인`];
+    // 계층별 소득표 상이(행복주택 등): 본인 계층의 소득가구원수별 표 우선(맞벌이 가산 구간 포함). 없으면 공통표.
+    const _tk = tierKeyFor(req.자격요건?.계층별);
+    const _tierIncome = _tk && req.자격요건?.계층별?.[_tk]?.소득가구원수별;
+    const incomeTable = (_tierIncome && typeof _tierIncome === 'object' && Object.keys(_tierIncome).length) ? _tierIncome : sg.가구원수별;
+    const row = incomeTable?.[`${P.세대원수}인`];
     if (!row || typeof row !== 'object') return { s: 'check', m: `${P.세대원수}인 소득표 없음(기본 ${sg.기본퍼센트 ?? '?'}%) → 원문확인` };
     const nums = Object.entries(row).filter(([, v]) => typeof v === 'number');
     if (!nums.length) return { s: 'check', m: '소득 상한 수치 없음' };
@@ -140,7 +144,7 @@ export function createMatcher(P, todayStr) {
   }
   function gateTier(req) {
     const t = req.유형 || '', name = req.공고명 || '', 계층 = (req.자격요건?.대상계층 || []).join(' ');
-    if (/고령자/.test(name) || (/고령자/.test(계층) && !/행복주택/.test(t))) {
+    if (/고령자복지주택|공공실버주택/.test(name)) {
       if (age != null && age >= 65) return { s: 'pass', m: '고령자(65+) 해당' };
       return { s: 'check', m: '고령자복지주택=만65세+ 대상(본인 미해당 가능)' };
     }
@@ -158,6 +162,104 @@ export function createMatcher(P, todayStr) {
       return { s: 'check', m: '행복 공급계층(청년/신혼/대학생/고령자 등) 확인' };
     }
     return { s: 'pass', m: '' };
+  }
+
+  // 매입임대 '자격유형 순위 전용' — 순위조건 중 하나라도 충족해야 적격(일반 신청자는 저소득 경로로만).
+  //   조건 1개씩 yes/no/unknown 판정 → yes 있으면 pass, 전부 no(전부 인식)면 fail, unknown 있으면 check(fail-safe).
+  function 순위조건Match(req, c) {
+    const s = String(c);
+    const incOk = pct => {                              // 소득 N% 이하 충족? (가구원수별 표 조회)
+      if (P.월평균소득 == null || P.세대원수 == null) return 'unknown';
+      const lim = req.자격요건?.소득기준?.가구원수별?.[`${P.세대원수}인`]?.[`${pct}%`];
+      if (typeof lim !== 'number') return 'unknown';
+      return P.월평균소득 <= lim ? 'yes' : 'no';
+    };
+    const 수급 = P.수급자 && P.수급자 !== '해당없음';
+    const 장애 = (P.특수자격 || []).some(x => /장애/.test(x));
+    const 차상위 = (P.특수자격 || []).some(x => /차상위/.test(x));
+    const 한부모 = P.혼인상태 === '한부모' || (P.특수자격 || []).some(x => /한부모/.test(x));
+    const 신혼 = ['혼인중', '예비'].includes(P.혼인상태);
+    const 자녀수 = (P.자녀 || []).length;
+    const 미혼 = !P.혼인상태 || P.혼인상태 === '미혼';
+    // 순수 무주택 조건(든든전세 등)만 — '무주택 미혼 청년'처럼 복합조건은 아래 계층 인식자로 위임
+    if (/무주택/.test(s) && !/청년|신혼|장애|수급|고령|차상위|한부모/.test(s))
+      return P.무주택 === true ? 'yes' : P.무주택 === false ? 'no' : 'unknown';
+    // 저소득 고령자(수급+65세)
+    if (/고령자/.test(s) && /(수급|기초생활|제2조)/.test(s)) {
+      if (age != null && age < 65) return 'no';
+      if (age != null && age >= 65 && 수급) return 'yes';
+      return 수급 ? 'unknown' : 'no';
+    }
+    // 수급자 계열(차상위 제외)
+    if (/수급/.test(s) && !/차상위/.test(s)) {
+      const types = [];
+      if (/생계/.test(s)) types.push('생계급여');
+      if (/의료/.test(s)) types.push('의료급여');
+      if (/주거/.test(s)) types.push('주거급여');
+      if (/교육/.test(s)) types.push('교육급여');
+      if (!types.length) return 수급 ? 'yes' : 'no';
+      if (수급 && types.includes(P.수급자)) return 'yes';
+      return 'no';                                       // 미수급 or 다른 급여 → 이 조건엔 비해당
+    }
+    if (/차상위/.test(s)) return 차상위 ? 'yes' : (P.특수자격 ? 'no' : 'unknown');
+    if (/한부모/.test(s)) {
+      if (!한부모) return 'no';
+      if (/6세 이하|미성년/.test(s)) return 자녀수 ? 'yes' : 'unknown';
+      return 'yes';
+    }
+    if (/장애/.test(s)) {
+      if (!장애) return P.특수자격 ? 'no' : 'unknown';
+      const m = s.match(/(\d+)\s*%/);
+      return m ? incOk(Number(m[1])) : 'yes';
+    }
+    if (/신생아/.test(s)) {
+      const 신생아 = (P.자녀 || []).some(x => x.태아 || (x.생년월일 && (TODAY - new Date(x.생년월일)) / (365.25 * 864e5) <= 2));
+      return 신생아 ? 'yes' : 'no';
+    }
+    if (/신혼|예비신혼|혼인가구/.test(s)) {
+      if (!신혼 && P.혼인상태 !== '혼인중') return 'no';
+      if (/자녀가 없는/.test(s)) return 자녀수 === 0 ? 'yes' : 'no';
+      if (/자녀가 있는|6세 이하/.test(s)) return 자녀수 > 0 ? 'yes' : 'no';
+      return 'yes';
+    }
+    if (/미혼 청년|무주택.{0,4}청년/.test(s) || /\d+\s*세 이상\s*\d+\s*세 이하/.test(s)) {
+      if (/미혼/.test(s) && !미혼) return 'no';
+      if (age == null) return 'unknown';
+      return age >= 19 && age <= 39 ? 'yes' : 'no';
+    }
+    const mPct = s.match(/월평균\s*소득\D*?(\d+)\s*%/) || (/소득/.test(s) && s.match(/(\d+)\s*%\s*이하/));
+    if (mPct && /소득/.test(s)) return incOk(Number(mPct[1]));
+    if (/거주자|주민등록|시민|모집권역/.test(s)) {       // 거주 요건 — 본인 거주지가 조건에 보이면 충족, 미일치는 gateResidence가 별도 판정(여기선 fail-safe)
+      const sd = P.거주지?.시도, sgg = P.거주지?.시군구;
+      if (!sd && !sgg) return 'unknown';
+      const short = x => String(x).replace(/특별자치도|특별자치시|특별시|광역시/, '');
+      if ((sgg && s.includes(sgg)) || (sd && (s.includes(sd) || s.includes(short(sd))))) return 'yes';
+      return 'unknown';
+    }
+    return 'unknown';                                    // 주거취약·대학생·예술인·소득자산충족 등 → 판정불가
+  }
+  function gate매입순위(req) {
+    if (req.유형 !== '매입임대') return { s: 'pass', m: '' };
+    const ranks = (req.순위규칙 || []).filter(r => /자격유형/.test(r.기준 || '') && (r.조건 || []).length);
+    if (!ranks.length) return { s: 'pass', m: '' };
+    // 추출이 한 순위의 AND조건(단일 자격 프로파일)과 OR대안(독립 카테고리)을 단일 배열로 평탄화 → 순위별로 분류:
+    //   독립 자격 카테고리(수급/장애/한부모/신혼/소득N%↓ 등)가 하나라도 있으면 OR(택1), 없으면 속성조합 AND(전부 충족).
+    const 독립카테고리 = /신생아|한부모|신혼|예비신혼|혼인가구|수급|차상위|장애|고령자|\d+\s*%\s*이하/;
+    let 가능 = false;   // 어느 순위든 충족 가능성(미상 포함)이 남아있나
+    for (const r of ranks) {
+      const conds = r.조건 || [];
+      const vs = conds.map(c => 순위조건Match(req, c));
+      if (conds.some(c => 독립카테고리.test(String(c)))) {           // OR: 카테고리 택1
+        if (vs.includes('yes')) return { s: 'pass', m: '순위 자격유형 해당' };
+        if (vs.includes('unknown')) 가능 = true;
+      } else {                                                        // AND: 단일 자격 프로파일(무주택+연령+거주+직군 등) 전부 충족
+        if (vs.every(v => v === 'yes')) return { s: 'pass', m: '순위 자격유형 해당' };
+        if (!vs.includes('no')) 가능 = true;
+      }
+    }
+    return 가능
+      ? { s: 'check', m: '순위 자격유형(수급/장애/한부모/신혼/저소득/직군 등) 해당여부 확인필요' }
+      : { s: 'fail', m: '매입임대 순위 자격유형 비해당(수급/장애/한부모/신혼/청년/저소득 순위 아님)' };
   }
 
   function supplyForm(r) {
@@ -377,6 +479,7 @@ export function createMatcher(P, todayStr) {
       자산: tierLimit(req, req.자격요건?.자산상한, '자산상한', '총자산', P.총자산),
       자동차: tierLimit(req, req.자격요건?.자동차상한, '자동차상한', '차량가액', P.자동차가액),
       청약: gateSubscription(req), 거주지: gateResidence(req), 계층: gateTier(req),
+      순위자격: gate매입순위(req),
     };
     const fails = Object.entries(gates).filter(([, g]) => g.s === 'fail');
     const checks = Object.entries(gates).filter(([, g]) => g.s === 'check');
