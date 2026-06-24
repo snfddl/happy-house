@@ -166,6 +166,8 @@ export function createMatcher(P, todayStr) {
   function estimateScore(req) {
     const tbl = req.배점표 || []; if (!tbl.length) return null;
     let got = 0, max = 0; const used = [], skipped = [];
+    // 괄호 부연(예: "대학생 거주지(부모 거주지)")은 제거 후 핵심 라벨만 — 기계적 자르기로 괄호 깨지는 것 방지
+    const lbl = s => String(s).replace(/[（(].*$/, '').replace(/\s+/g, ' ').trim().slice(0, 22);
     for (const item of tbl) {
       const name = item.항목 || ''; const bands = item.구간 || [];
       const top = Math.max(0, ...bands.map(b => b[1] || 0)); max += top;
@@ -174,8 +176,8 @@ export function createMatcher(P, todayStr) {
       else if (/자녀/.test(name)) v = 미성년자녀;
       else if (/납입\s*횟수|청약/.test(name)) v = P.청약저축?.납입횟수 ?? 0;
       else if (/무주택\s*기간/.test(name)) v = (P.무주택기간개월 ?? 0) / 12;
-      if (v == null) { skipped.push(name.slice(0, 14)); continue; }
-      const sc = pickBand(bands, v); got += sc; used.push(`${name.slice(0, 10)}:${sc}`);
+      if (v == null) { skipped.push(lbl(name)); continue; }
+      const sc = pickBand(bands, v); got += sc; used.push(`${lbl(name)}:${sc}`);
     }
     return { got, max, used, skipped };
   }

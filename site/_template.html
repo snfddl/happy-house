@@ -216,7 +216,8 @@
     font-weight:560;cursor:pointer;font-family:inherit;padding:8px 26px 18px;text-decoration:underline}
   .wiz-peek:hover{color:var(--ink-2)}
   .m-head{padding:22px 24px 18px;border-bottom:1px solid var(--line);position:relative;background:linear-gradient(180deg,#fff,var(--surface-2))}
-  .m-head .row1{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:11px}
+  .m-head .row1{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:11px;padding-right:44px}
+  .m-head .row1 .dday{margin-left:0}  /* 카드에선 우측끝으로 밀지만(margin-left:auto), 모달은 ✕ 닫기버튼과 겹쳐서 인라인 배치 */
   .m-head h2{font-size:19px;font-weight:760;margin:0;letter-spacing:-.025em;line-height:1.3}
   .m-head .mloc{font-size:13px;color:var(--muted);margin-top:5px;font-weight:560}
   .m-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:9px;border:1px solid var(--line);
@@ -248,10 +249,10 @@
   .spct span{font-size:12px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:7px;padding:5px 9px;font-weight:560;color:var(--ink-2)}
   .spct span b{font-family:var(--mono);color:var(--accent-ink)}
   .m-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
-  .m-links a{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;text-decoration:none;font-size:13px;font-weight:650;border-radius:10px;padding:10px 16px}
+  .m-links a{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--accent);color:#fff;text-decoration:none;font-size:13px;font-weight:650;border-radius:10px;padding:0 16px;min-height:44px;border:1.5px solid transparent;box-sizing:border-box;line-height:1.2}
   .m-links a:hover{background:var(--accent-ink)}
-  .m-links a.sec{background:transparent;color:var(--accent-ink);border:1.5px solid var(--accent)}
-  .m-links a.sec:hover{background:var(--accent);color:#fff}
+  .m-links a.outline{background:transparent;color:var(--accent-ink);border:1.5px solid var(--accent)}
+  .m-links a.outline:hover{background:var(--accent);color:#fff}
   .note{font-size:11.5px;color:var(--faint);margin-top:14px;line-height:1.5}
 
   /* Drawer (프로필 편집) */
@@ -584,7 +585,7 @@
     const metaH='<div class="sec"><h4>매칭 상세</h4><dl class="kv">'+meta.map(m=>'<dt>'+m[0]+'</dt><dd>'+esc(m[1])+'</dd>').join('')+'</dl></div>';
     const linkA=[];
     if(x.상세링크) linkA.push('<a href="'+esc(x.상세링크)+'" target="_blank" rel="noopener">'+(x.source==='applyhome'?'청약홈 공고':'LH 공고·청약 페이지')+' ↗</a>');
-    if(x.공고PDF) linkA.push('<a href="'+esc(x.공고PDF)+'" target="_blank" rel="noopener" class="sec">공고문 PDF ↓</a>');
+    if(x.공고PDF) linkA.push('<a href="'+esc(x.공고PDF)+'" target="_blank" rel="noopener" class="outline">공고문 PDF ↓</a>');
     const links=linkA.length?'<div class="m-links">'+linkA.join('')+'</div>':'';
     $('#modal').innerHTML=
       '<div class="m-head"><button class="m-close" onclick="closeModal()">✕</button>'
