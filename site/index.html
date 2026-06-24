@@ -953,11 +953,13 @@ function createMatcher(P, todayStr) {
     +Object.keys(KR_REGIONS).map(s=>'<option value="'+esc(s)+'"'+(s===cur?' selected':'')+'>'+esc(s)+'</option>').join('');
   const sggOptions=(sido,cur)=>'<option value="">'+(sido?'전체':'시·도 먼저 선택')+'</option>'
     +(KR_REGIONS[sido]||[]).map(s=>'<option value="'+esc(s)+'"'+(s===cur?' selected':'')+'>'+esc(s)+'</option>').join('');
+  // 무주택 기간 가점 구간(청약 가점표 2~32점, 1년 단위). 첫 원소=자동(만30세·혼인 기준 추정).
+  const 무주택구간=['자동(만 30세·혼인 기준)','1년 미만','1~2년','2~3년','3~4년','4~5년','5~6년','6~7년','7~8년','8~9년','9~10년','10~11년','11~12년','12~13년','13~14년','14~15년','15년 이상'];
   const FORM=[
     {g:'기본 정보',f:[
       {k:'생년월일',t:'date'},
       {k:'무주택',t:'bool',label:'무주택 세대',hint:'분양권·입주권 보유도 주택으로 봅니다'},
-      {k:'무주택시작일',t:'month',label:'무주택이 된 시점(연·월)',hint:'분양 가점용. 쭉 무주택이면 비워두세요 — 만 30세(혼인 시 혼인신고일)부터 자동 계산됩니다. 직전에 집을 처분했다면 그 시점을 넣으세요.'},
+      {k:'무주택기간구간',t:'sel',opts:무주택구간,label:'무주택 기간(분양 가점)',hint:'분양 가점은 1년 단위 구간으로 산정됩니다. 그대로 두면 만 30세(혼인 시 혼인신고일)부터 자동 계산 — 직전에 집을 처분했다면 실제 무주택 기간 구간을 직접 고르세요.'},
       {k:'세대원수',t:'num',suf:'인',hint:'주민등록표상 세대원(태아 포함)'},
       {k:'월평균소득',t:'man',suf:'만원/월',label:'월평균소득(세전)',hint:'세금·공제 전 총소득. 상여·수당 포함, 세대 구성원 합산(공공주택 소득기준은 모두 세전 기준)'},
       {k:'총자산',t:'man',suf:'만원',hint:'부동산+금융+기타 자산에서 부채 차감(세대 합산)'},
@@ -1130,17 +1132,17 @@ function createMatcher(P, todayStr) {
       if(mEl){ const on=mEl.classList.contains('on'); P.청약저축.매달납입=on;
         if(on&&P.청약저축.가입개월!=null) P.청약저축.납입횟수=P.청약저축.가입개월; }
     }
-    // 무주택 기간(분양 가점용): 시작 시점 입력 시 그로부터, 무주택인데 미입력이면 만30세·혼인신고일 중 늦은 날부터 자동 추정
+    // 무주택 기간(분양 가점용) → 무주택기간개월. 구간 직접선택이면 그 구간, '자동'이면 만30세·혼인 기준 추정.
     if(P.무주택===true){
-      let y,mo;
-      if(P.무주택시작일){ [y,mo]=String(P.무주택시작일).split('-').map(Number); }
+      const i=무주택구간.indexOf(P.무주택기간구간);  // 0=자동, 1='1년 미만'…16='15년 이상'
+      if(i>=1){ P.무주택기간개월=(i-1)*12; }
       else{
         const cands=[];
         if(P.생년월일){ const d=new Date(P.생년월일); cands.push([d.getFullYear()+30, d.getMonth()+1]); }
         if(P.혼인신고일){ const w=new Date(P.혼인신고일); cands.push([w.getFullYear(), w.getMonth()+1]); }
-        if(cands.length){ cands.sort((a,c)=>(c[0]-a[0])||(c[1]-a[1])); [y,mo]=cands[0]; }  // 가장 늦은 시점
+        if(cands.length){ cands.sort((a,c)=>(c[0]-a[0])||(c[1]-a[1])); const [y,mo]=cands[0];
+          const b=new Date(M.기준일); P.무주택기간개월=Math.max(0,(b.getFullYear()-y)*12+(b.getMonth()+1-mo)); }
       }
-      if(y&&mo){ const b=new Date(M.기준일); P.무주택기간개월=Math.max(0,(b.getFullYear()-y)*12+(b.getMonth()+1-mo)); }
     }
     saveP();
     refresh();
@@ -1189,7 +1191,7 @@ function createMatcher(P, todayStr) {
     {emoji:'🎂',q:'생년월일을 알려주세요',sub:'나이로 일부 자격·가점을 계산합니다',fields:[{k:'생년월일',t:'date'}]},
     {emoji:'🏠',q:'지금 소유한 집이 있나요?',sub:'분양권·입주권도 주택으로 봅니다',fields:[
       {k:'무주택',t:'bool',label:'무주택 세대입니다'},
-      {k:'무주택시작일',t:'month',label:'무주택이 된 시점(분양 가점용·선택)',hint:'쭉 무주택이면 비워두세요 — 만 30세(혼인 시 혼인신고일)부터 자동 계산. 직전에 집을 팔았다면 그 시점.'}
+      {k:'무주택기간구간',t:'sel',opts:무주택구간,label:'무주택 기간(분양 가점)',hint:'그대로 두면 만 30세·혼인 기준 자동. 직전에 집을 팔았다면 실제 구간을 고르세요.'}
     ]},
     {emoji:'👪',q:'함께 사는 세대원은 몇 명인가요?',sub:'주민등록표상 인원(본인·태아 포함)',fields:[{k:'세대원수',t:'num',suf:'명'}]},
     {emoji:'📍',q:'어디에 사세요?',sub:'거주지 우선·지역 자격 판정에 쓰입니다',fields:[{k:'거주지.시도',t:'sido',label:'시·도',row:1},{k:'거주지.시군구',t:'sigungu',label:'시·군·구',row:1}]},
