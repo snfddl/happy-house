@@ -250,6 +250,8 @@
   .m-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
   .m-links a{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;text-decoration:none;font-size:13px;font-weight:650;border-radius:10px;padding:10px 16px}
   .m-links a:hover{background:var(--accent-ink)}
+  .m-links a.sec{background:transparent;color:var(--accent-ink);border:1.5px solid var(--accent)}
+  .m-links a.sec:hover{background:var(--accent);color:#fff}
   .note{font-size:11.5px;color:var(--faint);margin-top:14px;line-height:1.5}
 
   /* Drawer (프로필 편집) */
@@ -355,6 +357,7 @@
         <option value="지원형">임대(전세지원형)</option>
       </select>
       <select class="sel" id="typeSel"><option value="">전체 유형</option></select>
+      <select class="sel" id="regionSel"><option value="">전체 지역</option></select>
       <select class="sel" id="sortSel">
         <option value="smart">추천순</option>
         <option value="dday">마감임박순</option>
@@ -450,12 +453,28 @@
   }
 
   // ── 매칭 계산 ──
+  // 공고 '지역' 문자열(표기 제각각: "전북"·"전북특별자치도 익산시"·"대구·경북")을 캐논 시·도(짧은 이름)로.
+  // 첫 토큰만 판정(시군구 오탐 방지: "경기 광주시"가 광주광역시로 새지 않게). 복합 첫토큰(·,/)은 분해.
+  const SIDO_ORDER=['서울','부산','대구','인천','광주','대전','울산','세종','경기','강원','충북','충남','전북','전남','경북','경남','제주'];
+  const SIDO_ALIAS=[['서울',/^서울/],['부산',/^부산/],['대구',/^대구/],['인천',/^인천/],['광주',/^광주/],['대전',/^대전/],['울산',/^울산/],['세종',/^세종/],['경기',/^경기/],['강원',/^강원/],['충북',/^충(북|청북)/],['충남',/^충(남|청남)/],['전북',/^전(북|라북)/],['전남',/^전(남|라남)/],['경북',/^경(북|상북)/],['경남',/^경(남|상남)/],['제주',/^제주/]];
+  function siList(지역){
+    if(!지역) return [];
+    if(/전국/.test(지역)) return ['전국'];
+    const out=[];
+    String(지역).split(/\s+/)[0].split(/[·,/、]/).forEach(p=>{
+      for(const[k,re]of SIDO_ALIAS){ if(re.test(p)){ if(!out.includes(k))out.push(k); break; } }
+    });
+    return out;
+  }
   let LIST=[];
   function compute(){
     const matcher=createMatcher(P, M.기준일);
     LIST=DATA.reqs.map(req=>{
       const r=matcher.evaluate(req);
-      return Object.assign(r,{id:req.__id,source:req.__src,상품구조:req.상품구조||(r.공급형태==='분양'?'분양':'임대')}, extras(req));
+      return Object.assign(r,{id:req.__id,source:req.__src,상품구조:req.상품구조||(r.공급형태==='분양'?'분양':'임대'),
+        상세링크:(req.원문링크&&req.원문링크.상세페이지)||null,
+        공고PDF:(req.원문링크&&req.원문링크.공고문PDF)||null,
+        시도목록:siList(r.지역||req.지역)}, extras(req));
     });
   }
 
@@ -525,7 +544,7 @@
       +priceLine(x)
       +'<div class="card-foot"><span class="src">'+(x.상품구조==='분양'?'🏗️':'🔑')+' '+srcLabel(x.source)+'</span>'
       +'<span class="foot-r"><span class="more">주택형별 ▸</span>'
-      +(x.링크?'<a href="'+esc(x.링크)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">원문 ↗</a>':'')+'</span></div>'
+      +(x.상세링크?'<a href="'+esc(x.상세링크)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+(x.source==='applyhome'?'청약홈':'공고·청약')+' ↗</a>':'')+'</span></div>'
       +'</article>';
   }
 
@@ -563,7 +582,10 @@
     if(x.예상배점) meta.push([x.유형==='민영분양'?'내 가점':'예상배점',x.예상배점]);
     if(x.단지주소) meta.push(['위치',x.단지주소]);
     const metaH='<div class="sec"><h4>매칭 상세</h4><dl class="kv">'+meta.map(m=>'<dt>'+m[0]+'</dt><dd>'+esc(m[1])+'</dd>').join('')+'</dl></div>';
-    const links=x.링크?'<div class="m-links"><a href="'+esc(x.링크)+'" target="_blank" rel="noopener">'+esc(x.링크라벨||'원문 보기')+' ↗</a></div>':'';
+    const linkA=[];
+    if(x.상세링크) linkA.push('<a href="'+esc(x.상세링크)+'" target="_blank" rel="noopener">'+(x.source==='applyhome'?'청약홈 공고':'LH 공고·청약 페이지')+' ↗</a>');
+    if(x.공고PDF) linkA.push('<a href="'+esc(x.공고PDF)+'" target="_blank" rel="noopener" class="sec">공고문 PDF ↓</a>');
+    const links=linkA.length?'<div class="m-links">'+linkA.join('')+'</div>':'';
     $('#modal').innerHTML=
       '<div class="m-head"><button class="m-close" onclick="closeModal()">✕</button>'
       +'<div class="row1"><span class="badge b-'+x.판정+'">'+x.판정+'</span>'+typeTag(x)+ddayHtml(x)+'</div>'
@@ -579,7 +601,7 @@
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModal(); closeDrawer(); closeWizard(); } });
 
   // ── 필터/정렬 ──
-  const state={판정:'',supply:'',type:'',q:'',sort:'smart',regionOnly:false,분양류:false,activeOnly:true};
+  const state={판정:'',supply:'',type:'',region:'',q:'',sort:'smart',regionOnly:false,분양류:false,activeOnly:true};
   const ACTIVE=new Set(['접수중','공고중','정정공고중','접수예정']);
   const isActive=x=>ACTIVE.has(x.상태)&&(x.dday==null||x.dday>=0);
   function apply(){
@@ -588,6 +610,7 @@
     if(state.판정) r=r.filter(x=>x.판정===state.판정);
     if(state.supply) r=r.filter(x=>x.공급형태===state.supply);
     if(state.type) r=r.filter(x=>x.유형===state.type);
+    if(state.region) r=r.filter(x=>(x.시도목록||[]).includes(state.region)||(x.시도목록||[]).includes('전국'));
     if(state.regionOnly) r=r.filter(x=>x.희망지역매칭===true);
     if(state.분양류) r=r.filter(x=>x.공급형태==='분양'||x.분양전환===true);
     if(state.q){ const q=state.q.toLowerCase(); r=r.filter(x=>(x.공고명+' '+x.지역+' '+x.유형).toLowerCase().includes(q)); }
@@ -623,6 +646,13 @@
     const types=[...new Set(LIST.map(x=>x.유형))].sort();
     const cur=$('#typeSel').value;
     $('#typeSel').innerHTML='<option value="">전체 유형</option>'+types.map(t=>'<option'+(t===cur?' selected':'')+'>'+esc(t)+'</option>').join('');
+    // 지역(시·도) 옵션 — 활성 공고에 등장하는 시·도만, 표준 순서·건수 표기. '전국' 공고는 모든 지역에서 노출되므로 옵션서 제외.
+    const base=LIST.filter(isActive), cnt={};
+    base.forEach(x=>(x.시도목록||[]).forEach(s=>{ if(s!=='전국') cnt[s]=(cnt[s]||0)+1; }));
+    const nation=base.filter(x=>(x.시도목록||[]).includes('전국')).length;
+    const rcur=$('#regionSel').value;
+    $('#regionSel').innerHTML='<option value="">전체 지역</option>'
+      +SIDO_ORDER.filter(s=>cnt[s]).map(s=>'<option value="'+s+'"'+(s===rcur?' selected':'')+'>'+esc(s)+' ('+(cnt[s]+nation)+')</option>').join('');
     const chips=[
       {id:'regionOnly',label:'희망지역만',c:LIST.filter(x=>x.희망지역매칭).length},
       {id:'분양류',label:'분양(전환)',c:LIST.filter(x=>x.공급형태==='분양'||x.분양전환===true).length},
@@ -911,6 +941,7 @@
   $('#q').addEventListener('input',e=>{ state.q=e.target.value.trim(); apply(); });
   $('#supplySel').addEventListener('change',e=>{ state.supply=e.target.value; apply(); });
   $('#typeSel').addEventListener('change',e=>{ state.type=e.target.value; apply(); });
+  $('#regionSel').addEventListener('change',e=>{ state.region=e.target.value; apply(); });
   $('#sortSel').addEventListener('change',e=>{ state.sort=e.target.value; apply(); });
 
   // ── 첫 방문 단계별 마법사(카드뉴스식) — 한 번에 하나씩, 모르면 건너뛰기 ──

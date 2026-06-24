@@ -19,6 +19,7 @@ for (const [src, base] of SRC) {
     const f = new URL(`${n}/requirements.json`, base);
     if (!existsSync(f)) continue;
     const r = JSON.parse(readFileSync(f, 'utf8'));
+    if (r.원문링크) delete r.원문링크.로컬PDF; // 개인 절대경로(/Users/…) 공개 site 유출 방지
     const li = src === 'lh' ? liveIdx[r.panId] : null;
     if (li) { if (li.상태) r.상태 = li.상태; if ('마감일' in li) r.마감일 = li.마감일; }
     r.__src = src; r.__id = `${src}:${r.panId || r.no || n}`;
