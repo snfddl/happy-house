@@ -1,14 +1,16 @@
 // normalize-requirements.mjs — 추출된 requirements.json의 '계층별' 메타를 결정론적으로 정규화(canonical schema v1).
 //   추출(Sonnet)은 계층 키/필드명을 자유형으로 뱉어 같은 개념이 제각각(자산상한 vs 총자산상한, 신혼부부·한부모가족 vs …계층).
 //   이 패스가 동의어→캐논으로 표준화 + 만원→원 숫자화 + 키 충돌 병합. 무손실·멱등(두 번 돌려도 동일). 외부 LLM 0.
-//   사용: node normalize-requirements.mjs [--report] [panId ...]
+//   사용: node normalize-requirements.mjs [--source=lh|myhome|sh|gh] [--report] [panId ...]
+//     --source= : 정규화할 소스 디렉터리(data/derived/<source>/). 기본 lh.
 //     --report  : 쓰지 않고 변경 요약만 출력
-//     panId 인자 : 해당 공고만(없으면 data/derived/lh 전체)
+//     panId 인자 : 해당 공고만(없으면 data/derived/<source> 전체)
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 
 const HERE = new URL('./', import.meta.url);
-const DERIVED = new URL('data/derived/lh/', HERE);
 const args = process.argv.slice(2);
+const SOURCE = (args.find(a => a.startsWith('--source=')) || '--source=lh').split('=')[1];
+const DERIVED = new URL(`data/derived/${SOURCE}/`, HERE);
 const REPORT = args.includes('--report');
 const onlyPans = args.filter(a => !a.startsWith('--'));
 
@@ -108,10 +110,10 @@ function normTargetList(arr) {
 
 // ── 한 공고 정규화 ────────────────────────────────────────────
 function normalizeReq(r) {
-  // 통합 envelope 스탬프(SCHEMA.md §4): LH derived는 전부 임대. id=panId, source=lh, 상품군=임대. 멱등.
+  // 통합 envelope 스탬프(SCHEMA.md §4): id=panId. source는 --source 인자(myhome/sh/gh는 수집기가 이미 채움 → 보존). 멱등.
   const envBefore = `${r.source}|${r.상품군}`;
   if (r.no && !r.panId) { r.panId = r.no; delete r.no; }
-  r.source = 'lh'; r.상품군 = '임대';
+  r.source = r.source || SOURCE; r.상품군 = r.상품군 || '임대';
   // 일부 추출이 접수/마감을 top-level(접수시작·마감일) 대신 `일정` 객체에 자유문장으로만 둠 → 매처(req.마감일=D-day)가 읽도록 hoist(멱등)
   let dateHoisted = false;
   if (r.마감일 == null && r.일정 && typeof r.일정 === 'object') {

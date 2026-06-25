@@ -8,6 +8,14 @@ const SRC = [['lh', new URL('derived/lh/', ROOT)], ['applyhome', new URL('derive
 const LIVE_OVERLAY = new Set(['lh', 'gh']);   // 수집기가 index에 최신 상태·마감일을 갱신하는 소스(빌드때 신선도 덮어쓰기)
 const TODAY = new Date().toISOString().slice(0, 10);
 
+// 빌드시 신선도 결정론 재계산. 마감일이 지났으면 '접수마감'으로(수집/추출 후 시간이 흘러도 빌드 TODAY가 권위).
+//   보수적: 마감 외에는 기존 상태 보존 → '정정공고중'·'공고중' 같은 활성 뉘앙스를 '접수중'으로 평탄화하지 않음.
+const ACTIVE = new Set(['접수중', '공고중', '정정공고중', '접수예정']);
+function freshStatus(b, e, prev) {
+  if (e && TODAY > e) return '접수마감';        // 마감일 경과 → 마감(유일한 결정론 강등)
+  return prev ?? (e ? '접수중' : null);           // 그 외엔 기존 상태 보존
+}
+
 // 수집기(lh-collect)가 매 실행 갱신하는 최신 상태/마감일. 빌드 때 requirements에 덮어써 신선도 유지(접수중 필터·D-day).
 const idxPath = new URL('index.json', ROOT);
 const liveIdx = existsSync(idxPath) ? JSON.parse(readFileSync(idxPath, 'utf8')) : {};
@@ -23,6 +31,10 @@ for (const [src, base] of SRC) {
     if (r.원문링크) delete r.원문링크.로컬PDF; // 개인 절대경로(/Users/…) 공개 site 유출 방지
     const li = LIVE_OVERLAY.has(src) ? liveIdx[r.panId] : null;
     if (li) { if (li.상태) r.상태 = li.상태; if ('마감일' in li) r.마감일 = li.마감일; }
+    // 마감일 지난 건은 TODAY 기준 '접수마감'으로 강등(오버레이 없는 applyhome/myhome/sh도 신선도 유지).
+    r.상태 = freshStatus(r.접수시작, r.마감일, r.상태);
+    // SH 등 날짜 자체가 없는 활성건: 거짓 '공고중' 대신 '마감일 미상'으로 정직 표시(수시모집은 접수시작이 있어 제외).
+    if (!r.마감일 && !r.접수시작 && ACTIVE.has(r.상태)) r.마감일미상 = true;
     r.__src = src; r.__id = `${src}:${r.panId || r.no || n}`;
     reqs.push(r);
   }

@@ -474,7 +474,7 @@ export function createMatcher(P, todayStr) {
 
     return {
       panId: req.panId ?? req.no, 유형: req.유형, 공고명: req.공고명, 지역: req.지역,
-      상태: req.상태, 마감일: req.마감일, dday, 판정,
+      상태: req.상태, 마감일: req.마감일, 마감일미상: req.마감일미상 || false, dday, 판정,
       공급형태: '분양', 공급형태설명: `분양 · 분양가 ${분양가 || '?'} · 특공해당 ${특공.length ? 특공.join(',') : '없음/확인'}`,
       분양전환: false,
       실격사유: fails, 확인필요: checks, 참고,
@@ -511,7 +511,7 @@ export function createMatcher(P, todayStr) {
     const supply = supplyForm(req);
     return {
       panId: req.panId, 유형: req.유형, 공고명: req.공고명, 지역: req.지역,
-      상태: req.상태, 마감일: req.마감일, dday, 판정,
+      상태: req.상태, 마감일: req.마감일, 마감일미상: req.마감일미상 || false, dday, 판정,
       공급형태: supply.code, 공급형태설명: supply.label,
       분양전환: req.분양전환 === '분양전환형',
       실격사유: fails.map(([k, g]) => `${k}:${g.m}`),

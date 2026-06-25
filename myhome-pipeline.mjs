@@ -111,5 +111,12 @@ log(`[2/3] 요건추출 — claude -p (Sonnet, 동시성 ${CONC})`);
 await poolRun(targets, CONC, extractOne);
 
 // ── 3. 계층 정규화 ────────────────────────────────────────────
-log('[3/3] 계층별 메타 정규화(normalize-requirements 로직은 LH 디렉터리 기준이라 myhome는 envelope 스탬프만 별도 확인)');
+//   추출(Sonnet)이 계층 키/필드를 자유형으로 뱉으면 매처(tierLimit/tierKeyFor)가 캐논 키로 못 찾아 자산/소득 게이트가 조용히 누락됨.
+//   normalize-requirements.mjs를 --source로 같은 디렉터리에 적용(결정론·멱등). LH(pipeline.mjs)와 동일 패턴.
+log('[3/3] 계층별 메타 정규화 — normalize-requirements.mjs');
+const normalizer = p(new URL('normalize-requirements.mjs', HERE));
+try {
+  const out = execFileSync('node', [normalizer, `--source=${SOURCE}`, ...targets.map(t => t.slug)], { cwd: p(HERE) }).toString('utf8');
+  process.stdout.write(out);
+} catch (e) { log(`  ⚠️ 정규화 실패: ${e.message}`); }
 log('완료. build-site.mjs 재실행으로 사이트 반영.');
