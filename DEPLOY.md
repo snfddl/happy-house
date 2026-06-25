@@ -36,12 +36,13 @@ push 트리거 경로: `site/**`, `*.mjs`, `data/derived/**`, `.github/workflows
 
 **신규 공고가 떴을 때** (CI가 이슈로 알림 / 또는 `node lh-collect.mjs --refresh`로 직접 확인):
 ```bash
-node pipeline.mjs                 # 수집→추출(claude -p)→정규화→xlsx→링크→검증
-node build-site.mjs               # 사이트 재빌드(168→…)
+node process-all.mjs              # 전 소스 통합: collect→derive/extract(claude -p)→정규화→검증→build
 git add data/derived data/index.json site/index.html
 git commit -m "feat: 신규 공고 N건"
 git push                          # push 트리거 → 자동 배포
 ```
+`process-all.mjs`가 소스별 진입점(LH=`pipeline.mjs`, applyhome=`applyhome-collect`+`derive`, myhome/sh/gh=`*-collect`+`myhome-pipeline`)을 순서대로 호출하고 마지막에 `build-site`까지 수행한다. 특정 소스만: `--source=sh,gh`. 한 소스만 따로: 기존 진입점 직접 호출도 그대로 유효.
+검증 리포트: `data/pipeline-report.json`(LH) · `data/<source>-report.json`(myhome/sh/gh).
 
 **UI/로직만 고쳤을 때**: `_template.html`/`match-core.mjs` 수정 → `node build-site.mjs` → 커밋·push → 자동 배포.
 (`match-core.mjs`는 빌드 때 `site/index.html`에 인라인되므로 반드시 재빌드.)
