@@ -39,7 +39,8 @@
   - **완료(2026-06-25):** 캐논 `PAMPHLET_PAT`로 교체(평면도·카달로그 포함). dry-run: LH 24개 홍보파일 이제 스킵, 공고문 오스킵 0. **기존 디스크 홍보PDF 7개/27.1MB도 prune**(meta 정합 갱신, raw 610→583M, 공고문 무손실).
 - [x] **#8 공유유틸 추출 미완.** ~~mergeNewPending·fetchNoticeFiles·toEnvelope 플레이스홀더·SKIP_PAT 4벌 → #7 근본원인.~~
   - **완료(2026-06-25):** collect-util에 `PAMPHLET_PAT`/`NON_NOTICE_PAT`(캐논 패턴 2종, 드리프트 종식)·`mergeNewPending(root,src,entries)`·`saveDoc`(fetch-검증-저장 코어, 메커니즘은 fetchBuf 콜백 주입으로 fetch/cert-https 차이 흡수)·`emptyQualification(소득비고)` 추출. lh/myhome/sh/gh 4 수집기 재배선. 검증: saveDoc 단위 7/7(스킵·비문서·HTML에러·성공·저장·오류), emptyQualification 키 동등, 5파일 node --check.
-- [ ] **#9 슬라이서 sub-block 제거에 RISK_LINE fail-safe 없음.** `slice-notice.mjs:48-57` — top-level만 가드. 현재 손실 0이나 미보장. sub-block에도 RISK_LINE 적용.
+- [x] **#9 슬라이서 sub-block 제거에 RISK_LINE fail-safe 없음.** ~~top-level만 가드, sub-block 미보장.~~
+  - **완료(2026-06-25):** `stripSubBlocks`에 **라인 단위 RISK_LINE 보존** 추가(제거대상 절차블록이어도 요건표 라인은 살림). 블록 단위(A)는 절감 20.3%→13.5%로 중복 과다보존이라 기각, 라인 단위(B)는 **20.2%(원래와 동일) 유지하며 95건 fail-safe 적용**. 정밀확인: DROP_SUB 블록은 절차문이고 요건표는 보존 섹션에 있어 기존 추출 영향 없음 → 손실 0 보장이 핵심.
 - [x] **#10 freshStatus↔statusOf 불일치(미래 접수시작).** ~~빌드 신선도가 미래 접수시작을 '접수중'으로 오표시.~~
   - **완료(2026-06-25):** `freshStatus`에 `if (b && TODAY<b) return '접수예정'` 추가(prev 보존 보수성은 유지). 검증: 미래 접수시작 LH 71건(2026-06-26~07월)이 과거 '공고중' 오표시 → 정확히 '접수예정'으로 정정.
 - [ ] **#11 index.json 무한누적**(485건 66% 마감) · [x] **#12 gh-collect TODAY 재선언**(미사용 dead 선언이라 삭제) · **#13 pipeline/myhome-pipeline 스캐폴딩 중복**.

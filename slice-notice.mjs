@@ -44,14 +44,15 @@ function splitTopSections(text) {
   return sections;
 }
 
-// 보존 섹션 안에서 ■/▣/○/◦ 하위 보일러플레이트 블록 제거
+// 보존 섹션 안에서 ■/▣/○/◦ 하위 보일러플레이트 블록 제거.
+//   #9 fail-safe(라인 단위): 제거대상 하위블록(산정·접수방법 등 *절차 설명*)이라도 요건표 라인(RISK_LINE: 소득/자산/배점 기준값)은 보존.
+//   DROP_SUB 블록은 절차문이라 요건표 자체는 보존 섹션에 있음(전수 확인). 의심 라인만 살려 손실 0 보장하되 절차 본문은 제거(절감 유지).
 function stripSubBlocks(secLines) {
   const out = [];
   let dropping = false;
   for (const ln of secLines) {
-    const isHead = /^\s*[■▣◆●○◦▶]/.test(ln);
-    if (isHead) dropping = DROP_SUB.test(ln);
-    if (!dropping) out.push(ln);
+    if (/^\s*[■▣◆●○◦▶]/.test(ln)) dropping = DROP_SUB.test(ln);
+    if (!dropping || RISK_LINE.test(ln)) out.push(ln);   // 보존 라인이거나, 제거블록이어도 요건표 라인이면 보존
   }
   return out;
 }
