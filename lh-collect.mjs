@@ -4,9 +4,9 @@
 //       node lh-collect.mjs 11 26 41              (서울/부산/경기, 전체 임대유형)
 // 원칙: raw/ 는 불변(원본). derived/ 는 재생성 가능. index.json 으로 신규 diff.
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
+import { UA, dwell, sani, getArg, loadIndex, loadServiceKey } from './collect-util.mjs';
 
 const BASE = 'https://apply.lh.or.kr/lhapply';
-const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36';
 const ROOT = new URL('./data/', import.meta.url);
 const RAW = new URL('raw/lh/', ROOT);
 const IDX = new URL('index.json', ROOT);
@@ -44,17 +44,14 @@ async function req(url, opts = {}) {
   absorb(res);
   return res;
 }
-const dwell = ms => new Promise(r => setTimeout(r, ms)); // 예의상 간격
 
 // ── 유틸 ───────────────────────────────────────────────────
-const sani = s => s.replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, ' ').trim().slice(0, 120);
 function cdName(disposition, fallback) {
   const m = (disposition || '').match(/filename="?([^";]+)"?/);
   if (!m) return fallback;
   try { return Buffer.from(m[1], 'latin1').toString('utf8'); } catch { return m[1]; }
 }
-function loadIndex() { try { return JSON.parse(readFileSync(IDX, 'utf8')); } catch { return {}; } }
-const index = loadIndex();
+const index = loadIndex(IDX);
 
 // ── 1) 세션 (상세/PDF 다운로드용 쿠키) ─────────────────────
 await req(`${BASE}/apply/wt/wrtanc/selectWrtancList.do?mi=1026`);
@@ -65,12 +62,10 @@ await req(`${BASE}/apply/wt/wrtanc/selectWrtancList.do?mi=1026`);
 const today = new Date();
 const fmt = d => d.toISOString().slice(0, 10);
 // 초기 백필 범위. 이후 실행은 index.json diff로 신규만 추가됨. --since=YYYY-MM-DD 로 조정
-const startDt = (argv.find(a => a.startsWith('--since=')) || '--since=2026-05-01').split('=')[1];
+const startDt = getArg('since', '2026-05-01');
 
 // data.go.kr 서비스키(.env, 인코딩/디코딩 무관 — applyhome-collect와 동일 규칙)
-let API_KEY = process.env.DATA_GO_KR_SERVICE_KEY || '';
-try { for (const line of readFileSync(new URL('.env', import.meta.url), 'utf8').split('\n')) { const m = line.match(/^DATA_GO_KR_SERVICE_KEY=(.*)$/); if (m) API_KEY = m[1].trim(); } } catch {}
-const SERVICE_KEY = /%[0-9A-Fa-f]{2}/.test(API_KEY) ? decodeURIComponent(API_KEY) : API_KEY;
+const SERVICE_KEY = loadServiceKey();
 if (!SERVICE_KEY) {
   // CI(키 미주입)에서 --refresh로 호출되면 LH만 건너뛰고 정상종료 — SH/GH 등 키 불필요 소스가 이어서 돌 수 있게(refresh.yml).
   if (REFRESH) { console.warn('⚠️ DATA_GO_KR_SERVICE_KEY 없음 — LH refresh 생략(키 필요). 키 불필요 소스(SH/GH)만 진행.'); process.exit(0); }

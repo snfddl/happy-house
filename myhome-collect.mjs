@@ -5,7 +5,8 @@
 //   → 마이홈은 LH 사각지대(지방 도시·개발공사 임대)만 보강. SH/GH는 자체시스템 운영으로 미포함될 수 있음(커버리지 한계).
 //   소득·자산 요건은 구조화 미제공 → 공고문 PDF(pcUrl) 추출 후속(LH식 파이프라인 재사용).
 // 사용: node myhome-collect.mjs [--since=2026-05-01] [--include-lh] [--probe]
-import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
+import { UA, dwell, sani, dnorm, getArg, loadIndex, loadServiceKey } from './collect-util.mjs';
 
 const BASE = 'http://apis.data.go.kr/1613000/HWSPR02';
 const LIST_OP = 'rsdtRcritNtcList';
@@ -15,21 +16,15 @@ const DERIVED = new URL('derived/myhome/', ROOT);
 const IDX = new URL('index.json', ROOT);
 
 const argv = process.argv.slice(2);
-const getArg = (k, d) => (argv.find(a => a.startsWith(`--${k}=`)) || `--${k}=${d}`).split('=')[1];
 const PROBE = argv.includes('--probe');
 const INCLUDE_LH = argv.includes('--include-lh');   // 기본은 LH 제외(lh-collect가 담당)
 const SINCE = getArg('since', '2026-05-01');
 
-let KEY = process.env.DATA_GO_KR_SERVICE_KEY || '';
-try { for (const line of readFileSync(new URL('.env', import.meta.url), 'utf8').split('\n')) { const m = line.match(/^DATA_GO_KR_SERVICE_KEY=(.*)$/); if (m) KEY = m[1].trim(); } } catch {}
-if (!KEY) { console.error('❌ .env 의 DATA_GO_KR_SERVICE_KEY 가 비어있음'); process.exit(1); }
-const SERVICE_KEY = /%[0-9A-Fa-f]{2}/.test(KEY) ? decodeURIComponent(KEY) : KEY;
+const SERVICE_KEY = loadServiceKey();
+if (!SERVICE_KEY) { console.error('❌ .env 의 DATA_GO_KR_SERVICE_KEY 가 비어있음'); process.exit(1); }
 
-const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36';
 const FILE_DOWN = 'https://www.myhome.go.kr/hws/com/fms/cvplFileDownload.do';
 const SKIP_PAT = /팸플릿|팜플렛|리플렛|리플릿|브로슈어|카탈로그|조감도|평면도/;
-const sani = s => String(s).replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, ' ').trim().slice(0, 120);
-const dwell = ms => new Promise(r => setTimeout(r, ms));
 const TODAY = new Date().toISOString().slice(0, 10);
 
 // 상세페이지(pcUrl) → 공고문 PDF/HWP 첨부 다운로드 (전자정부 cvplFileDownload.do, atchFileId+fileSn GET)
@@ -56,10 +51,8 @@ async function fetchNoticeFiles(pblancId, houseSn, dir) {
   }
   return files;
 }
-const dnorm = s => { const d = (s || '').replace(/\D/g, ''); return d.length === 8 ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}` : null; };
 const numOrNull = v => { const n = Number(String(v ?? '').replace(/[^\d]/g, '')); return Number.isFinite(n) && n > 0 ? n : null; };
 function statusOf(b, e) { if (b && TODAY < b) return '접수예정'; if (e && TODAY > e) return '접수마감'; if (b && e) return '접수중'; return null; }
-function loadIndex() { try { return JSON.parse(readFileSync(IDX, 'utf8')); } catch { return {}; } }
 
 async function fetchPage(pageNo, numOfRows) {
   const qs = new URLSearchParams({ serviceKey: SERVICE_KEY, pageNo: String(pageNo), numOfRows: String(numOfRows), type: 'json' });
@@ -104,7 +97,7 @@ if (PROBE) {
   process.exit(0);
 }
 
-const index = loadIndex();
+const index = loadIndex(IDX);
 let isNew = 0, kept = 0, skippedOld = 0, skippedLh = 0;
 const byInstt = {};
 try {

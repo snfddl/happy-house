@@ -10,6 +10,7 @@
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import https from 'node:https';
 import tls from 'node:tls';
+import { UA, dwell, sani, getArg, loadIndex } from './collect-util.mjs';
 
 const ORIGIN = 'https://apply.gh.or.kr';
 // apply.gh.or.kr는 leaf 인증서만 보내고 중간 인증서(Sectigo RSA OV)를 누락 → Node fetch가 체인검증 실패.
@@ -72,12 +73,10 @@ const DERIVED = new URL('derived/gh/', ROOT);
 const IDX = new URL('index.json', ROOT);
 
 const argv = process.argv.slice(2);
-const getArg = (k, d) => (argv.find(a => a.startsWith(`--${k}=`)) || `--${k}=${d}`).split('=')[1];
 const PROBE = argv.includes('--probe');
 const REFRESH = argv.includes('--refresh');   // CI 갱신: 기존 상태/마감일 갱신 + 신규는 new-pending 기록만(다운로드/추출 없음). 키 불필요.
 const SINCE = getArg('since', '2026-05-01');
 
-const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36';
 // 게시판: [라벨, sb-board(목록/상세), sr-board(파일다운)]. sr7150=공공임대, sr7155=매입임대.
 const BOARDS = [
   ['임대', 'sr7150', 'sr7150'],
@@ -89,10 +88,7 @@ const detailUrl = b => `${ORIGIN}/sb/sr/${b[1]}/selectPbancDetailView.do`;
 const fileDownUrl = (b, p) => `${ORIGIN}/sr/${b[2]}/selectFileDown.do?pbancNo=${encodeURIComponent(p.pbancNo)}&atchFileSn=${encodeURIComponent(p.atchFileSn)}&atchFileDtlSn=${encodeURIComponent(p.atchFileDtlSn)}&mode=1`;
 
 const SKIP_FILE = /팸플릿|팜플렛|리플렛|리플릿|브로슈어|카탈로그|조감도|평면도|위임장|서식|별지/;
-const sani = s => String(s).replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, ' ').trim().slice(0, 120);
-const dwell = ms => new Promise(r => setTimeout(r, ms));
 const TODAY = new Date().toISOString().slice(0, 10);
-function loadIndex() { try { return JSON.parse(readFileSync(IDX, 'utf8')); } catch { return {}; } }
 // new-pending.json 소스별 병합(CI에서 lh→sh→gh 순차 갱신 시 서로 덮어쓰지 않게). 이 소스 항목만 교체.
 function mergeNewPending(source, entries) {
   let cur = []; try { cur = JSON.parse(readFileSync(new URL('new-pending.json', ROOT), 'utf8')); } catch {}
@@ -203,7 +199,7 @@ if (PROBE) {
   process.exit(0);
 }
 
-const index = loadIndex();
+const index = loadIndex(IDX);
 let isNew = 0, kept = 0, skippedOld = 0;
 const byBoard = {}, newPending = [];
 try {

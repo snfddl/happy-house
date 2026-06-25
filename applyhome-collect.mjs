@@ -6,6 +6,7 @@
 // 원칙: raw/ 는 불변(원본 API 응답 detail.json/models.json). meta.json·index는 갱신 가능.
 //   외부 LLM API 미사용(구조화 JSON이라 추출 불필요). 상세: 청약홈_분양_API_노트.md
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
+import { dwell, dnorm, getArg, loadIndex, loadServiceKey } from './collect-util.mjs';
 
 const SVC = 'https://api.odcloud.kr/api/ApplyhomeInfoDetailSvc/v1';
 // [라벨, 공고헤더 op, 주택형별 op, 기본kind]. 전 op HTTP 200 실측(2026-06-24).
@@ -22,29 +23,19 @@ const IDX = new URL('index.json', ROOT);
 
 // ── 인자 ───────────────────────────────────────────────────
 const argv = process.argv.slice(2);
-const getArg = (k, d) => (argv.find(a => a.startsWith(`--${k}=`)) || `--${k}=${d}`).split('=')[1];
 const SINCE = getArg('since', '2026-05-01');          // 모집공고일 이 날짜 이후만 (클라 측 컷)
 const PER_PAGE = Number(getArg('perPage', '1000'));
 const ONLY = getArg('only', '').split(',').map(s => s.trim()).filter(Boolean); // family 라벨 제한(빈값=전체)
 
 // ── 키 로드(.env, 인코딩/디코딩 무관) ──────────────────────
-let KEY = process.env.DATA_GO_KR_SERVICE_KEY || '';
-try {
-  for (const line of readFileSync(new URL('.env', import.meta.url), 'utf8').split('\n')) {
-    const m = line.match(/^DATA_GO_KR_SERVICE_KEY=(.*)$/);
-    if (m) KEY = m[1].trim();
-  }
-} catch {}
-if (!KEY) { console.error('❌ .env 의 DATA_GO_KR_SERVICE_KEY 가 비어있음'); process.exit(1); }
-const SERVICE_KEY = /%[0-9A-Fa-f]{2}/.test(KEY) ? decodeURIComponent(KEY) : KEY; // URLSearchParams가 재인코딩
+const SERVICE_KEY = loadServiceKey();
+if (!SERVICE_KEY) { console.error('❌ .env 의 DATA_GO_KR_SERVICE_KEY 가 비어있음'); process.exit(1); }
 
 // ── 유틸 ───────────────────────────────────────────────────
-const dwell = ms => new Promise(r => setTimeout(r, ms));
 const today = new Date();
 const fmt = d => d.toISOString().slice(0, 10);
 const TODAY = fmt(today);
-// family마다 날짜 포맷이 다름(ISO "2026-06-24" vs 압축 "20260624") → YYYY-MM-DD로 정규화
-const dnorm = s => { const d = (s || '').replace(/\D/g, ''); return d.length === 8 ? `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}` : null; };
+// family마다 날짜 포맷이 다름(ISO "2026-06-24" vs 압축 "20260624") → YYYY-MM-DD로 정규화(dnorm: collect-util)
 // 접수일: APT는 RCEPT_*, 그 외 family는 SUBSCRPT_RCEPT_* (실측)
 const rceptOf = d => [dnorm(d.RCEPT_BGNDE ?? d.SUBSCRPT_RCEPT_BGNDE), dnorm(d.RCEPT_ENDDE ?? d.SUBSCRPT_RCEPT_ENDDE)];
 const spsplyOf = d => [dnorm(d.SPSPLY_RCEPT_BGNDE), dnorm(d.SPSPLY_RCEPT_ENDDE)];
@@ -60,8 +51,7 @@ function statusOf([b, e]) {
 // 주의: Urbty의 HOUSE_SECD_NM은 전 행이 "도시형/오피스텔/생활숙박시설/민간임대" 통짜 카테고리라 판별에 쓰면 안 됨 → 세부유형으로만.
 const rowKind = (famKind, d) => (famKind === 'rent' || /임대/.test(d.RENT_SECD_NM || '') || /임대/.test(d.HOUSE_DTL_SECD_NM ?? d.HOUSE_DETAIL_SECD_NM ?? '')) ? 'rent' : 'sale';
 
-function loadIndex() { try { return JSON.parse(readFileSync(IDX, 'utf8')); } catch { return {}; } }
-const index = loadIndex();
+const index = loadIndex(IDX);
 
 // odcloud 페이징: totalCount 채울 때까지 페이지 순회
 async function fetchAll(op) {
