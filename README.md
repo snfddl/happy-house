@@ -2,6 +2,7 @@
 
 LH 등 공공임대주택 공고를 **수집 → 요건 자동 구조화 → 개인 조건 매칭 → (예정) 알림**하는 개인용 서비스.
 공고문(PDF)을 자격/순위/소득·자산/임대료 스키마로 뽑아, 사용자 프로필을 대입해 "지원가능/순위/예상배점"을 계산한다.
+**5소스(LH·청약홈·마이홈·SH·GH)를 단일 envelope로 통합** — 진입점 `node process-all.mjs`, 전체 구조는 `ARCHITECTURE.md` 참고.
 
 ## 현재 상태 (2026-06-24)
 
@@ -28,7 +29,8 @@ LH 등 공공임대주택 공고를 **수집 → 요건 자동 구조화 → 개
 ## 빠른 실행
 
 ```bash
-node pipeline.mjs              # [임대] 신규 공고 수집~추출~정규화~검증 완전자동 (PIPELINE.md 참고)
+node process-all.mjs           # [전 소스] 진입점 — LH·청약홈·마이홈·SH·GH 수집~파생/추출~검증~사이트빌드 통합 (--source=sh,gh / --skip-collect / --semi / --no-build)
+node pipeline.mjs              # [임대·LH] 신규 공고 수집~추출~정규화~검증 완전자동 (process-all의 LH 하위 단계, PIPELINE.md 참고)
 node normalize-requirements.mjs # 계층별 메타 캐논 정규화(파이프라인에 포함, 단독 재실행 가능. --report=미저장 점검)
 node match.mjs                 # profile.json 으로 임대+분양 매칭 (로직=match-core.mjs 공유)(--possible/--supply=/--type=)
 node applyhome-collect.mjs     # [분양] 청약홈 OpenAPI 수집 (--since=2026-05-01 / --include-rent)
@@ -48,17 +50,30 @@ node prune-index.mjs           # [관리] 오래된 마감 공고를 index→ind
 
 | 문서 | 내용 |
 |---|---|
+| **개요·런북** | |
 | `README.md` | 진입점·현재 상태·실행 (이 문서) |
+| `ARCHITECTURE.md` | **전체 구조 한 장** — 5소스→통합 envelope→매칭→사이트 데이터 흐름·모듈 지도 |
+| `PIPELINE.md` | LH 신규 공고 처리 파이프라인 런북(`pipeline.mjs` 6단계) |
+| `DEPLOY.md` | 무료 자동배포(GitHub Actions + Pages) 구조·운영 런북 |
+| `CLAUDE.md` | 작업 규칙(절대규칙 포함) — 에이전트/기여자용 |
+| **기획·진단** | |
 | `ROADMAP.md` | 다음 할 일·백로그 |
 | `DECISIONS.md` | 주요 결정과 그 이유 (경량 ADR) |
-| `CLAUDE.md` | 작업 규칙(절대규칙 포함) — 에이전트/기여자용 |
-| `DEPLOY.md` | 무료 자동배포(GitHub Actions + Pages) 구조·운영 런북 |
+| `MONETIZATION.md` | 수익화 모델(무료조회+유료알림)·호스팅 전략 |
+| `PRECISION_TEST.md` | 매칭 정밀도 테스트 결과·방법 |
+| `AUDIT.md` | 코드·아키텍처 진단 기록(Round 1·2, 이슈별 처리내역) |
+| **핵심 코드 모듈** | |
+| `process-all.mjs` | **진입점** — 전 5소스 통합 오케스트레이터(얇은 시퀀서) |
 | `match-core.mjs` | 매칭 로직 단일 소스(순수 함수) — `match.mjs`·조회페이지 공유 |
 | `normalize-requirements.mjs` | 계층별 메타 캐논 정규화(키/필드 enum·만원→원·멱등) |
-| `.github/workflows/refresh.yml` | CI: cron 상태갱신 + push 자동배포 → Pages |
-| `PIPELINE.md` | 신규 공고 처리 파이프라인 런북 |
-| `SCHEMA.md` | 데이터 스키마(3층: UserProfile·NoticeRequirements·Matching). §6=분양 변형 |
+| `validate-requirements.mjs` | 전 소스 공통 요건 검증 게이트(pass/review/fail) |
+| `check-canon-drift.mjs` | 계층 캐논 함수 드리프트 가드(매처↔정규화 동일성 assert, 빌드 전 차단) |
+| `collect-util.mjs` | 5종 수집기 공통 순수유틸(목록·envelope 헬퍼) |
+| **스키마·CI** | |
+| `SCHEMA.md` | 데이터 스키마(3층: UserProfile·NoticeRequirements·Matching). §0=통합 envelope, §6=분양 변형 |
 | `schema-v1.jsonc` / `schema-sale-v1.jsonc` | 임대 / 분양 requirements 컴팩트 스키마 |
+| `.github/workflows/refresh.yml` | CI: cron 상태갱신 + push 자동배포 → Pages |
+| **소스 RE 노트** | |
 | `LH_SCRAPE_NOTES.md` | LH 스크래핑 리버스엔지니어링 노트 |
 | `청약홈_분양_API_노트.md` | 분양 확장 — 청약홈 OpenAPI 소스 노트(엔드포인트·필드·구현계획) |
 

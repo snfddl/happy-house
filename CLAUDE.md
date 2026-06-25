@@ -1,9 +1,10 @@
 # happy-house — 프로젝트 규칙
 
 LH 등 임대주택 공고 수집·요건 추출·알림 개인용 서비스.
-설계 상세는 `SCHEMA.md`, 스크래핑 RE 노트는 `LH_SCRAPE_NOTES.md`, **신규 공고 처리 파이프라인은 `PIPELINE.md`** 참고.
+**전체 아키텍처는 `ARCHITECTURE.md`**, 설계 상세는 `SCHEMA.md`, 스크래핑 RE 노트는 `LH_SCRAPE_NOTES.md`, 신규 공고 처리 파이프라인은 `PIPELINE.md` 참고.
 
-**진입점: `node pipeline.mjs`** — 수집→타깃선정→슬라이스→요건추출(헤드리스)→xlsx파싱→링크주입→검증게이트를 신규 공고만 증분 처리(완전자동). 외부 LLM API 0.
+**진입점: `node process-all.mjs`** — 전 5소스(LH·청약홈·마이홈·SH·GH)를 수집→파생/요건추출→정규화→검증게이트→사이트빌드까지 통합 처리하는 얇은 시퀀서. 외부 LLM API 0.
+  - **LH 단일 파이프라인은 그 하위 단계인 `node pipeline.mjs`** (수집→타깃선정→슬라이스→요건추출(헤드리스)→xlsx파싱→링크주입→검증게이트, 신규만 증분). 한 소스만 돌릴 땐 기존 진입점 직접 호출도 그대로 유효.
 
 ## 1. 절대 규칙
 
@@ -11,7 +12,9 @@ LH 등 임대주택 공고 수집·요건 추출·알림 개인용 서비스.
   - 공고문 요건 추출 같은 LLM 작업은 **Claude Code 에이전트(이 세션/슬래시 명령/워크플로우)로** 수행한다 — API 키·과금 없음 (CertiQ의 vision 추출 패턴과 동일).
   - `reference/extract-requirements.mjs`의 API 호출 방식은 참고용일 뿐, 실제 파이프라인에서는 쓰지 않는다(죽은코드 격리 — `reference/README.md`).
 
-## 2. 수집 (lh-collect.mjs)
+## 2. LH 수집 (lh-collect.mjs)
+
+(청약홈·마이홈·SH·GH 수집 규칙은 각 `*-collect.mjs` 헤더와 `ARCHITECTURE.md` 참고. 아래는 주 소스인 LH 기준.)
 
 - 대상: **전국 × 전 임대유형**. 기간은 **2026-05-01 이후** 공고만 (과거/마감 공고 제외).
 - 상태: **접수중·공고중·정정공고중**만 추출 대상. **접수마감 제외.**
@@ -49,6 +52,6 @@ LH 등 임대주택 공고 수집·요건 추출·알림 개인용 서비스.
 ## 5. 배포 / 운영 (DEPLOY.md)
 
 - **무료 자동배포**: GitHub Actions + Pages. **결정론 단계만 CI에서**(키 0) — 수집(`--refresh`)·정규화·빌드·배포. cron 하루 3회 상태/마감일 갱신 + main push 시 즉시 빌드·배포.
-- **요건추출(LLM)은 CI에서 하지 않는다.** 신규 공고는 CI가 GitHub 이슈로 알리고, **로컬 `node pipeline.mjs`** 로 추출·정규화 후 커밋·push(외부 API 0 규칙 유지).
+- **요건추출(LLM)은 CI에서 하지 않는다.** 신규 공고는 CI가 GitHub 이슈로 알리고, **로컬 `node process-all.mjs`**(LH만이면 `pipeline.mjs`)로 추출·정규화 후 커밋·push(외부 API 0 규칙 유지).
 - `data/raw/`(불변·대용량)와 개인 `profile.json`은 **gitignore**(공개 repo 유출 방지). CI 빌드는 `--seed` 없이 빈 프로필.
 - `build-site.mjs`는 빌드 때 `index.json`의 최신 상태/마감일을 오버레이(신선도). `lh-collect --refresh`는 다운로드 없이 상태만 갱신·신규는 `new-pending.json`에 기록.
