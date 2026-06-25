@@ -1,14 +1,14 @@
-// [DEAD/참고] 독립 슬라이서 — 현재 진입점 pipeline.mjs [2/6] 인라인 슬라이스로 대체됨(호출처 0).
-//   extract-targets.json→slice-manifest.json 산출. 재활성화 시 pickPdf는 collect-util 캐논 공유.
+// [DEAD/참고] 독립 슬라이서 — 현재 진입점 pipeline.mjs [2/6] 인라인 슬라이스로 대체됨(호출처 0). reference/로 격리.
+//   extract-targets.json→slice-manifest.json 산출. 재활성화 시 경로는 repo 루트(../) 기준, pickPdf는 collect-util 캐논 공유.
 // 추출(LLM) 전에 결정론적으로 미리 잘라둔다. 토큰 0.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { pickPdf } from './collect-util.mjs';
+import { pickPdf } from '../collect-util.mjs';
 
-const ROOT = new URL('./data/', import.meta.url);
+const ROOT = new URL('../data/', import.meta.url);
 const targets = JSON.parse(readFileSync(new URL('extract-targets.json', ROOT), 'utf8'));
 
-const slicer = new URL('slice-notice.mjs', import.meta.url).pathname;
+const slicer = new URL('../slice-notice.mjs', import.meta.url).pathname;
 let ok = 0, miss = [], small = [];
 const manifest = [];
 for (const t of targets) {
