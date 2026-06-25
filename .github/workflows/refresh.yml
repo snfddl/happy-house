@@ -42,9 +42,9 @@ jobs:
         env:
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}   # 미설정이면 키 필요 소스는 graceful 생략
         run: |
-          node lh-collect.mjs --refresh || true        # LH 상태갱신(키 없으면 graceful), 신규는 new-pending
-          node sh-collect.mjs --refresh                # SH — 라이브 스크래핑(키 불필요)
-          node gh-collect.mjs --refresh                # GH — 라이브 스크래핑+인라인 인증서(키 불필요)
+          node lh-collect.mjs --refresh || true        # LH 상태갱신(청약플러스 공개 API), 신규는 new-pending
+          node sh-collect.mjs --refresh || true        # SH — 라이브 스크래핑(키 불필요). 한 소스 실패가 나머지 막지 않게 || true
+          node gh-collect.mjs --refresh || true        # GH — 라이브 스크래핑+인라인 인증서(키 불필요)
           node myhome-collect.mjs --refresh || true    # 마이홈 상태갱신(키 필요·없으면 graceful), 신규는 new-pending
           node applyhome-collect.mjs && node applyhome-derive.mjs || true   # 청약홈: 결정론 완전(키 필요). 신규 분양까지 자동 반영
 
