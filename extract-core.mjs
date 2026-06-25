@@ -104,3 +104,19 @@ function extractOneHeadless(item, log) {
 export async function runHeadless(queue, conc = 3, log = console.log) {
   return pool(queue, conc, it => extractOneHeadless(it, log));
 }
+
+// 큐 항목 생성 — 완성 prompt를 포함해 헤드리스/워크플로우 양쪽이 "prompt 받아 실행"만 하면 되게.
+export function toQueueItem({ mode, source, slug, slicedPath, reqPath, header, label }) {
+  return { source, slug, mode, slicedPath, reqPath, header, label: label || `${source}:${slug}`,
+    prompt: buildExtractPrompt({ mode, slicedPath, reqPath, header }) };
+}
+
+// 전소스 통합 큐(extract-queue.json)에 해당 source 몫을 교체 기록(다른 소스 항목 보존). mergeNewPending과 동일 패턴.
+//   대화형 /update 워크플로우가 이 파일을 읽어 병렬 추출. 재생성물(gitignore).
+export function mergeQueue(rootUrl, source, items) {
+  const f = new URL('extract-queue.json', rootUrl);
+  let q = []; try { q = JSON.parse(readFileSync(f, 'utf8')); } catch {}
+  q = q.filter(x => x.source !== source).concat(items);
+  writeFileSync(f, JSON.stringify(q, null, 2));
+  return q;
+}

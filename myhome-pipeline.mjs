@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { validateFile, buildReport, printReport } from './validate-requirements.mjs';
 import { pickPdf } from './collect-util.mjs';
-import { runHeadless } from './extract-core.mjs';
+import { runHeadless, toQueueItem, mergeQueue } from './extract-core.mjs';
 
 const HERE = new URL('./', import.meta.url);
 const ROOT = new URL('./data/', import.meta.url);
@@ -49,16 +49,19 @@ for (const slug of slugs) {
 }
 log(`[1/4] 슬라이스 ${targets.length}건`);
 if (!targets.length) { log('추출 대상 없음.'); process.exit(0); }
-if (SEMI) { log('[--semi] 추출 직전까지. 슬라이스 완료.'); process.exit(0); }
 
-// ── 2. 요건추출 (extract-core 헤드리스, mode=merge, 신규만) ────
-log(`[2/4] 요건추출 — claude -p 헤드리스 (Sonnet, 동시성 ${CONC})`);
-const queue = targets.map(it => ({
-  mode: 'merge', slug: it.slug, meta: it.meta,
+// 추출 큐(mode=merge) 생성 — 전소스 통합 extract-queue.json에 이 소스 몫 기록(완성 prompt 포함).
+const queue = targets.map(it => toQueueItem({
+  mode: 'merge', source: SOURCE, slug: it.slug,
   slicedPath: it.slicedPath, reqPath: it.reqPath,
   header: { 공급기관: it.meta.공급기관, 유형: it.meta.유형, panId: it.meta.panId },
   label: `${it.meta.공급기관}:${it.slug}`,
 }));
+mergeQueue(ROOT, SOURCE, queue);
+if (SEMI) { log(`[--semi] 슬라이스+큐 완료(${SOURCE} ${queue.length}건 → extract-queue.json).`); process.exit(0); }
+
+// ── 2. 요건추출 (extract-core 헤드리스, mode=merge, 신규만) ────
+log(`[2/4] 요건추출 — claude -p 헤드리스 (Sonnet, 동시성 ${CONC})`);
 await runHeadless(queue, CONC, log);
 
 // ── 3. 계층 정규화 ────────────────────────────────────────────

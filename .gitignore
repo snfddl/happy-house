@@ -16,6 +16,7 @@ data/new-pending.json
 data/pipeline-report.json
 data/extract-targets.json
 data/wf-args.json
+data/extract-queue.json
 data/slice-manifest.json
 
 # 의존성/임시/잡파일

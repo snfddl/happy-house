@@ -17,7 +17,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from 
 import { execFileSync } from 'node:child_process';
 import { validateFile, buildReport, printReport } from './validate-requirements.mjs';
 import { pickPdf } from './collect-util.mjs';
-import { runHeadless } from './extract-core.mjs';
+import { runHeadless, toQueueItem, mergeQueue } from './extract-core.mjs';
 
 const HERE = new URL('./', import.meta.url);
 const ROOT = new URL('./data/', import.meta.url);
@@ -117,7 +117,14 @@ for (const t of selected) {
     newTargets.push({ panId: t.panId, type: t.type, region: t.region, status: t.상태, due: t.마감일, sliced: slicedPath });
   } catch (e) { noPdf.push({ panId: t.panId, type: t.type, 사유: 'slice 실패 — 수동 확인', dtl: `https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=${t.panId}` }); }
 }
-writeFileSync(new URL('wf-args.json', ROOT), JSON.stringify(newTargets, null, 2));
+// 추출 큐(mode=new) 생성 — 전소스 통합 extract-queue.json에 lh 몫 기록(완성 prompt 포함).
+const queue = newTargets.map(t => toQueueItem({
+  mode: 'new', source: 'lh', slug: t.panId,
+  slicedPath: t.sliced, reqPath: t.sliced.replace('notice_sliced.txt', 'requirements.json'),
+  header: { panId: t.panId, type: t.type, region: t.region, status: t.status, due: t.due },
+  label: `${t.type}:${t.panId.slice(-4)}`,
+}));
+mergeQueue(ROOT, 'lh', queue);
 log(`신규 ${newTargets.length}건 슬라이스 / 기존 스킵 ${skipped.length}건` + (noPdf.length ? ` / ⚠️ PDF없음·실패 ${noPdf.length}: ${noPdf.map(x => x.panId).join(', ')}` : ''));
 
 if (!newTargets.length) { log('\n✅ 신규 추출 대상 없음. (xlsx/링크 갱신만 수행)'); }
@@ -126,16 +133,10 @@ if (!newTargets.length) { log('\n✅ 신규 추출 대상 없음. (xlsx/링크 �
 let extracted = [];
 if (SEMI) {
   hr('[3/6] 요건추출 — 생략(--semi)');
-  log(`wf-args.json 준비됨(${newTargets.length}건). 추출은 워크플로우(extract-requirements) 또는 process-all로.`);
+  log(`extract-queue.json 준비됨(lh ${queue.length}건). 추출은 워크플로우(extract-requirements) 또는 process-all로.`);
   process.exit(0);
 } else if (newTargets.length) {
   hr(`[3/6] 요건추출 — claude -p 헤드리스 (Sonnet, 동시성 ${CONC})`);
-  const queue = newTargets.map(t => ({
-    mode: 'new', panId: t.panId, type: t.type,
-    slicedPath: t.sliced, reqPath: t.sliced.replace('notice_sliced.txt', 'requirements.json'),
-    header: { panId: t.panId, type: t.type, region: t.region, status: t.status, due: t.due },
-    label: `${t.type}:${t.panId.slice(-4)}`,
-  }));
   extracted = await runHeadless(queue, CONC, log);
   const extFailed = extracted.filter(e => !e.ok);
   if (extFailed.length) log(`⚠️ 추출 실패 ${extFailed.length}/${newTargets.length}건: ${extFailed.map(e => e.panId.slice(-4)).join(', ')} — 원인은 위 ↳ stderr 라인 참조(검증게이트가 격리).`);
