@@ -6,7 +6,7 @@
 //   소득·자산 요건은 구조화 미제공 → 공고문 PDF(pcUrl) 추출 후속(LH식 파이프라인 재사용).
 // 사용: node myhome-collect.mjs [--since=2026-05-01] [--include-lh] [--probe]
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
-import { UA, dwell, sani, dnorm, getArg, loadIndex, loadServiceKey, statusOf, makePanId, SRC_PREFIX, PAMPHLET_PAT, saveDoc, emptyQualification } from './collect-util.mjs';
+import { UA, dwell, sani, dnorm, getArg, loadIndex, loadServiceKey, statusOf, makePanId, SRC_PREFIX, PAMPHLET_PAT, saveDoc, emptyQualification, mergeNewPending } from './collect-util.mjs';
 
 const BASE = 'http://apis.data.go.kr/1613000/HWSPR02';
 const LIST_OP = 'rsdtRcritNtcList';
@@ -18,10 +18,11 @@ const IDX = new URL('index.json', ROOT);
 const argv = process.argv.slice(2);
 const PROBE = argv.includes('--probe');
 const INCLUDE_LH = argv.includes('--include-lh');   // 기본은 LH 제외(lh-collect가 담당)
+const REFRESH = argv.includes('--refresh');          // CI 갱신: 기존 상태/마감일만 갱신, 신규는 다운로드 없이 new-pending 기록(추출은 로컬)
 const SINCE = getArg('since', '2026-05-01');
 
 const SERVICE_KEY = loadServiceKey();
-if (!SERVICE_KEY) { console.error('❌ .env 의 DATA_GO_KR_SERVICE_KEY 가 비어있음'); process.exit(1); }
+if (!SERVICE_KEY) { if (REFRESH) { console.log('[refresh] DATA_GO_KR_SERVICE_KEY 없음 — myhome 갱신 생략(키 불필요 소스로 진행).'); process.exit(0); } console.error('❌ .env 의 DATA_GO_KR_SERVICE_KEY 가 비어있음'); process.exit(1); }
 
 const FILE_DOWN = 'https://www.myhome.go.kr/hws/com/fms/cvplFileDownload.do';
 
@@ -86,6 +87,7 @@ if (PROBE) {
 const index = loadIndex(IDX);
 let isNew = 0, kept = 0, skippedOld = 0, skippedLh = 0;
 const byInstt = {};
+const newPending = [];
 try {
   for (let page = 1; ; page++) {
     const { items, total } = await fetchPage(page, 300);
@@ -104,6 +106,10 @@ try {
         Object.assign(index[idxKey], { 상태: env.상태, 마감일: env.마감일 });
         try { const r = JSON.parse(readFileSync(reqPath, 'utf8')); r.상태 = env.상태; r.마감일 = env.마감일; writeFileSync(reqPath, JSON.stringify(r, null, 2)); } catch {}
         continue;
+      }
+      if (REFRESH) {   // CI 갱신: 신규는 PDF 다운로드/추출 없이 목록만 기록(로컬 process-all이 처리)
+        newPending.push({ panId: env.panId, title: env.공고명, type: env.유형, region: env.지역, 상태: env.상태, 마감일: env.마감일 });
+        isNew++; continue;
       }
       // 신규: 마이홈은 LLM 추출 없이 envelope가 곧 requirements.json(메타 구조화). 소득/자산은 myhome-pipeline PDF추출 후속.
       mkdirSync(ddir, { recursive: true });
@@ -127,6 +133,7 @@ try {
 } catch (e) { console.error(`❌ ${e.message}`); process.exit(1); }
 
 mkdirSync(ROOT, { recursive: true });
+if (REFRESH) { writeFileSync(IDX, JSON.stringify(index, null, 2)); mergeNewPending(ROOT, 'myhome', newPending); console.log(`\n[refresh] 미추출 신규 ${newPending.length}건 → data/new-pending.json (다운로드/추출은 로컬 process-all).`); process.exit(0); }
 writeFileSync(IDX, JSON.stringify(index, null, 2));
 console.log(`\n신규 ${isNew} · 유지 ${kept} · LH제외 ${skippedLh} · 기간밖 ${skippedOld}`);
 console.log(`공급기관 분포(수집분): ${JSON.stringify(byInstt)}`);

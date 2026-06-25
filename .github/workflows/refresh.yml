@@ -1,8 +1,10 @@
 name: refresh & deploy
 
-# 결정론 갱신만 CI에서(키 0): 키 불필요 소스(SH/GH) 라이브 스크래핑 + 전 소스 상태/마감일 갱신 → 빌드 → Pages 배포.
-#   LH/applyhome/myhome 수집은 gov API 키 필요 → CI에선 생략(키 있으면 lh-collect가 자동 수행), 로컬에서 처리.
-# 요건추출(LLM)은 CI에서 안 함 — 신규 공고는 이슈로 알리고 로컬 `node process-all.mjs`로 처리.
+# 결정론 갱신만 CI에서: 전 소스 상태/마감일 갱신 → 빌드 → Pages 배포.
+#   SH/GH: 키 불필요(라이브 스크래핑). LH/myhome: 키 있으면 --refresh 상태갱신(없으면 graceful skip), 추출은 로컬.
+#   applyhome(청약홈): 추출이 결정론(applyhome-derive, LLM 0)이라 키 있으면 collect+derive로 신규까지 CI 완전 처리.
+# 키: secrets.DATA_GO_KR_SERVICE_KEY (data.go.kr). 미설정이면 키 필요 소스만 graceful 생략, 나머지 진행.
+# 요건추출(LLM)은 CI에서 안 함 — LH/myhome 신규는 이슈로 알리고 로컬 `node process-all.mjs`/`/update`로 처리.
 
 on:
   schedule:
@@ -37,10 +39,14 @@ jobs:
 
       - name: 상태/마감일 갱신 (다운로드 없음)
         if: github.event_name != 'push'   # push 배포 땐 스크래핑 생략(빠르게)
+        env:
+          DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}   # 미설정이면 키 필요 소스는 graceful 생략
         run: |
-          node lh-collect.mjs --refresh   # 키 없으면 자동 생략(키 불필요 소스로 진행)
-          node sh-collect.mjs --refresh   # SH — 라이브 스크래핑(키 불필요)
-          node gh-collect.mjs --refresh   # GH — 라이브 스크래핑+인라인 인증서(키 불필요)
+          node lh-collect.mjs --refresh || true        # LH 상태갱신(키 없으면 graceful), 신규는 new-pending
+          node sh-collect.mjs --refresh                # SH — 라이브 스크래핑(키 불필요)
+          node gh-collect.mjs --refresh                # GH — 라이브 스크래핑+인라인 인증서(키 불필요)
+          node myhome-collect.mjs --refresh || true    # 마이홈 상태갱신(키 필요·없으면 graceful), 신규는 new-pending
+          node applyhome-collect.mjs && node applyhome-derive.mjs || true   # 청약홈: 결정론 완전(키 필요). 신규 분양까지 자동 반영
 
       - name: 사이트 빌드 (빈 프로필·공유용)
         run: node build-site.mjs
