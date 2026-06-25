@@ -45,7 +45,8 @@
 - [ ] **#11 index.json 무한누적**(485건 66% 마감) · [x] **#12 gh-collect TODAY 재선언**(미사용 dead 선언이라 삭제) · **#13 pipeline/myhome-pipeline 스캐폴딩 중복**.
 
 ### P3 — 정리/정직성
-- [ ] **#14** tier 소득표 세대원수 행 없으면 유효 pass→확인필요 강등(공통표 fallback) · **#15** 희망지역 substring 오매칭(`광주`→경기 광주시) · **#16** 루트 `dl_67253288`(342KB HWP)·prep-slices 죽은코드 정리 · **#17** LH derived 5건 `상태:null` 백필.
+- [x] **#14** tier 소득표 세대원수 행 없으면 유효 pass→확인필요 강등 → **공통표 행 폴백 추가**(회귀테스트). · [x] **#15** 희망지역 substring 오매칭 → **시도 단축명은 공고 시도와 캐논 비교**(시군구는 substring 유지, 회귀테스트 3케이스). 17/17 통과.
+- [ ] **#16** 루트 `dl_67253288`(342KB HWP)·prep-slices 죽은코드 정리 · **#17** LH derived 5건 `상태:null` 백필.
 
 ### 검증된 강점 (유지)
 panId 불변식·statusOf 단일캐논·raw 불변·검증게이트·GH TLS·증분처리·매처 fail-safe('확인필요' 보수성)·슬라이서 top-level fail-safe(138 PDF 손실 0)·맞벌이/특공/미성년자녀 게이트 정확.

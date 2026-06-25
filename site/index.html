@@ -426,6 +426,7 @@ function createMatcher(P, todayStr) {
       if (t.startsWith(a)) return b;
     return t.slice(0, 2);   // 서울특별시·경기도·강원특별자치도·전북특별자치도 등 → 앞 2글자
   };
+  const SIDO = new Set(['서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종', '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주']);
   const LH_LIST = 'https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026';
   // 동작하는 원문 링크 선택: LH 상세페이지(selectWrtancInfo.do)는 GET 시 "비정상 경로" 에러라 못 씀
   //   → LH는 공고문 PDF(lhFile.do, GET 검증됨), 분양(청약홈)은 상세페이지가 GET 정상.
@@ -470,8 +471,11 @@ function createMatcher(P, todayStr) {
     // 계층별 소득표 상이(행복주택 등): 본인 계층의 소득가구원수별 표 우선(맞벌이 가산 구간 포함). 없으면 공통표.
     const _tk = tierKeyFor(req.자격요건?.계층별);
     const _tierIncome = _tk && req.자격요건?.계층별?.[_tk]?.소득가구원수별;
-    const incomeTable = (_tierIncome && typeof _tierIncome === 'object' && Object.keys(_tierIncome).length) ? _tierIncome : sg.가구원수별;
-    const row = incomeTable?.[`${P.세대원수}인`];
+    const _hasTier = _tierIncome && typeof _tierIncome === 'object' && Object.keys(_tierIncome).length;
+    const _key = `${P.세대원수}인`;
+    // 계층 소득표 우선, 단 본인 세대원수 행이 없으면 공통표로 폴백(#14: 계층표에 행 없다고 유효 pass를 확인필요로 강등 방지).
+    let row = _hasTier ? _tierIncome[_key] : undefined;
+    if (!row || typeof row !== 'object') row = sg.가구원수별?.[_key];
     if (!row || typeof row !== 'object') return { s: 'check', m: `${P.세대원수}인 소득표 없음(기본 ${sg.기본퍼센트 ?? '?'}%) → 원문확인` };
     const nums = Object.entries(row).filter(([, v]) => typeof v === 'number');
     if (!nums.length) return { s: 'check', m: '소득 상한 수치 없음' };
@@ -723,8 +727,10 @@ function createMatcher(P, todayStr) {
   }
   function regionMatch(req) {
     const want = P.희망?.지역; if (!want?.length) return null;
+    const 공고시도 = 시도canon((req.지역 || '').split(' ')[0]);
     const hay = [req.지역, ...(req.단지 || []).map(d => d.주소), ...Object.keys(req.주택목록?.지역분포 || {})].join(' ');
-    const hit = want.filter(w => hay.includes(w));
+    // 시도 단축명(서울·광주 등)은 공고 시도와 캐논 비교(#15: '광주'가 경기 '광주시'에 substring 오매칭되던 것 방지). 시군구(성남시 등)는 substring.
+    const hit = want.filter(w => SIDO.has(w) ? 공고시도 === w : hay.includes(w));
     return { ok: hit.length > 0, hit };
   }
   function pickBand(bands, value) {
