@@ -12,7 +12,10 @@
 GitHub Actions (refresh & deploy)
 ├─ trigger: schedule(cron 하루 3회) · push(main) · 수동(workflow_dispatch)
 ├─ build job
-│   ├─ [push 아닐 때만] lh-collect.mjs --refresh   # 상태/마감일 라이브 갱신(다운로드 X), 신규→new-pending.json
+│   ├─ [push 아닐 때만] 5소스 상태/신규 갱신 (env: DATA_GO_KR_SERVICE_KEY)
+│   │     lh/sh/gh-collect --refresh   # 상태/마감일(다운로드 X), 신규→new-pending. lh=공개API·sh/gh=스크래핑(키 불필요)
+│   │     myhome-collect --refresh     # 상태/마감일(키 필요·없으면 graceful skip), 신규→new-pending
+│   │     applyhome-collect + derive   # 청약홈: 추출이 결정론(LLM 0) → 신규 분양까지 CI 완전 처리(키 필요)
 │   ├─ build-site.mjs                              # index.json 최신상태 오버레이 → site/index.html(빈 프로필)
 │   ├─ [push 아닐 때만] index.json 커밋·push
 │   ├─ [push 아닐 때만] 신규 있으면 GitHub 이슈 생성
@@ -28,15 +31,21 @@ GitHub Actions (refresh & deploy)
 
 push 트리거 경로: `site/**`, `*.mjs`, `data/derived/**`, `.github/workflows/**` (문서만 바꾸면 배포 안 함).
 
-## 왜 추출은 CI에서 안 하나
+## 왜 (LLM) 추출은 CI에서 안 하나
 
-요건추출은 `claude -p`(Sonnet 헤드리스)로 한다. CI에서 무인 실행하려면 API 키(=과금, "외부 LLM API 금지" 위반)나 세션 인증이 필요해 **무료로 불가**. 그래서 추출은 **로컬에서** 돌리고 결과(requirements.json)만 커밋한다. 파이프라인이 증분이라 신규 없는 날은 추출 0건 — 대부분 날은 CI의 결정론 갱신만으로 충분.
+**LLM 요건추출**(LH·마이홈의 공고문 PDF → 자격/소득)은 `claude -p`(Sonnet 헤드리스)로 한다. CI 무인 실행은 API 키(=과금, "외부 LLM API 금지" 위반)나 세션 인증이 필요해 **무료로 불가** → **로컬에서** 돌리고(`/update` 또는 `process-all`) 결과만 커밋. 증분이라 신규 없는 날은 추출 0건.
+
+**예외 — 청약홈(분양)은 CI에서 완전 처리한다.** 청약홈은 추출이 결정론(`applyhome-derive`, LLM 0)이라 키만 있으면 collect+derive로 신규 분양까지 CI가 끝낸다. 그래서 CI는 5소스 상태갱신 + 청약홈 신규를 자동 반영하고, **LH·마이홈 신규 임대 추출만** 로컬 몫(이슈로 알림).
+
+**키(Secret)**: data.go.kr 키를 `gh secret set DATA_GO_KR_SERVICE_KEY`로 등록해야 LH(refresh)·마이홈(refresh)·청약홈(collect+derive)이 CI에서 동작. 미설정 시 키 필요 소스만 graceful 생략, SH/GH는 키 불필요라 항상 동작.
 
 ## 일상 운영
 
 **신규 공고가 떴을 때** (CI가 이슈로 알림 / 또는 `node lh-collect.mjs --refresh`로 직접 확인):
 ```bash
-node process-all.mjs              # 전 소스 통합: collect→derive/extract(claude -p)→정규화→검증→build
+/update                           # [권장] 대화형 한 명령 — 수집→추출(워크플로우 병렬·빠름)→정제→통합→build
+# 또는 무인:
+node process-all.mjs              # 전 소스 통합: collect→derive/extract(claude -p 헤드리스·느림)→정규화→검증→build
 git add data/derived data/index.json site/index.html
 git commit -m "feat: 신규 공고 N건"
 git push                          # push 트리거 → 자동 배포

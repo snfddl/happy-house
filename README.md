@@ -29,7 +29,8 @@ LH 등 공공임대주택 공고를 **수집 → 요건 자동 구조화 → 개
 ## 빠른 실행
 
 ```bash
-node process-all.mjs           # [전 소스] 진입점 — LH·청약홈·마이홈·SH·GH 수집~파생/추출~검증~사이트빌드 통합 (--source=sh,gh / --skip-collect / --semi / --no-build)
+/update                        # [권장·대화형] Claude Code 세션 한 명령 — 전 소스 수집~추출(워크플로우 병렬·빠름)~정제~통합~빌드 (.claude/skills/update)
+node process-all.mjs           # [전 소스·무인] 진입점 — 위와 동일하나 추출 헤드리스(claude -p·느림, CI/cron) (--source=sh,gh / --skip-collect / --semi / --no-build)
 node pipeline.mjs              # [임대·LH] 신규 공고 수집~추출~정규화~검증 완전자동 (process-all의 LH 하위 단계, PIPELINE.md 참고)
 node normalize-requirements.mjs # 계층별 메타 캐논 정규화(파이프라인에 포함, 단독 재실행 가능. --report=미저장 점검)
 node match.mjs                 # profile.json 으로 임대+분양 매칭 (로직=match-core.mjs 공유)(--possible/--supply=/--type=)
@@ -63,7 +64,9 @@ node prune-index.mjs           # [관리] 오래된 마감 공고를 index→ind
 | `PRECISION_TEST.md` | 매칭 정밀도 테스트 결과·방법 |
 | `AUDIT.md` | 코드·아키텍처 진단 기록(Round 1·2, 이슈별 처리내역) |
 | **핵심 코드 모듈** | |
-| `process-all.mjs` | **진입점** — 전 5소스 통합 오케스트레이터(얇은 시퀀서) |
+| `process-all.mjs` | **무인 진입점** — 전 5소스 통합 오케스트레이터(헤드리스 추출) |
+| `.claude/skills/update` | **대화형 진입점** `/update` — 추출만 워크플로우 병렬(빠름), 결정론은 node |
+| `extract-core.mjs` | 추출 골격 단일 소스(buildExtractPrompt new/merge · runHeadless · 큐). pipeline·myhome-pipeline·`/update` 공유 |
 | `match-core.mjs` | 매칭 로직 단일 소스(순수 함수) — `match.mjs`·조회페이지 공유 |
 | `normalize-requirements.mjs` | 계층별 메타 캐논 정규화(키/필드 enum·만원→원·멱등) |
 | `validate-requirements.mjs` | 전 소스 공통 요건 검증 게이트(pass/review/fail) |
