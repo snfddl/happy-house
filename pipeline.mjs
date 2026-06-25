@@ -16,7 +16,7 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
 import { validateFile, buildReport, printReport } from './validate-requirements.mjs';
-import { pickPdf } from './collect-util.mjs';
+import { pickPdf, pool } from './collect-util.mjs';
 
 const HERE = new URL('./', import.meta.url);
 const ROOT = new URL('./data/', import.meta.url);
@@ -163,15 +163,6 @@ function extractOne(it) {
       resolve({ ...it, ok: code === 0 && ok, err: ok ? '' : err.trim().slice(-500) });
     });
   });
-}
-
-async function pool(items, n, fn) {
-  const res = []; let i = 0;
-  const workers = Array.from({ length: Math.min(n, items.length) }, async () => {
-    while (i < items.length) { const idx = i++; res[idx] = await fn(items[idx]); }
-  });
-  await Promise.all(workers);
-  return res;
 }
 
 let extracted = [];

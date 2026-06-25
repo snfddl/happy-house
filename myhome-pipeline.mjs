@@ -6,7 +6,7 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
 import { validateFile, buildReport, printReport } from './validate-requirements.mjs';
-import { statusOf, pickPdf } from './collect-util.mjs';
+import { statusOf, pickPdf, pool } from './collect-util.mjs';
 
 const HERE = new URL('./', import.meta.url);
 const ROOT = new URL('./data/', import.meta.url);
@@ -85,17 +85,17 @@ if (SEMI) { log('[--semi] 추출 직전까지. 슬라이스 완료.'); process.e
 function extractOne(it) {
   return new Promise(resolve => {
     const ps = spawn('claude', ['-p', buildPrompt(it.slug, it.slicedPath, it.reqPath, it.meta), '--model', 'sonnet', '--permission-mode', 'acceptEdits', '--allowedTools', 'Read', 'Write'], { cwd: p(HERE), stdio: ['ignore', 'pipe', 'pipe'] });
-    let out = ''; ps.stdout.on('data', d => out += d); ps.stderr.on('data', () => {});
-    ps.on('close', () => {
+    let out = '', err = ''; ps.stdout.on('data', d => out += d); ps.stderr.on('data', d => err += d);   // 실패 원인 추적용(#4 일관성)
+    ps.on('close', code => {
       let ok = false; try { const r = JSON.parse(readFileSync(it.reqPath, 'utf8')); ok = !!r.자격요건; if (ok) { r.__pdf추출 = true; r.상태 = statusOf(r.접수시작, r.마감일, r.상태); writeFileSync(it.reqPath, JSON.stringify(r, null, 2)); } } catch {}
       log(`  ${ok ? '✅' : '❌'} ${it.meta.공급기관}:${it.slug} ${out.trim().slice(0, 70)}`);
+      if (!ok) log(`     ↳ exit ${code}${err.trim() ? ` · stderr: ${err.trim().slice(-200)}` : ' · stderr 없음(자격요건 미생성)'}`);
       resolve({ ...it, ok });
     });
   });
 }
-async function poolRun(items, n, fn) { const res = []; let i = 0; await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; res[k] = await fn(items[k]); } })); return res; }
 log(`[2/4] 요건추출 — claude -p (Sonnet, 동시성 ${CONC})`);
-await poolRun(targets, CONC, extractOne);
+await pool(targets, CONC, extractOne);
 
 // ── 3. 계층 정규화 ────────────────────────────────────────────
 //   추출(Sonnet)이 계층 키/필드를 자유형으로 뱉으면 매처(tierLimit/tierKeyFor)가 캐논 키로 못 찾아 자산/소득 게이트가 조용히 누락됨.

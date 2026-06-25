@@ -61,6 +61,16 @@ export const makePanId = (src, rawId) => `${SRC_PREFIX[src] ?? ''}${rawId}`;
 // index.json 로드(없거나 깨졌으면 {}). idxUrl = 각 수집기의 IDX(URL/경로).
 export function loadIndex(idxUrl) { try { return JSON.parse(readFileSync(idxUrl, 'utf8')); } catch { return {}; } }
 
+// 동시성 워커풀 — items를 최대 n개 병렬로 fn 처리, 입력순 결과 배열 반환. pipeline·myhome-pipeline의 동일 구현 1벌로.
+//   (extractOne 본문은 소스별 후처리가 달라 각 파일에 둠 — 여기선 스케줄링만 공유.)
+export async function pool(items, n, fn) {
+  const res = []; let i = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+    while (i < items.length) { const k = i++; res[k] = await fn(items[k]); }
+  }));
+  return res;
+}
+
 // new-pending.json 소스별 병합(CI에서 lh→sh→gh 순차 갱신 시 서로 안 덮어쓰게). 이 소스(`${source}-` 접두) 항목만 교체.
 //   rootUrl = data/ URL. sh/gh가 바이트동일 복붙하던 것을 1벌로.
 export function mergeNewPending(rootUrl, source, entries) {
