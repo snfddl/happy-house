@@ -31,15 +31,15 @@ node pipeline.mjs --skip-collect --force --only=020038,020094   # 특정 공고(
 
 ## 요건추출 [3단계] 실행 경로 — 워크플로우 vs 헤드리스 (로컬 전용)
 
-추출은 두 경로가 있고 **결과·품질은 동일**(같은 `buildPrompt`·`schema-v1.jsonc`·`extract-rules.txt`). **속도만 다르다.** `--semi`가 만든 `wf-args.json`(슬라이스 본문 경로 목록)이 공통 입력.
+추출 골격은 `extract-core.mjs` 단일 소스(buildExtractPrompt mode=new/merge · runHeadless · 큐 `extract-queue.json`). 두 경로가 있고 **결과·품질은 동일**(같은 프롬프트·`schema-v1.jsonc`·`extract-rules.txt`). **속도만 다르다.** `--semi`가 만든 `extract-queue.json`(전소스 통합 큐)이 공통 입력.
 
 | 경로 | 무엇 | 속도 | 언제 |
 |---|---|---|---|
-| **워크플로우 `lh-extract-requirements`** (권장) | 슬라이스 본문을 병렬 에이전트(동시 ~16)로 추출 | **빠름** — 19건 ~3분 | **사람이 세션에서 직접 돌릴 때.** 기본으로 이걸 쓴다 |
-| **헤드리스 `claude -p`** (`pipeline.mjs` 내장) | 건당 별도 claude 프로세스, conc 3 기본 | 느림 — 건당 풀세션 부팅(수십 초)·동시 3 | **무인 cron 등 대화형 세션이 없을 때만**의 fallback |
+| **`/update` 스킬(워크플로우)** (권장) | `extract-queue.json`을 병렬 에이전트(동시 ~16)로 추출(`update-extract.workflow.mjs`) | **빠름** — 19건 ~3분 | **사람이 세션에서 직접 돌릴 때.** 기본으로 이걸 쓴다 |
+| **헤드리스 `claude -p`** (`process-all`/`pipeline` 내장) | 건당 별도 claude 프로세스, conc 3 기본 | 느림 — 건당 풀세션 부팅(수십 초)·동시 3 | **무인 cron 등 대화형 세션이 없을 때만**의 fallback |
 
-- `pipeline.mjs`/`process-all.mjs`를 그냥 실행하면 무인용 헤드리스 경로로 간다(느림). 로컬에서 신규를 빠르게 처리하려면 **`pipeline.mjs --semi`로 `wf-args.json`만 만든 뒤 워크플로우로 추출**하고, 이후 결정론 후속([3.5]정규화·[4]xlsx·[5]링크·[6]검증)은 `--skip-collect`로 마무리하거나 개별 실행한다.
-- 워크플로우 추출 후 후속은 신규로 자동 인식되지 않으므로(이미 requirements.json 존재) **정규화·xlsx·링크·검증을 명시적으로** 돌려야 한다.
+- `node process-all.mjs`(또는 `pipeline.mjs`)를 그냥 실행하면 무인용 헤드리스 경로로 간다(느림). 로컬에서 빠르게 처리하려면 **`/update` 스킬**을 쓴다(= `process-all --semi`로 큐 생성 → 워크플로우 추출 → 정규화·xlsx·링크·빌드).
+- 워크플로우 추출 후 후속은 신규로 자동 인식되지 않으므로(이미 requirements.json 존재) **정규화·xlsx·링크·빌드를 명시적으로** 돌린다(`/update` 스킬 3단계가 이를 수행).
 
 ## 증분(incremental) 원칙
 

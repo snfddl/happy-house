@@ -32,7 +32,8 @@ LH 등 임대주택 공고 수집·요건 추출·알림 개인용 서비스.
   - 제거는 **섹션 제목 블랙리스트로만** 판단. 요건 섹션(신청자격·선정기준·임대조건·소득자산기준)은 절대 제거 안 됨.
   - 못 알아보는 섹션은 **무조건 보존(fail-safe)**. 전 유형 검증 결과 요건표 손실 0건, 평균 ~21% 입력 절감(LH 265건 전수 실측: 건별평균 21.0%·총합 20.3%·중앙값 18.5%).
 - **추출 모델 = Sonnet.** Haiku는 품질 부적합(쓰지 않음). Opus는 검증/감수용.
-- **추출 실행 경로**: 로컬 대화형은 **워크플로우 `lh-extract-requirements`(병렬·빠름)** 권장, 무인 cron은 `pipeline.mjs` 헤드리스 `claude -p`(conc 3·느림) fallback. **품질 동일**(같은 프롬프트·스키마), 속도만 다름. 상세·후속단계 주의는 `PIPELINE.md`.
+- **추출 골격 = `extract-core.mjs` 단일 소스** (buildExtractPrompt mode=new[LH 신규생성]/merge[myhome·sh·gh envelope MERGE] · runHeadless · postProcess · 큐 `extract-queue.json`). pipeline·myhome-pipeline·`/update` 워크플로우가 공유.
+- **추출 실행 경로**: 로컬 대화형은 **`/update` 스킬(워크플로우 병렬·빠름)** 권장, 무인 cron은 `node process-all.mjs`(헤드리스 `claude -p`·conc 3·느림). **품질 동일**(같은 프롬프트·스키마), 속도만 다름. 상세는 `PIPELINE.md`·`ARCHITECTURE.md`.
 - 출력은 `SCHEMA.md` §5 **정규 스키마 v1** 형태로 `data/derived/lh/<panId>/requirements.json` 에 저장.
   - 선정방식은 enum 1개, 소득기준은 항상 object, 임대료는 항상 배열. 못 채운 필드는 `_검증노트`에 기록.
   - 자격완화로 소득 배제 시 `소득기준.종류:"없음"` + 비고에 근거. 자산/자동차상한은 숫자(원)·"없음"·"공고문미기재".
