@@ -35,7 +35,8 @@
   - **완료(2026-06-25):** `collect-util.mjs`에 캐논 `statusOf(b,e,prev=null)`+`TODAY` export. 4 수집기(applyhome·myhome-collect·myhome-pipeline·sh) 로컬 정의 제거·import. 캐논 본문은 pipeline/sh판(마감→예정→접수중→`prev ?? null`). 의미차 수렴: applyhome/myhome-collect의 `접수중` 판정 `(b&&e)`→`(e)`(마감일만 있고 시작 null이면 접수중). SH 기본 `'공고중'`은 호출부 `?? '공고중'`으로 보존. 검증: `node --check` 5파일·캐논 7케이스 스모크 통과.
 - [x] **`pickPdf` 통일.** ~~`pipeline.mjs:95`/`prep-slices.mjs:10`/`myhome-pipeline.mjs:33` 3변형.~~
   - **완료(2026-06-25):** `collect-util.mjs`에 캐논 `pickPdf(filesDir, fileid=null)` — fileid 접두(LH) → 모집공고/입주자모집 → 공고문 → 공고(붙임·별지·서식 제외) → 모집 → 첫 PDF. pipeline·myhome-pipeline 로컬 정의 제거·import. **prep-slices는 호출처 0(pipeline 인라인 [2/6]으로 대체)임을 확인 → `[DEAD/참고]` 배너 + 캐논 공유**(P3 죽은코드 격리 일부 선반영). 검증: 302개 raw 전수에서 기존 3변형 대비 **선택차이 0건**, 4소스 라이브 픽 정상.
-- [ ] **panId 키 규약 일원화.** panId 접두사(`ah:`/`mh-`/`sh-`/`gh-`/LH무접두)가 5곳 문자열 리터럴로 분산. applyhome은 derived `panId`(`2026…`)와 index 키(`ah:2026…`) 불일치 — LIVE_OVERLAY에 넣으면 조용히 실패. **정확도 버그 동반 → 별도 처리.**
+- [x] **panId 키 규약 일원화.** ~~접두사(`ah:`/`mh-`/`sh-`/`gh-`/LH무접두) 5곳 분산, applyhome panId(bare)≠index키(`ah:…`).~~
+  - **완료(2026-06-25):** `collect-util.mjs`에 `SRC_PREFIX`+`makePanId(src,rawId)` 단일선언. **불변식 확립: index 키 === derived panId === `${접두}${원시ID}` (전 5소스).** 근본원인=applyhome은 collect(idxKey)와 derive(panId)가 별파일이라 각자 구성→불일치 → 양쪽 `makePanId('applyhome',no)`로 강제(콜론 접두는 기존 index.json 키 호환 위해 유지, 마이그레이션 0). myhome/sh/gh collect·count로그도 헬퍼/`SRC_PREFIX` 경유로 통일. `build-site` LIVE_OVERLAY에 불변식 주석. **검증: derived 재생성 후 applyhome 183건 전수 panId가 index 키와 일치(이전 0건)**, derived diff는 panId 라인만(183파일), 사이트 빌드 333건·`__id` 전부 `applyhome:ah:…`·드리프트 가드 통과. **footgun 해소 — 이제 어느 소스든 overlay 안전.**
 
 ### P3 — 정리/정확성
 

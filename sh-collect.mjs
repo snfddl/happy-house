@@ -10,7 +10,7 @@
 //   --reparse : 기존 수집분 재처리(재다운로드 없음) — 제목필터 재적용(발표글 등 제거) + 상세 본문에서 접수기간/마감일/발표일 백필.
 //   --refresh : CI용 — 신규만 감지해 data/new-pending.json에 기록(다운로드/추출 안 함, 로컬 process-all이 처리). SH는 키 불필요.
 import { mkdirSync, writeFileSync, existsSync, readFileSync, rmSync } from 'node:fs';
-import { UA, dwell, sani, getArg, loadIndex, statusOf } from './collect-util.mjs';
+import { UA, dwell, sani, getArg, loadIndex, statusOf, makePanId, SRC_PREFIX } from './collect-util.mjs';
 
 const ORIGIN = 'https://www.i-sh.co.kr';
 const ROOT = new URL('./data/', import.meta.url);
@@ -118,7 +118,7 @@ const pick = f => ({ brdId: f.brdId, seq: f.seq, fileSeq: f.fileSeq, fileTp: f.f
 // 행 → 통합 envelope(SCHEMA §0). 소득/자산·마감일·상태는 공고문 PDF 추출 후속.
 function toEnvelope(b, row, viewLink) {
   return {
-    panId: `sh-${row.seq}`, source: 'sh', 상품군: b[4],
+    panId: makePanId('sh', row.seq), source: 'sh', 상품군: b[4],
     공고명: row.title, 유형: b[0], 상품구조: b[4], 공급기관: 'SH 서울주택도시공사',
     지역: '서울', 주소: null,
     // SH 목록엔 상태·마감일 없음 → 기본 '공고중'. 수집 루프에서 parseBodyDates(상세 본문)로 접수시작/마감일/발표일 백필 후 statusOf 재계산.
@@ -248,4 +248,4 @@ if (REFRESH) { writeFileSync(IDX, JSON.stringify(index, null, 2)); mergeNewPendi
 writeFileSync(IDX, JSON.stringify(index, null, 2));
 console.log(`\n신규 ${isNew} · 유지 ${kept} · 기간밖 ${skippedOld} · 비모집(제목) ${skippedTitle}`);
 console.log(`게시판 분포(수집분): ${JSON.stringify(byBoard)}`);
-console.log(`sh index ${Object.keys(index).filter(k => k.startsWith('sh-')).length}건. 마감일·상태·소득/자산은 공고문 PDF 추출 후속.`);
+console.log(`sh index ${Object.keys(index).filter(k => k.startsWith(SRC_PREFIX.sh)).length}건. 마감일·상태·소득/자산은 공고문 PDF 추출 후속.`);

@@ -10,7 +10,10 @@ execFileSync(process.execPath, ['check-canon-drift.mjs'], { cwd: new URL('./', i
 
 const ROOT = new URL('./data/', import.meta.url);
 const SRC = [['lh', new URL('derived/lh/', ROOT)], ['applyhome', new URL('derived/applyhome/', ROOT)], ['myhome', new URL('derived/myhome/', ROOT)], ['sh', new URL('derived/sh/', ROOT)], ['gh', new URL('derived/gh/', ROOT)]];
-const LIVE_OVERLAY = new Set(['lh', 'gh']);   // 수집기가 index에 최신 상태·마감일을 갱신하는 소스(빌드때 신선도 덮어쓰기)
+// 수집기가 index에 최신 상태·마감일을 갱신하는 소스(빌드때 liveIdx[r.panId]로 덮어쓰기).
+//   ★ 키 규약: liveIdx 키 === r.panId (전 소스 불변식, collect-util makePanId 보장). 과거 applyhome만 panId=bare vs key='ah:…'라
+//     overlay에 넣으면 조용히 실패했음 → 규약 일원화로 해소. 이제 어느 소스든 안전히 추가 가능(추가는 별도 판단).
+const LIVE_OVERLAY = new Set(['lh', 'gh']);
 const TODAY = new Date().toISOString().slice(0, 10);
 
 // 빌드시 신선도 결정론 재계산. 마감일이 지났으면 '접수마감'으로(수집/추출 후 시간이 흘러도 빌드 TODAY가 권위).

@@ -10,7 +10,7 @@
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import https from 'node:https';
 import tls from 'node:tls';
-import { UA, dwell, sani, getArg, loadIndex } from './collect-util.mjs';
+import { UA, dwell, sani, getArg, loadIndex, makePanId, SRC_PREFIX } from './collect-util.mjs';
 
 const ORIGIN = 'https://apply.gh.or.kr';
 // apply.gh.or.kr는 leaf 인증서만 보내고 중간 인증서(Sectigo RSA OV)를 누락 → Node fetch가 체인검증 실패.
@@ -163,7 +163,7 @@ async function fetchNoticeFiles(b, atts, referer, dir) {
 // 행 → 통합 envelope(SCHEMA §0). 상태·마감일은 목록제공, 소득/자산은 공고문 PDF 추출 후속.
 function toEnvelope(b, row) {
   return {
-    panId: `gh-${row.pbancNo}`, source: 'gh', 상품군: '임대',
+    panId: makePanId('gh', row.pbancNo), source: 'gh', 상품군: '임대',
     공고명: row.title, 유형: row.bizTyNm || b[0], 상품구조: '임대', 공급기관: 'GH 경기주택도시공사',
     지역: ['경기', row.지역].filter(Boolean).join(' '), 주소: null,
     공고일: row.공고일, 접수시작: null, 마감일: row.마감일, 상태: row.상태, 당첨자발표: null, 공고구분: null,
@@ -251,4 +251,4 @@ writeFileSync(IDX, JSON.stringify(index, null, 2));
 if (REFRESH) { mergeNewPending('gh', newPending); console.log(`\n[refresh] 상태 갱신 완료. 미추출 신규 ${newPending.length}건 → data/new-pending.json (다운로드/추출은 로컬 process-all).`); process.exit(0); }
 console.log(`\n신규 ${isNew} · 유지 ${kept} · 기간밖 ${skippedOld}`);
 console.log(`게시판 분포(수집분): ${JSON.stringify(byBoard)}`);
-console.log(`gh index ${Object.keys(index).filter(k => k.startsWith('gh-')).length}건. 소득/자산은 공고문 PDF 추출 후속.`);
+console.log(`gh index ${Object.keys(index).filter(k => k.startsWith(SRC_PREFIX.gh)).length}건. 소득/자산은 공고문 PDF 추출 후속.`);

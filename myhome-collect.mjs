@@ -6,7 +6,7 @@
 //   소득·자산 요건은 구조화 미제공 → 공고문 PDF(pcUrl) 추출 후속(LH식 파이프라인 재사용).
 // 사용: node myhome-collect.mjs [--since=2026-05-01] [--include-lh] [--probe]
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
-import { UA, dwell, sani, dnorm, getArg, loadIndex, loadServiceKey, statusOf } from './collect-util.mjs';
+import { UA, dwell, sani, dnorm, getArg, loadIndex, loadServiceKey, statusOf, makePanId, SRC_PREFIX } from './collect-util.mjs';
 
 const BASE = 'http://apis.data.go.kr/1613000/HWSPR02';
 const LIST_OP = 'rsdtRcritNtcList';
@@ -68,7 +68,7 @@ function toEnvelope(it) {
   const b = dnorm(it.beginDe), e = dnorm(it.endDe);
   const 보증금 = numOrNull(it.rentGtn), 월세 = numOrNull(it.mtRntchrg);
   return {
-    panId: `mh-${it.pblancId}-${it.houseSn ?? 1}`, source: 'myhome', 상품군: '임대',
+    panId: makePanId('myhome', `${it.pblancId}-${it.houseSn ?? 1}`), source: 'myhome', 상품군: '임대',
     공고명: it.pblancNm, 유형: it.suplyTyNm, 상품구조: it.suplyTyNm, 공급기관: it.suplyInsttNm,
     지역: [it.brtcNm, it.signguNm].filter(Boolean).join(' '), 주소: it.fullAdres,
     공고일: dnorm(it.rcritPblancDe), 접수시작: b, 마감일: e, 상태: statusOf(b, e),
@@ -136,4 +136,4 @@ mkdirSync(ROOT, { recursive: true });
 writeFileSync(IDX, JSON.stringify(index, null, 2));
 console.log(`\n신규 ${isNew} · 유지 ${kept} · LH제외 ${skippedLh} · 기간밖 ${skippedOld}`);
 console.log(`공급기관 분포(수집분): ${JSON.stringify(byInstt)}`);
-console.log(`myhome index ${Object.keys(index).filter(k => k.startsWith('mh-')).length}건. 소득·자산은 공고문 PDF 추출 후속.`);
+console.log(`myhome index ${Object.keys(index).filter(k => k.startsWith(SRC_PREFIX.myhome)).length}건. 소득·자산은 공고문 PDF 추출 후속.`);

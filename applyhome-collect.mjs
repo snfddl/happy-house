@@ -6,7 +6,7 @@
 // 원칙: raw/ 는 불변(원본 API 응답 detail.json/models.json). meta.json·index는 갱신 가능.
 //   외부 LLM API 미사용(구조화 JSON이라 추출 불필요). 상세: 청약홈_분양_API_노트.md
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
-import { dwell, dnorm, getArg, loadIndex, loadServiceKey, statusOf } from './collect-util.mjs';
+import { dwell, dnorm, getArg, loadIndex, loadServiceKey, statusOf, makePanId, SRC_PREFIX } from './collect-util.mjs';
 
 const SVC = 'https://api.odcloud.kr/api/ApplyhomeInfoDetailSvc/v1';
 // [라벨, 공고헤더 op, 주택형별 op, 기본kind]. 전 op HTTP 200 실측(2026-06-24).
@@ -112,7 +112,7 @@ for (const [label, detailOp, mdlOp, famKind] of FAMILIES) {
     };
 
     const dir = new URL(`${no}/`, RAW);
-    const idxKey = `ah:${no}`;
+    const idxKey = makePanId('applyhome', no);   // === derive panId(불변식). 콜론 접두는 collect-util 규약.
     if (index[idxKey]?.done) {                       // 이미 받음 → 갱신만(상태·meta)
       try {
         const mp = new URL('meta.json', dir);
@@ -145,4 +145,4 @@ for (const [label, detailOp, mdlOp, famKind] of FAMILIES) {
 mkdirSync(ROOT, { recursive: true });
 writeFileSync(IDX, JSON.stringify(index, null, 2));
 console.log(`\n신규 ${isNew}건 저장 · 유지(기간내) ${kept}건 · 기간밖 ${skippedOld}${failedFam ? ` · 실패family ${failedFam}` : ''}`);
-console.log(`index 총 ${Object.keys(index).length}건 추적중 (applyhome ${Object.keys(index).filter(k => k.startsWith('ah:')).length}).`);
+console.log(`index 총 ${Object.keys(index).length}건 추적중 (applyhome ${Object.keys(index).filter(k => k.startsWith(SRC_PREFIX.applyhome)).length}).`);

@@ -46,6 +46,12 @@ export function pickPdf(filesDir, fileid = null) {
     || pdfs[0];
 }
 
+// 소스별 panId 접두 규약(단일 선언). 불변식: index 키 === derived panId === `${접두}${원시ID}` (전 소스 공통).
+//   LH는 레거시 무접두(API panId 그대로), 나머지는 소스 약칭 접두. applyhome ':'(콜론)은 기존 index 키 호환 위해 유지(타 소스는 '-').
+//   ★ applyhome은 collect(idxKey)와 derive(panId)가 별파일이라 과거 panId=bare vs key='ah:…' 불일치 → overlay 조용한실패. 양쪽 makePanId로 강제.
+export const SRC_PREFIX = { lh: '', applyhome: 'ah:', myhome: 'mh-', sh: 'sh-', gh: 'gh-' };
+export const makePanId = (src, rawId) => `${SRC_PREFIX[src] ?? ''}${rawId}`;
+
 // index.json 로드(없거나 깨졌으면 {}). idxUrl = 각 수집기의 IDX(URL/경로).
 export function loadIndex(idxUrl) { try { return JSON.parse(readFileSync(idxUrl, 'utf8')); } catch { return {}; } }
 

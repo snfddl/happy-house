@@ -4,6 +4,7 @@
 //   ① APT 분양(가점/순차·특공·지역우선)  ② 추첨 분양(오피스텔/무순위/임의공급)  ③ 임대(공공지원민간임대·APT임대)
 // API 미제공 항목은 _갭(분양)/_검증노트(임대)에 → 매칭시 "확인필요". 스펙: SCHEMA.md §5·§6
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { makePanId } from './collect-util.mjs';
 
 const ROOT = new URL('./data/', import.meta.url);
 const RAW = new URL('raw/applyhome/', ROOT);
@@ -47,7 +48,7 @@ function deriveApt(no, d, models, meta) {
   const 갭 = ['전매제한', '실거주의무', '특공자격컷'];
   if (민영) 갭.unshift('가점추첨비율');
   return {
-    panId: no, source: 'applyhome', 상품군: '분양', 공고명: d.HOUSE_NM, 상품구조: '분양', 유형,
+    panId: makePanId('applyhome', no), source: 'applyhome', 상품군: '분양', 공고명: d.HOUSE_NM, 상품구조: '분양', 유형,
     지역: meta.region ? `${meta.region} ${(d.HSSPLY_ADRES || '').split(' ')[1] || ''}`.trim() : meta.region,
     공고일: meta.모집공고일, 접수시작: meta.청약접수?.[0] || null, 마감일: meta.청약접수?.[1] || null, 상태: meta.상태,
     특별공급접수: meta.특별공급접수 || [null, null], 당첨자발표: meta.당첨발표일, 입주예정: meta.입주예정월,
@@ -74,7 +75,7 @@ function deriveChoo(no, d, models, meta) {
   const 무순위 = t === '무순위/잔여';
   const 무주택 = 무순위 ? '무주택세대구성원(해당지역 거주자 우선일 수 있음 — 공고문 확인)' : '제한없음(만 19세 이상 추첨, 무주택·청약통장 무관)';
   return {
-    panId: no, source: 'applyhome', 상품군: '분양', 공고명: d.HOUSE_NM, 상품구조: '분양', 유형: t,
+    panId: makePanId('applyhome', no), source: 'applyhome', 상품군: '분양', 공고명: d.HOUSE_NM, 상품구조: '분양', 유형: t,
     지역: meta.region ? `${meta.region} ${(d.HSSPLY_ADRES || '').split(' ')[1] || ''}`.trim() : meta.region,
     공고일: meta.모집공고일, 접수시작: meta.청약접수?.[0] || null, 마감일: meta.청약접수?.[1] || null, 상태: meta.상태,
     당첨자발표: meta.당첨발표일, 입주예정: meta.입주예정월,
@@ -103,7 +104,7 @@ function deriveRent(no, d, models, meta) {
   };
   const 대상계층 = Object.entries(특공).filter(([, v]) => v > 0).map(([k]) => k);
   return {
-    panId: no, source: 'applyhome', 상품군: '임대', 공고명: d.HOUSE_NM, 유형: meta.type, 상품구조: meta.type, 분양전환: '해당없음',
+    panId: makePanId('applyhome', no), source: 'applyhome', 상품군: '임대', 공고명: d.HOUSE_NM, 유형: meta.type, 상품구조: meta.type, 분양전환: '해당없음',
     지역: meta.region ? `${meta.region} ${(d.HSSPLY_ADRES || '').split(' ')[1] || ''}`.trim() : meta.region,
     공고일: meta.모집공고일 || '공고문미기재', 접수시작: meta.청약접수?.[0] || null, 마감일: meta.청약접수?.[1] || null, 상태: meta.상태,
     당첨자발표: meta.당첨발표일, 입주예정: meta.입주예정월,
