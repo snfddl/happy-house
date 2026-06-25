@@ -106,11 +106,13 @@ export function createMatcher(P, todayStr) {
     return null;
   }
   function tierLimit(req, topVal, tierField, label, mine) {
-    if (!isMissing(topVal)) return gateLimit(topVal, mine, label);
+    // 본인 계층(캐논)의 계층별 상한이 본인의 구속 상한 — top-level(공통/기본)보다 우선(SCHEMA §5: 매처가 계층별로 위임).
+    //   과거버그: top-level 값이 있으면 계층값을 보지도 않고 평가 → 계층 상한이 더 엄격한 경우(예: 행복 top 3.45억 vs 청년 2.51억)
+    //   자격없는 사람을 '지원가능'으로 오판(false positive). 그래서 계층 해결을 먼저.
     const 계층별 = req.자격요건?.계층별, key = tierKeyFor(계층별);
     if (key && 계층별[key] && !isMissing(계층별[key][tierField]))
       return gateLimit(계층별[key][tierField], mine, label, key);
-    return gateLimit(topVal, mine, label);   // 계층 못 정하면 '확인필요'
+    return gateLimit(topVal, mine, label);   // 계층 미해결/계층값 미기재 → top-level(공통). 그것도 미기재면 '확인필요'
   }
   function gateSubscription(req) {
     const c = req.자격요건?.청약요건;
