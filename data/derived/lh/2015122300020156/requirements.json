@@ -249,7 +249,7 @@
     "우선배정: 별도 우선공급 비율 명시 없음(개인정보 동의서에 '우선공급 대상 장애인 등' 언급 있으나 비율·조건 미기재)."
   ],
   "원문링크": {
-    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300020156",
+    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026",
     "공고문PDF": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67307782",
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020156/files/67307782__(경기북부)2026년2차신혼·신생아매입임대Ⅰ예비입주자모집공고문.pdf",
     "첨부": [
@@ -286,8 +286,8 @@
       },
       "고유면적수": 19,
       "목록": [
-        43.0,
-        44.0,
+        43,
+        44,
         46.2,
         47.9,
         48.6,
@@ -304,7 +304,7 @@
         81.8,
         84.7,
         84.9,
-        85.0
+        85
       ]
     },
     "임대조건": {

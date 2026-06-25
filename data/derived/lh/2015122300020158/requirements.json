@@ -225,7 +225,7 @@
     "선정방식: 배점 합산(가점)에 동점 시 전입일·추첨 보조 및 순번 지정 공급 방식이 혼합되어 enum '혼합'으로 표기."
   ],
   "원문링크": {
-    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300020158",
+    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026",
     "공고문PDF": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67285817",
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020158/files/67285817__붙임5)2026년안성시안성맞춤청년주택(청년매입임대주택)입주자모집공고.pdf",
     "첨부": [
@@ -260,7 +260,7 @@
       "고유면적수": 16,
       "목록": [
         20.3,
-        26.0,
+        26,
         27.1,
         30.8,
         35.1,
@@ -268,13 +268,13 @@
         40.2,
         43.1,
         43.5,
-        46.0,
+        46,
         46.8,
         48.9,
         56.4,
         59.7,
         59.9,
-        60.0
+        60
       ]
     },
     "임대조건": {

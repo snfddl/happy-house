@@ -209,7 +209,7 @@
     "마감일 시각: 청약신청 마감은 7.2(목) 16:00."
   ],
   "원문링크": {
-    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300020080",
+    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026",
     "공고문PDF": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67297175",
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020080/files/67297175__(경기북부)2026년2차청년매입임대주택예비입주자모집공고문.pdf",
     "첨부": [
@@ -256,7 +256,7 @@
         21.5,
         21.6,
         21.8,
-        23.0,
+        23,
         25.2,
         27.2,
         27.7,
@@ -264,17 +264,17 @@
         29.3,
         29.5,
         29.6,
-        30.0,
+        30,
         31.4,
         37.9,
         38.6,
-        39.0,
+        39,
         39.8,
         39.9,
-        40.0,
+        40,
         40.5,
         41.2,
-        42.0,
+        42,
         43.6,
         45.1
       ]

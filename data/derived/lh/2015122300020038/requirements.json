@@ -141,7 +141,7 @@
     "자산상한·자동차상한: 입주자격 단계에서는 심사 배제이므로 '없음'으로 기록. 분양전환 단계 자산기준(3.62억원, 자동차 포함 총자산)은 소득기준.비고에 별도 기재."
   ],
   "원문링크": {
-    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300020038",
+    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026",
     "공고문PDF": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67202854",
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020038/files/67202854__군산시든든전세주택입주자모집공고문(분양전환형).pdf",
     "첨부": [
@@ -173,7 +173,7 @@
       "고유면적수": 2,
       "목록": [
         84.8,
-        85.0
+        85
       ]
     },
     "임대조건": {

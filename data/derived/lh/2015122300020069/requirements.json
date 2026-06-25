@@ -222,7 +222,7 @@
     "소득 가구원수별 표는 50%/70% 두 컬럼을 모두 보존했으나, 컬럼 라벨에 가구원별 가산(1인·2인 별도%)이 혼재되어 키명에 원문 표기를 그대로 사용함."
   ],
   "원문링크": {
-    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300020069",
+    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026",
     "공고문PDF": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67138241",
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020069/files/67138241__인제서화_고령자복지주택(국민임대)_입주자모집공고문(260608).pdf",
     "첨부": [

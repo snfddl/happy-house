@@ -175,7 +175,7 @@
     "지역 시군구: 목록기준 경남, 공고 발행 주체는 경남지역본부(창원시). 실제 공급권역은 부산·울산·경남 전체이므로 시군구 단위 특정은 목록 파일 필요."
   ],
   "원문링크": {
-    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300020094",
+    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026",
     "공고문PDF": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67197244",
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020094/files/67197244__26년1차분양전환형든든전세주택매입임대입주자모집공고문(경남).pdf",
     "첨부": [
@@ -202,7 +202,7 @@
     },
     "전용면적": {
       "최소": 59.49,
-      "최대": 85.0,
+      "최대": 85,
       "구간분포": {
         "50㎡~": 180
       },
@@ -218,7 +218,7 @@
         84.3,
         84.5,
         84.9,
-        85.0
+        85
       ]
     },
     "임대조건": {

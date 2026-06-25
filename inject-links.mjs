@@ -36,7 +36,9 @@ for (const panId of panIds) {
   }
 
   req.원문링크 = {
-    상세페이지: meta.dtlUrl || `${BASE}/apply/wt/wrtanc/selectWrtancInfo.do?panId=${panId}`,
+    // LH 상세(selectWrtancInfo.do)는 POST 전용 — panId GET 딥링크는 "비정상적인 경로로 접근" alert로 차단됨.
+    //   LH 청약플러스는 SPA/POST 구조라 공고별 GET 딥링크가 없음 → 공고목록(List.do, GET 작동)으로 보내 검색·청약. 공고 원문은 공고문PDF로.
+    상세페이지: `${BASE}/apply/wt/wrtanc/selectWrtancList.do?mi=1026`,
     공고문PDF: noticePdf ? dl(noticePdf.fileid) : null,
     로컬PDF: localPdf,
     첨부: realFiles.map(f => ({ name: f.name, ext: f.ext, 다운로드: dl(f.fileid) })),

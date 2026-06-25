@@ -250,7 +250,7 @@
     "매입주택 임대보증금범위·월임대료: 첨부 주택내역에만 존재하여 0 처리."
   ],
   "원문링크": {
-    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300020157",
+    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026",
     "공고문PDF": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67297436",
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020157/files/67297436__(경기북부)2026년2차신혼·신생아매입임대Ⅱ(전세형)예비입주자모집공고문.pdf",
     "첨부": [
@@ -289,7 +289,7 @@
         47.6,
         48.8,
         55.9,
-        60.0,
+        60,
         72.5,
         77.4,
         81.7,

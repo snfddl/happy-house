@@ -171,7 +171,7 @@
     "당첨자발표: 8.14(금) 17:00 이후, 단 지역본부별 일정 상이 가능."
   ],
   "원문링크": {
-    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300020087",
+    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026",
     "공고문PDF": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67197654",
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020087/files/67197654__26년1차비분양전환형든든전세주택매입임대입주자모집공고문(경남).pdf",
     "첨부": [
@@ -206,11 +206,11 @@
         51.2,
         54.8,
         57.1,
-        59.0,
+        59,
         59.3,
         59.6,
         59.8,
-        60.0,
+        60,
         67.5,
         76.8,
         81.3,

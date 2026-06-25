@@ -221,7 +221,7 @@
     "단지 배열 비워둠: 주택별 단지명·주소 공고문 미기재. xlsx 파싱 후 주입."
   ],
   "원문링크": {
-    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300020217",
+    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026",
     "공고문PDF": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67430330",
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020217/files/67430330__(전북지역본부)26년2차신혼·신생아매입임대Ⅰ예비입주자모집공고문.pdf",
     "첨부": [

@@ -186,7 +186,7 @@
     "매입주택.임대보증금범위: 구체 금액은 첨부 xlsx 참조, null 처리(parse-housing-xlsx.py 결정론 주입 예정)."
   ],
   "원문링크": {
-    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300020127",
+    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026",
     "공고문PDF": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67318865",
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020127/files/67318865__충남_든든전세(분양전환형)_매입임대주택_입주자모집공고문.pdf",
     "첨부": [
@@ -211,15 +211,15 @@
     },
     "전용면적": {
       "최소": 74.87,
-      "최대": 85.0,
+      "최대": 85,
       "구간분포": {
         "50㎡~": 60
       },
       "고유면적수": 3,
       "목록": [
         74.9,
-        75.0,
-        85.0
+        75,
+        85
       ]
     },
     "임대조건": {

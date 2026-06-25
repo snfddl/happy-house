@@ -207,7 +207,7 @@
         17.3,
         18.5,
         18.7,
-        19.0,
+        19,
         19.1,
         19.4,
         19.8,
@@ -217,11 +217,11 @@
         22.2,
         22.5,
         22.9,
-        23.0,
+        23,
         24.2,
         25.1,
         25.9,
-        26.0,
+        26,
         26.2,
         26.3,
         26.8,
@@ -256,7 +256,7 @@
     ]
   },
   "원문링크": {
-    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300020192",
+    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026",
     "공고문PDF": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67380743",
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020192/files/67380743__[충북지역본부]청년매입임대예비입주자모집공고(260624공고).pdf",
     "첨부": [

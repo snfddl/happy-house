@@ -236,7 +236,7 @@
       "목록": [
         45.8,
         46.4,
-        47.0,
+        47,
         47.1,
         47.2,
         47.9,
@@ -250,7 +250,7 @@
         53.4,
         53.5,
         54.1,
-        55.0,
+        55,
         55.7,
         55.9,
         56.2,
@@ -261,8 +261,8 @@
         58.4,
         59.2,
         59.6,
-        60.0,
-        61.0,
+        60,
+        61,
         61.4,
         65.8,
         67.2,
@@ -297,7 +297,7 @@
     ]
   },
   "원문링크": {
-    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300020191",
+    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026",
     "공고문PDF": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67380193",
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020191/files/67380193__[충북지역본부]신혼·신생아매입임대Ⅰ예비입주자모집공고(260624공고).pdf",
     "첨부": [

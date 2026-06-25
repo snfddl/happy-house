@@ -210,7 +210,7 @@
       "서구": 1
     },
     "전용면적": {
-      "최소": 7.0,
+      "최소": 7,
       "최대": 73.02,
       "구간분포": {
         "~20㎡": 28,
@@ -243,7 +243,7 @@
     ]
   },
   "원문링크": {
-    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=2015122300020178",
+    "상세페이지": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026",
     "공고문PDF": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67360832",
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020178/files/67360832__2026년2차대구경북지역청년매입임대입주자모집공고문.pdf",
     "첨부": [
