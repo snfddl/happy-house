@@ -33,7 +33,9 @@
   - **완료(2026-06-25):** `collect-util.mjs` 신설 — 순수유틸 7개 export(`UA`·`dwell`·`sani`·`dnorm`·`getArg`·`loadIndex(idxUrl)`·`loadServiceKey()`). 5 수집기가 자기 필요분만 import. **`sani`는 캐논=`String()`판으로 통일 → lh의 비문자열 크래시 버그 흡수.** `loadServiceKey`는 디코드된 키만 반환(빈값시 exit/skip 정책은 호출부에 위임 → lh `--refresh` graceful skip 보존). **`fetchNoticeFiles`는 의도적 제외** — 3변형이 URL빌더·필드명·시그니처가 소스별로 진짜 다름(순수 복붙 아님). 콜백 떡칠 대비 가치 낮아 각 파일 유지. `statusOf` 통일은 별도 P2 항목. 검증: 6파일 `node --check` 통과, 유틸 단위테스트(sani 숫자입력·dnorm·loadIndex결측·키 유무) 통과, sh/gh `--refresh` 라이브 정상(신규 2/0건, 데이터 churn 0).
 - [x] **`statusOf` 3중 구현 통일.** ~~`applyhome-collect.mjs:53`/`myhome-collect.mjs:61`/`myhome-pipeline.mjs:22` 시그니처 제각각(`([b,e])` vs `(b,e)` vs `(b,e,prev)`) — 같은 규칙 3곳, 변경 시 동시 수정 필요.~~
   - **완료(2026-06-25):** `collect-util.mjs`에 캐논 `statusOf(b,e,prev=null)`+`TODAY` export. 4 수집기(applyhome·myhome-collect·myhome-pipeline·sh) 로컬 정의 제거·import. 캐논 본문은 pipeline/sh판(마감→예정→접수중→`prev ?? null`). 의미차 수렴: applyhome/myhome-collect의 `접수중` 판정 `(b&&e)`→`(e)`(마감일만 있고 시작 null이면 접수중). SH 기본 `'공고중'`은 호출부 `?? '공고중'`으로 보존. 검증: `node --check` 5파일·캐논 7케이스 스모크 통과.
-- [ ] **`pickPdf` 통일 + panId 키 규약 일원화.** `pickPdf`가 `pipeline.mjs:95`/`prep-slices.mjs:10`/`myhome-pipeline.mjs:33` 3변형. panId 접두사(`ah:`/`mh-`/`sh-`/`gh-`/LH무접두)가 5곳 문자열 리터럴로 분산. applyhome은 derived `panId`(`2026…`)와 index 키(`ah:2026…`) 불일치 — LIVE_OVERLAY에 넣으면 조용히 실패.
+- [x] **`pickPdf` 통일.** ~~`pipeline.mjs:95`/`prep-slices.mjs:10`/`myhome-pipeline.mjs:33` 3변형.~~
+  - **완료(2026-06-25):** `collect-util.mjs`에 캐논 `pickPdf(filesDir, fileid=null)` — fileid 접두(LH) → 모집공고/입주자모집 → 공고문 → 공고(붙임·별지·서식 제외) → 모집 → 첫 PDF. pipeline·myhome-pipeline 로컬 정의 제거·import. **prep-slices는 호출처 0(pipeline 인라인 [2/6]으로 대체)임을 확인 → `[DEAD/참고]` 배너 + 캐논 공유**(P3 죽은코드 격리 일부 선반영). 검증: 302개 raw 전수에서 기존 3변형 대비 **선택차이 0건**, 4소스 라이브 픽 정상.
+- [ ] **panId 키 규약 일원화.** panId 접두사(`ah:`/`mh-`/`sh-`/`gh-`/LH무접두)가 5곳 문자열 리터럴로 분산. applyhome은 derived `panId`(`2026…`)와 index 키(`ah:2026…`) 불일치 — LIVE_OVERLAY에 넣으면 조용히 실패. **정확도 버그 동반 → 별도 처리.**
 
 ### P3 — 정리/정확성
 

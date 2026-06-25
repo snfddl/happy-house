@@ -1,7 +1,7 @@
 // collect-util.mjs — 수집기 공통 순수유틸. 5종 collect(lh/applyhome/myhome/sh/gh)가 복붙하던 것을 1벌로.
 //   수집기는 Node 실행(브라우저 인라인 아님)이라 정당하게 import 공유 가능(CLAUDE.md §4 — 인라인 제약은 match-core 한정).
 //   순수함수·결정론이라 위험 낮음. 소스별로 다른 로직(fetchNoticeFiles·URL빌더)은 각 파일에 둠.
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 
 // 스크래핑 공통 User-Agent(데스크톱 크롬). 차단 회피용 고정값.
 export const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36';
@@ -30,6 +30,21 @@ export function statusOf(b, e, prev = null) {
 
 // CLI 인자 --k=v 읽기(없으면 기본값 d). process.argv 직접 조회(호출 파일과 동일 인자).
 export const getArg = (k, d) => (process.argv.slice(2).find(a => a.startsWith(`--${k}=`)) || `--${k}=${d}`).split('=')[1];
+
+// 공고문 PDF 1개 고르기(파이프라인 공통). filesDir = `<slug>/files/` URL. fileid 있으면(LH meta) "<fileid>__" 접두 우선.
+//   이후 이름패턴: 모집공고/입주자모집 → 공고문 → 공고(붙임·별지·서식 제외) → 모집 → 첫 PDF. PDF 없거나 디렉터리 부재 시 null.
+//   pipeline(LH)·myhome-pipeline(myhome/sh/gh) 2변형 + prep-slices 1변형을 1벌로. 302개 raw 전수 무손실 검증(선택차이 0).
+export function pickPdf(filesDir, fileid = null) {
+  let names; try { names = readdirSync(filesDir); } catch { return null; }
+  const pdfs = names.filter(n => n.toLowerCase().endsWith('.pdf'));
+  if (!pdfs.length) return null;
+  return (fileid && pdfs.find(n => n.startsWith(`${fileid}__`)))
+    || pdfs.find(n => /모집공고|입주자모집/.test(n))
+    || pdfs.find(n => /공고문/.test(n))
+    || pdfs.find(n => /공고/.test(n) && !/붙임|별지|서식/.test(n))
+    || pdfs.find(n => /모집/.test(n))
+    || pdfs[0];
+}
 
 // index.json 로드(없거나 깨졌으면 {}). idxUrl = 각 수집기의 IDX(URL/경로).
 export function loadIndex(idxUrl) { try { return JSON.parse(readFileSync(idxUrl, 'utf8')); } catch { return {}; } }

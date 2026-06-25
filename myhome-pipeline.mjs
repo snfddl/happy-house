@@ -6,7 +6,7 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
 import { validateFile, buildReport, printReport } from './validate-requirements.mjs';
-import { statusOf } from './collect-util.mjs';
+import { statusOf, pickPdf } from './collect-util.mjs';
 
 const HERE = new URL('./', import.meta.url);
 const ROOT = new URL('./data/', import.meta.url);
@@ -23,14 +23,6 @@ const log = (...a) => console.log(...a);
 
 const V1_SCHEMA = readFileSync(new URL('schema-v1.jsonc', HERE), 'utf8');
 const RULES = readFileSync(new URL('extract-rules.txt', HERE), 'utf8');
-
-// 공고문 PDF 고르기(팸플릿/붙임 제외, 공고/모집 우선)
-function pickPdf(slug) {
-  let names; try { names = readdirSync(new URL(`${slug}/files/`, RAW)); } catch { return null; }
-  const pdfs = names.filter(n => n.toLowerCase().endsWith('.pdf'));
-  if (!pdfs.length) return null;
-  return pdfs.find(n => /모집공고|입주자모집/.test(n)) || pdfs.find(n => /공고/.test(n) && !/붙임|별지|서식/.test(n)) || pdfs[0];
-}
 
 // 추출 프롬프트 — 기존 requirements(API envelope) 보존하고 PDF에서 자격요건만 채워 MERGE
 function buildPrompt(slug, slicedPath, reqPath, meta) {
@@ -76,7 +68,7 @@ for (const slug of slugs) {
     done = r.__pdf추출 === true;
   }
   if (done) continue;
-  const pdf = pickPdf(slug);
+  const pdf = pickPdf(new URL(`${slug}/files/`, RAW));
   if (!pdf) { log(`  ⚠️ ${slug} 공고문 PDF 없음 — API메타만 유지`); continue; }
   const slicedPath = p(new URL(`${slug}/notice_sliced.txt`, DERIVED));
   try {

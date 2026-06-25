@@ -16,6 +16,7 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
 import { validateFile, buildReport, printReport } from './validate-requirements.mjs';
+import { pickPdf } from './collect-util.mjs';
 
 const HERE = new URL('./', import.meta.url);
 const ROOT = new URL('./data/', import.meta.url);
@@ -91,19 +92,12 @@ if (!ONLY.length) {
 // ── 2. 신규판별 + 슬라이스 ────────────────────────────────────
 hr('[2/6] 신규판별 + 슬라이스');
 const slicer = p(new URL('slice-notice.mjs', HERE));
-function pickPdf(panId, fileid) {
-  let names; try { names = readdirSync(new URL(`${panId}/files/`, RAW)); } catch { return null; }
-  const pdfs = names.filter(n => n.toLowerCase().endsWith('.pdf'));
-  if (!pdfs.length) return null;
-  return pdfs.find(n => fileid && n.startsWith(`${fileid}__`))
-    || pdfs.find(n => /공고문/.test(n)) || pdfs.find(n => /모집/.test(n)) || pdfs[0];
-}
 
 const newTargets = [], skipped = [], noPdf = [];
 for (const t of selected) {
   const reqPath = new URL(`${t.panId}/requirements.json`, DERIVED);
   if (!FORCE && existsSync(reqPath)) { skipped.push(t.panId); continue; }
-  const pdfName = pickPdf(t.panId, t.fileid);
+  const pdfName = pickPdf(new URL(`${t.panId}/files/`, RAW), t.fileid);
   if (!pdfName) { noPdf.push({ panId: t.panId, type: t.type, 사유: 'PDF 없음(첨부 0 또는 비PDF) — 수동 확인', dtl: `https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=${t.panId}` }); continue; }
   const pdfPath = p(new URL(`${t.panId}/files/${pdfName}`, RAW));
   const outDir = new URL(`${t.panId}/`, DERIVED);
