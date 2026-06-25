@@ -16,12 +16,14 @@
   - **수정완료(2026-06-25):** `build-site.mjs`에 `freshStatus(b,e,prev)` 추가 — 마감일 경과건만 `TODAY` 기준 `접수마감`으로 결정론 강등(그 외 상태는 보존해 `정정공고중` 등 활성뉘앙스 평탄화 안 함), 오버레이 후 전 레코드 적용. 검증: 199건 정직 강등, 활성 잔존 누수 0. 날짜 자체 없는 활성건은 `마감일미상` 플래그→`match-core`(두 결과객체)·`_template.html ddayHtml` "마감일 미상" 뱃지로 정직 표시.
   - **SH 날짜 정밀화(2026-06-25, 사용자 지적 반영):** SH 마감일은 사실 대부분 첨부 PDF 추출로 이미 확보(18/20)됨 — 앞 진단의 "SH는 HWP뿐" 전제가 오류였음. 잔여 누락 4건 진단→처리: ②발표글 2건(`입주대상자/서류심사대상자 발표`)은 모집공고 아님 → `sh-collect.mjs SKIP_TITLE`에 `대상자\s*발표` 추가로 제외(index+derived+raw 삭제), ①PDF없이 HWP만 첨부된 303858은 상세 본문 작성자 기재 신청기간을 `parseBodyDates`로 백필(접수 5.4~마감 5.22 → 접수마감), ①상시모집 304968만 마감일 null 유지(`마감일미상` 뱃지 정당). 신규 수집에도 본문 백필 적용, 기존분은 `--reparse`(재다운로드 없이 제목필터 재적용+본문 백필). 22건 전수 파서 검증: 접수기간·발표일 오탐 0.
 
-### P1 — 지속가능성 (쓰기 경로 LH 편중)
+### P1 — 지속가능성 (쓰기 경로 LH 편중) — ✅ 완료(2026-06-25)
 
-- [ ] **오케스트레이션 통합.** `pipeline.mjs`에 비LH 참조 0건 → 신규 처리 절차가 소스 수만큼 분기(LH=pipeline 6단계, applyhome=derive, myhome/sh/gh=myhome-pipeline). `DEPLOY.md:39` 런북(`node pipeline.mjs`) 따라도 비LH 미처리.
-  - 수정: 상위에 얇은 통합 오케스트레이터(소스 순회→collect→derive/extract→공통검증→build), `pipeline.mjs:208-248` 검증게이트를 전소스 공통 모듈로 추출.
-- [ ] **검증 게이트 비LH 적용.** 필수필드/enum/계층정규화 검사·격리·`pipeline-report.json` 기록이 LH(`pipeline.mjs:208-248`)에만 존재. myhome-pipeline OK 판정은 `!!r.자격요건`(`myhome-pipeline.mjs:103`)뿐.
-- [ ] **CI 멀티소스 갱신.** `refresh.yml:39`이 `lh-collect --refresh`만 → applyhome/myhome/sh/gh 신규는 CI가 감지·알림조차 못 함. `new-pending.json`도 LH만. 비LH collect는 결정론(라이브 스크래핑+인증서, API키 불필요)이라 CI에서 못 돌릴 이유 없음(P0 상태재계산 선행 필요).
+- [x] **오케스트레이션 통합.** ~~`pipeline.mjs`에 비LH 참조 0건 → 신규 처리 절차가 소스 수만큼 분기.~~
+  - **완료:** `process-all.mjs`(얇은 시퀀서) 신설 — 소스 순회로 기존 진입점(LH=pipeline, applyhome=collect+derive, myhome/sh/gh=collect+myhome-pipeline) 호출 + build-site. `--source=`/`--skip-collect`/`--semi`/`--no-build`, 단계실패 격리. `DEPLOY.md` 런북을 process-all 기준으로 갱신.
+- [x] **검증 게이트 비LH 적용.** ~~필수필드/enum/격리/리포트가 LH(`pipeline.mjs:208-248`)에만.~~
+  - **완료:** `validate-requirements.mjs` 공통 모듈 추출(validateReq/validateFile/buildReport/printReport). pipeline.mjs(동작동일)·myhome-pipeline.mjs([4/4] 게이트, `data/<source>-report.json`)가 공유. 미추출(소득·자산 모두 공고문미기재)은 fail 아닌 review로(오탐 방지). 검증: lh 선정방식 enum위반 1건 fail 포착.
+- [x] **CI 멀티소스 갱신.** ~~`refresh.yml`이 `lh-collect --refresh`만 → 비LH 신규 미감지·미알림.~~
+  - **완료(범위=SH/GH, 사용자 결정):** sh/gh-collect에 `--refresh`(신규 감지→new-pending, 다운로드 없음, 키 불필요) 추가, `mergeNewPending` 소스별 병합. lh-collect는 키 부재 시 graceful skip(CI 안 깨짐). refresh.yml에 lh/sh/gh --refresh 순차. **lh/applyhome/myhome(키 필요)은 로컬 process-all 유지.** 검증: sh 실신규 2건 알림, raw 무변화.
 
 ### P2 — 코드 부채
 
