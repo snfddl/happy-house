@@ -35,12 +35,14 @@
   - **완료(2026-06-25):** `match-core`에 `tierFieldVal`(자산/자동차 동의어 내성, normalize FIELD_SYN과 동기화) 추가 — normalize 미적용 데이터(`총자산상한` 등)에서도 본인 계층값을 읽어 #1 우선규칙 유효. 미상 필드는 normalize가 비고로 흡수하므로 금액 2종만. 회귀테스트 1케이스(비캐논 총자산상한→fail). 13/13 통과.
 
 ### P2 — 부채
-- [ ] **#7 lh-collect SKIP_PAT에 `평면도`·`카달로그` 누락.** `lh-collect.mjs:27` → 홍보 PDF ~27MB 다운로드(§2 위반). 다른 수집기엔 `평면도` 있음.
-- [ ] **#8 공유유틸 추출 미완.** `mergeNewPending`(sh/gh 동일)·`fetchNoticeFiles`(sh/gh/myhome 유사)·toEnvelope 플레이스홀더·SKIP_PAT 4벌 → #7 근본원인. collect-util로 추출.
+- [x] **#7 lh-collect SKIP_PAT에 `평면도`·`카달로그` 누락.** ~~홍보 PDF ~27MB 다운로드(§2 위반).~~
+  - **완료(2026-06-25):** 캐논 `PAMPHLET_PAT`로 교체(평면도·카달로그 포함). dry-run: LH 24개 홍보파일 이제 스킵, 공고문 오스킵 0. **기존 디스크 홍보PDF 7개/27.1MB도 prune**(meta 정합 갱신, raw 610→583M, 공고문 무손실).
+- [x] **#8 공유유틸 추출 미완.** ~~mergeNewPending·fetchNoticeFiles·toEnvelope 플레이스홀더·SKIP_PAT 4벌 → #7 근본원인.~~
+  - **완료(2026-06-25):** collect-util에 `PAMPHLET_PAT`/`NON_NOTICE_PAT`(캐논 패턴 2종, 드리프트 종식)·`mergeNewPending(root,src,entries)`·`saveDoc`(fetch-검증-저장 코어, 메커니즘은 fetchBuf 콜백 주입으로 fetch/cert-https 차이 흡수)·`emptyQualification(소득비고)` 추출. lh/myhome/sh/gh 4 수집기 재배선. 검증: saveDoc 단위 7/7(스킵·비문서·HTML에러·성공·저장·오류), emptyQualification 키 동등, 5파일 node --check.
 - [ ] **#9 슬라이서 sub-block 제거에 RISK_LINE fail-safe 없음.** `slice-notice.mjs:48-57` — top-level만 가드. 현재 손실 0이나 미보장. sub-block에도 RISK_LINE 적용.
 - [x] **#10 freshStatus↔statusOf 불일치(미래 접수시작).** ~~빌드 신선도가 미래 접수시작을 '접수중'으로 오표시.~~
   - **완료(2026-06-25):** `freshStatus`에 `if (b && TODAY<b) return '접수예정'` 추가(prev 보존 보수성은 유지). 검증: 미래 접수시작 LH 71건(2026-06-26~07월)이 과거 '공고중' 오표시 → 정확히 '접수예정'으로 정정.
-- [ ] **#11 index.json 무한누적**(485건 66% 마감) · **#12 gh-collect TODAY 재선언** · **#13 pipeline/myhome-pipeline 스캐폴딩 중복**.
+- [ ] **#11 index.json 무한누적**(485건 66% 마감) · [x] **#12 gh-collect TODAY 재선언**(미사용 dead 선언이라 삭제) · **#13 pipeline/myhome-pipeline 스캐폴딩 중복**.
 
 ### P3 — 정리/정직성
 - [ ] **#14** tier 소득표 세대원수 행 없으면 유효 pass→확인필요 강등(공통표 fallback) · **#15** 희망지역 substring 오매칭(`광주`→경기 광주시) · **#16** 루트 `dl_67253288`(342KB HWP)·prep-slices 죽은코드 정리 · **#17** LH derived 5건 `상태:null` 백필.

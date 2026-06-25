@@ -10,7 +10,7 @@
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import https from 'node:https';
 import tls from 'node:tls';
-import { UA, dwell, sani, getArg, loadIndex, makePanId, SRC_PREFIX } from './collect-util.mjs';
+import { UA, dwell, sani, getArg, loadIndex, makePanId, SRC_PREFIX, NON_NOTICE_PAT, saveDoc, emptyQualification, mergeNewPending } from './collect-util.mjs';
 
 const ORIGIN = 'https://apply.gh.or.kr';
 // apply.gh.or.kr는 leaf 인증서만 보내고 중간 인증서(Sectigo RSA OV)를 누락 → Node fetch가 체인검증 실패.
@@ -87,16 +87,6 @@ const listUrl = b => `${ORIGIN}/sb/sr/${b[1]}/selectPbancRentHouseList.do`;
 const detailUrl = b => `${ORIGIN}/sb/sr/${b[1]}/selectPbancDetailView.do`;
 const fileDownUrl = (b, p) => `${ORIGIN}/sr/${b[2]}/selectFileDown.do?pbancNo=${encodeURIComponent(p.pbancNo)}&atchFileSn=${encodeURIComponent(p.atchFileSn)}&atchFileDtlSn=${encodeURIComponent(p.atchFileDtlSn)}&mode=1`;
 
-const SKIP_FILE = /팸플릿|팜플렛|리플렛|리플릿|브로슈어|카탈로그|조감도|평면도|위임장|서식|별지/;
-const TODAY = new Date().toISOString().slice(0, 10);
-// new-pending.json 소스별 병합(CI에서 lh→sh→gh 순차 갱신 시 서로 덮어쓰지 않게). 이 소스 항목만 교체.
-function mergeNewPending(source, entries) {
-  let cur = []; try { cur = JSON.parse(readFileSync(new URL('new-pending.json', ROOT), 'utf8')); } catch {}
-  if (!Array.isArray(cur)) cur = [];
-  const others = cur.filter(x => !String(x.panId || '').startsWith(`${source}-`));
-  writeFileSync(new URL('new-pending.json', ROOT), JSON.stringify([...others, ...entries], null, 2));
-}
-
 async function postForm(url, fields, referer) {
   const body = new URLSearchParams(fields).toString();
   const r = await httpsReq(url, {
@@ -144,18 +134,11 @@ function parseAttachments(html) {
 async function fetchNoticeFiles(b, atts, referer, dir) {
   const files = [];
   for (const f of atts) {
-    if (SKIP_FILE.test(f.name)) { files.push({ ...f, skipped: '팸플릿/서식류' }); continue; }
-    if (!/\.(pdf|hwp|hwpx)$/i.test(f.name)) { files.push({ ...f, skipped: '비문서' }); continue; }
-    try {
-      const r = await httpsReq(fileDownUrl(b, f), { headers: { 'User-Agent': UA, Referer: referer } });
-      const buf = r.buffer;
-      if (buf.length < 100 || /<!DOCTYPE html/i.test(buf.subarray(0, 200).toString('latin1'))) { files.push({ ...f, skipped: '다운실패' }); continue; }
-      const ext = (f.name.match(/\.[a-z0-9]+$/i) || ['.pdf'])[0].toLowerCase();
-      mkdirSync(new URL('files/', dir), { recursive: true });
-      writeFileSync(new URL(`files/${f.atchFileDtlSn}__${sani(f.name)}`, dir), buf);
-      files.push({ ...f, ext });
-      await dwell(200);
-    } catch { files.push({ ...f, skipped: '오류' }); }
+    const res = await saveDoc({
+      name: f.name, dir, saveKey: f.atchFileDtlSn, skipPat: NON_NOTICE_PAT,
+      fetchBuf: async () => (await httpsReq(fileDownUrl(b, f), { headers: { 'User-Agent': UA, Referer: referer } })).buffer,
+    });
+    files.push({ ...f, ...res });
   }
   return files;
 }
@@ -169,11 +152,7 @@ function toEnvelope(b, row) {
     공고일: row.공고일, 접수시작: null, 마감일: row.마감일, 상태: row.상태, 당첨자발표: null, 공고구분: null,
     단지: [], 공급형: [],
     선정방식: '순위', 선정방식상세: `GH ${row.bizTyNm || b[0]} — 자격·순위·소득/자산 컷은 공고문 확인.`,
-    자격요건: {
-      무주택: '무주택세대구성원(유형별 상이 — 공고문 확인)',
-      소득기준: { 종류: '공고문미기재', 기본퍼센트: null, 가구원수별: null, 가산규칙: '', 비고: 'GH 목록 소득기준 미제공 — 공고문 PDF 확인' },
-      자산상한: '공고문미기재', 자동차상한: '공고문미기재', 청약요건: '공고문미기재', 대상계층: ['일반'], 계층별: null,
-    },
+    자격요건: emptyQualification('GH 목록 소득기준 미제공 — 공고문 PDF 확인'),
     순위규칙: [], 배점표: [], 우선배정: [],
     원문링크: { 상세페이지: detailUrl(b), 공급기관: ORIGIN, pbancNo: row.pbancNo, pbancKndCd: row.pbancKndCd },
     _검증노트: ['소득/자산기준 목록미제공 → 공고문 PDF 추출 필요(myhome식 파이프라인)'],
@@ -248,7 +227,7 @@ try {
 
 mkdirSync(ROOT, { recursive: true });
 writeFileSync(IDX, JSON.stringify(index, null, 2));
-if (REFRESH) { mergeNewPending('gh', newPending); console.log(`\n[refresh] 상태 갱신 완료. 미추출 신규 ${newPending.length}건 → data/new-pending.json (다운로드/추출은 로컬 process-all).`); process.exit(0); }
+if (REFRESH) { mergeNewPending(ROOT, 'gh', newPending); console.log(`\n[refresh] 상태 갱신 완료. 미추출 신규 ${newPending.length}건 → data/new-pending.json (다운로드/추출은 로컬 process-all).`); process.exit(0); }
 console.log(`\n신규 ${isNew} · 유지 ${kept} · 기간밖 ${skippedOld}`);
 console.log(`게시판 분포(수집분): ${JSON.stringify(byBoard)}`);
 console.log(`gh index ${Object.keys(index).filter(k => k.startsWith(SRC_PREFIX.gh)).length}건. 소득/자산은 공고문 PDF 추출 후속.`);

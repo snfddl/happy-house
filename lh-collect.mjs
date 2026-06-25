@@ -4,7 +4,7 @@
 //       node lh-collect.mjs 11 26 41              (서울/부산/경기, 전체 임대유형)
 // 원칙: raw/ 는 불변(원본). derived/ 는 재생성 가능. index.json 으로 신규 diff.
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
-import { UA, dwell, sani, getArg, loadIndex, loadServiceKey } from './collect-util.mjs';
+import { UA, dwell, sani, getArg, loadIndex, loadServiceKey, PAMPHLET_PAT } from './collect-util.mjs';
 
 // 런타임 전제: Node 20+ (Headers.getSetCookie). 미만이면 세션쿠키 누락→인증 실패가 조용히 발생 → 즉시 명시적 중단.
 const NODE_MAJOR = +process.versions.node.split('.')[0];
@@ -24,7 +24,6 @@ const TYPE_LABEL = {
 }; // 매입임대(13/26)에 든든전세 포함
 const REGION_LABEL = { '11': '서울', '26': '부산', '27': '대구', '28': '인천', '29': '광주', '30': '대전', '31': '울산', '36110': '세종', '41': '경기', '51': '강원', '43': '충북', '44': '충남', '52': '전북', '46': '전남', '47': '경북', '48': '경남', '50': '제주' };
 // 요건 없는 홍보물(평면도·조감도 책자) — 받지 않고 fileid만 meta에 기록
-const SKIP_PAT = /팸플릿|팜플렛|리플렛|리플릿|브로슈어|카탈로그|조감도/;
 
 const argv = process.argv.slice(2);
 const REFRESH = argv.includes('--refresh'); // 상태/마감일만 갱신, 신규 다운로드 안 함(CI용·raw 불필요)
@@ -169,7 +168,7 @@ for (const n of uniq) {
   const hasPdf = pairs.some(([, nm]) => /\.pdf$/i.test(nm));
   const files = [];
   for (const [fid, dispName] of pairs) {
-    if (SKIP_PAT.test(dispName)) { files.push({ fileid: fid, name: dispName, skipped: '팸플릿류' }); continue; } // 받지 않고 id만 기록
+    if (PAMPHLET_PAT.test(dispName)) { files.push({ fileid: fid, name: dispName, skipped: '팸플릿류' }); continue; } // 받지 않고 id만 기록
     if (SKIP_EXT.test(dispName) && !(!hasPdf && FALLBACK_EXT.test(dispName))) { files.push({ fileid: fid, name: dispName, skipped: '비요건형식' }); continue; } // 파서 없는 형식 — id만 기록
     const fr = await req(`${BASE}/lhFile.do?fileid=${fid}`, { headers: { Referer: `${BASE}/apply/wt/wrtanc/selectWrtancInfo.do` } });
     const buf = Buffer.from(await fr.arrayBuffer());

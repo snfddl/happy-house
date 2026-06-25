@@ -10,7 +10,7 @@
 //   --reparse : 기존 수집분 재처리(재다운로드 없음) — 제목필터 재적용(발표글 등 제거) + 상세 본문에서 접수기간/마감일/발표일 백필.
 //   --refresh : CI용 — 신규만 감지해 data/new-pending.json에 기록(다운로드/추출 안 함, 로컬 process-all이 처리). SH는 키 불필요.
 import { mkdirSync, writeFileSync, existsSync, readFileSync, rmSync } from 'node:fs';
-import { UA, dwell, sani, getArg, loadIndex, statusOf, makePanId, SRC_PREFIX } from './collect-util.mjs';
+import { UA, dwell, sani, getArg, loadIndex, statusOf, makePanId, SRC_PREFIX, NON_NOTICE_PAT, saveDoc, emptyQualification, mergeNewPending } from './collect-util.mjs';
 
 const ORIGIN = 'https://www.i-sh.co.kr';
 const ROOT = new URL('./data/', import.meta.url);
@@ -43,14 +43,6 @@ const downUrl = f => `${ORIGIN}/main/com/file/innoFD.do?brdId=${encodeURICompone
 const KEEP_PAT = /모집\s*공고|입주자\s*모집|예비입주자|공급\s*공고|우선\s*공급/;
 // 발표·결과류 배제. '…대상자 발표'(입주대상자/서류심사대상자 발표 등)는 모집공고 본문을 인용해도 글 자체는 결과발표 → 제외.
 const SKIP_TITLE = /당첨자|경쟁률|계약\s*체결|계약\s*안내|선정\s*결과|결과\s*발표|발표\s*및|대상자\s*발표|최종\s*청약|명단|점검|환급|반환|중단\s*안내|시스템|연기|취소된/;
-const SKIP_FILE = /팸플릿|팜플렛|리플렛|리플릿|브로슈어|카탈로그|조감도|평면도|위임장|점검표|안내문|당첨자|명단|서식|별지/;
-// new-pending.json 소스별 병합(CI에서 lh→sh→gh 순차 갱신 시 서로 덮어쓰지 않게). 이 소스 항목만 교체.
-function mergeNewPending(source, entries) {
-  let cur = []; try { cur = JSON.parse(readFileSync(new URL('new-pending.json', ROOT), 'utf8')); } catch {}
-  if (!Array.isArray(cur)) cur = [];
-  const others = cur.filter(x => !String(x.panId || '').startsWith(`${source}-`));
-  writeFileSync(new URL('new-pending.json', ROOT), JSON.stringify([...others, ...entries], null, 2));
-}
 async function getText(url) { const r = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'ko-KR,ko;q=0.9' } }); return await r.text(); }
 
 // 목록 한 페이지 파싱 → [{seq, title, 공고일}]
@@ -98,18 +90,11 @@ async function fetchNoticeFiles(downList, viewLink, dir) {
   const files = [];
   for (const f of downList) {
     const name = f.oriFileNm || `${f.brdId}_${f.fileSeq}`;
-    if (SKIP_FILE.test(name)) { files.push({ ...pick(f), name, skipped: '팸플릿/서식류' }); continue; }
-    if (!/\.(pdf|hwp|hwpx)$/i.test(name)) { files.push({ ...pick(f), name, skipped: '비문서' }); continue; }
-    try {
-      const r = await fetch(downUrl(f), { headers: { 'User-Agent': UA, Referer: viewLink } });
-      const buf = Buffer.from(await r.arrayBuffer());
-      if (buf.length < 100 || /<!DOCTYPE html/i.test(buf.subarray(0, 200).toString('latin1'))) { files.push({ ...pick(f), name, skipped: '다운실패' }); continue; }
-      const ext = (name.match(/\.[a-z0-9]+$/i) || ['.pdf'])[0].toLowerCase();
-      mkdirSync(new URL('files/', dir), { recursive: true });
-      writeFileSync(new URL(`files/${f.fileSeq}__${sani(name)}`, dir), buf);
-      files.push({ ...pick(f), name, ext, bytes: buf.length });
-      await dwell(200);
-    } catch { files.push({ ...pick(f), name, skipped: '오류' }); }
+    const res = await saveDoc({
+      name, dir, saveKey: f.fileSeq, skipPat: NON_NOTICE_PAT,
+      fetchBuf: async () => Buffer.from(await (await fetch(downUrl(f), { headers: { 'User-Agent': UA, Referer: viewLink } })).arrayBuffer()),
+    });
+    files.push({ ...pick(f), name, ...res });
   }
   return files;
 }
@@ -125,11 +110,7 @@ function toEnvelope(b, row, viewLink) {
     공고일: row.공고일, 접수시작: null, 마감일: null, 상태: '공고중', 당첨자발표: null, 공고구분: null,
     단지: [], 공급형: [],
     선정방식: '순위', 선정방식상세: `SH ${b[0]} — 자격·순위·소득/자산 컷은 공고문 확인.`,
-    자격요건: {
-      무주택: '무주택세대구성원(유형별 상이 — 공고문 확인)',
-      소득기준: { 종류: '공고문미기재', 기본퍼센트: null, 가구원수별: null, 가산규칙: '', 비고: 'SH 목록 소득기준 미제공 — 공고문 PDF 확인' },
-      자산상한: '공고문미기재', 자동차상한: '공고문미기재', 청약요건: '공고문미기재', 대상계층: ['일반'], 계층별: null,
-    },
+    자격요건: emptyQualification('SH 목록 소득기준 미제공 — 공고문 PDF 확인'),
     순위규칙: [], 배점표: [], 우선배정: [],
     원문링크: { 상세페이지: pubUrl(b, row.seq), 공급기관: ORIGIN },
     _검증노트: ['접수기간·마감일·소득/자산기준 목록미제공 → 공고문 PDF 확인 필요(상태는 공고중으로 가정; myhome식 추출 파이프라인)'],
@@ -244,7 +225,7 @@ try {
 } catch (e) { console.error(`❌ ${e.message}`); process.exit(1); }
 
 mkdirSync(ROOT, { recursive: true });
-if (REFRESH) { writeFileSync(IDX, JSON.stringify(index, null, 2)); mergeNewPending('sh', newPending); console.log(`\n[refresh] 미추출 신규 ${newPending.length}건 → data/new-pending.json (다운로드/추출은 로컬 process-all).`); process.exit(0); }
+if (REFRESH) { writeFileSync(IDX, JSON.stringify(index, null, 2)); mergeNewPending(ROOT, 'sh', newPending); console.log(`\n[refresh] 미추출 신규 ${newPending.length}건 → data/new-pending.json (다운로드/추출은 로컬 process-all).`); process.exit(0); }
 writeFileSync(IDX, JSON.stringify(index, null, 2));
 console.log(`\n신규 ${isNew} · 유지 ${kept} · 기간밖 ${skippedOld} · 비모집(제목) ${skippedTitle}`);
 console.log(`게시판 분포(수집분): ${JSON.stringify(byBoard)}`);

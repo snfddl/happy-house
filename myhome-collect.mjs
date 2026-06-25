@@ -6,7 +6,7 @@
 //   소득·자산 요건은 구조화 미제공 → 공고문 PDF(pcUrl) 추출 후속(LH식 파이프라인 재사용).
 // 사용: node myhome-collect.mjs [--since=2026-05-01] [--include-lh] [--probe]
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
-import { UA, dwell, sani, dnorm, getArg, loadIndex, loadServiceKey, statusOf, makePanId, SRC_PREFIX } from './collect-util.mjs';
+import { UA, dwell, sani, dnorm, getArg, loadIndex, loadServiceKey, statusOf, makePanId, SRC_PREFIX, PAMPHLET_PAT, saveDoc, emptyQualification } from './collect-util.mjs';
 
 const BASE = 'http://apis.data.go.kr/1613000/HWSPR02';
 const LIST_OP = 'rsdtRcritNtcList';
@@ -24,7 +24,6 @@ const SERVICE_KEY = loadServiceKey();
 if (!SERVICE_KEY) { console.error('❌ .env 의 DATA_GO_KR_SERVICE_KEY 가 비어있음'); process.exit(1); }
 
 const FILE_DOWN = 'https://www.myhome.go.kr/hws/com/fms/cvplFileDownload.do';
-const SKIP_PAT = /팸플릿|팜플렛|리플렛|리플릿|브로슈어|카탈로그|조감도|평면도/;
 
 // 상세페이지(pcUrl) → 공고문 PDF/HWP 첨부 다운로드 (전자정부 cvplFileDownload.do, atchFileId+fileSn GET)
 async function fetchNoticeFiles(pblancId, houseSn, dir) {
@@ -35,18 +34,11 @@ async function fetchNoticeFiles(pblancId, houseSn, dir) {
     .map(m => ({ atchFileId: m[1], fileSn: m[2], name: m[3].trim() }));
   const files = [];
   for (const f of pairs) {
-    if (SKIP_PAT.test(f.name)) { files.push({ ...f, skipped: '팸플릿류' }); continue; }
-    if (!/\.(pdf|hwp|hwpx)$/i.test(f.name)) { files.push({ ...f, skipped: '비문서' }); continue; }
-    try {
-      const r = await fetch(`${FILE_DOWN}?atchFileId=${encodeURIComponent(f.atchFileId)}&fileSn=${encodeURIComponent(f.fileSn)}`, { headers: { 'User-Agent': UA, Referer: url } });
-      const buf = Buffer.from(await r.arrayBuffer());
-      if (buf.length < 100 || /<!DOCTYPE html/i.test(buf.subarray(0, 200).toString('latin1'))) { files.push({ ...f, skipped: '다운실패' }); continue; }
-      const ext = (f.name.match(/\.[a-z0-9]+$/i) || ['.pdf'])[0].toLowerCase();
-      mkdirSync(new URL('files/', dir), { recursive: true });
-      writeFileSync(new URL(`files/${f.atchFileId}__${sani(f.name)}`, dir), buf);
-      files.push({ atchFileId: f.atchFileId, fileSn: f.fileSn, name: f.name, ext, bytes: buf.length });
-      await dwell(200);
-    } catch { files.push({ ...f, skipped: '오류' }); }
+    const res = await saveDoc({
+      name: f.name, dir, saveKey: f.atchFileId, skipPat: PAMPHLET_PAT,
+      fetchBuf: async () => Buffer.from(await (await fetch(`${FILE_DOWN}?atchFileId=${encodeURIComponent(f.atchFileId)}&fileSn=${encodeURIComponent(f.fileSn)}`, { headers: { 'User-Agent': UA, Referer: url } })).arrayBuffer()),
+    });
+    files.push({ atchFileId: f.atchFileId, fileSn: f.fileSn, name: f.name, ...res });
   }
   return files;
 }
@@ -76,11 +68,7 @@ function toEnvelope(it) {
     단지: [{ 단지명: it.hsmpNm, 주소: it.fullAdres, 총공급세대: numOrNull(it.totHshldCo) }],
     공급형: (보증금 || 월세) ? [{ 형명: it.houseTyNm || null, 임대료: [{ 구분: '기본', 임대보증금: 보증금 || 0, 월임대료: 월세 || 0 }] }] : [],
     선정방식: '순위', 선정방식상세: `${it.suplyInsttNm} ${it.suplyTyNm} — 자격·순위·소득/자산 컷은 공고문 확인.`,
-    자격요건: {
-      무주택: '무주택세대구성원(유형별 상이 — 공고문 확인)',
-      소득기준: { 종류: '공고문미기재', 기본퍼센트: null, 가구원수별: null, 가산규칙: '', 비고: '마이홈 API 소득기준 미제공 — 공고문 PDF 확인' },
-      자산상한: '공고문미기재', 자동차상한: '공고문미기재', 청약요건: '공고문미기재', 대상계층: ['일반'], 계층별: null,
-    },
+    자격요건: emptyQualification('마이홈 API 소득기준 미제공 — 공고문 PDF 확인'),
     순위규칙: [], 배점표: [], 우선배정: [],
     원문링크: { 상세페이지: it.pcUrl || null, 공급기관: it.url || null },
     _검증노트: ['소득·자산기준 API미제공 → 공고문 PDF(pcUrl) 추출 필요(LH식 파이프라인)'],
