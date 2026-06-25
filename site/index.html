@@ -524,13 +524,20 @@ function createMatcher(P, todayStr) {
     for (const w of want) if (keys.includes(w)) return w;
     return null;
   }
+  // tier 금액 필드 동의어 내성(#6): normalize 미적용/스킵 시 '총자산상한' 등 비캐논 키로 남아도 본인 계층값을 읽어 #1 우선규칙이 유효.
+  //   normalize-requirements FIELD_SYN(자산/자동차)과 동기화 — 미상 필드는 normalize가 '비고'로 흡수하므로 여기선 금액 2종만.
+  const TIER_ALIAS = { 자산상한: ['자산상한', '총자산상한', '총자산', '자산'], 자동차상한: ['자동차상한', '자동차'] };
+  const tierFieldVal = (obj, canon) => {
+    for (const a of (TIER_ALIAS[canon] || [canon])) if (obj && !isMissing(obj[a])) return obj[a];
+    return undefined;
+  };
   function tierLimit(req, topVal, tierField, label, mine) {
     // 본인 계층(캐논)의 계층별 상한이 본인의 구속 상한 — top-level(공통/기본)보다 우선(SCHEMA §5: 매처가 계층별로 위임).
-    //   과거버그: top-level 값이 있으면 계층값을 보지도 않고 평가 → 계층 상한이 더 엄격한 경우(예: 행복 top 3.45억 vs 청년 2.51억)
+    //   과거버그(#1): top-level 값이 있으면 계층값을 보지도 않고 평가 → 계층 상한이 더 엄격한 경우(예: 행복 top 3.45억 vs 청년 2.51억)
     //   자격없는 사람을 '지원가능'으로 오판(false positive). 그래서 계층 해결을 먼저.
     const 계층별 = req.자격요건?.계층별, key = tierKeyFor(계층별);
-    if (key && 계층별[key] && !isMissing(계층별[key][tierField]))
-      return gateLimit(계층별[key][tierField], mine, label, key);
+    const tv = key && 계층별[key] ? tierFieldVal(계층별[key], tierField) : undefined;
+    if (tv !== undefined) return gateLimit(tv, mine, label, key);
     return gateLimit(topVal, mine, label);   // 계층 미해결/계층값 미기재 → top-level(공통). 그것도 미기재면 '확인필요'
   }
   function gateSubscription(req) {
