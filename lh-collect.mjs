@@ -6,6 +6,10 @@
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { UA, dwell, sani, getArg, loadIndex, loadServiceKey } from './collect-util.mjs';
 
+// 런타임 전제: Node 20+ (Headers.getSetCookie). 미만이면 세션쿠키 누락→인증 실패가 조용히 발생 → 즉시 명시적 중단.
+const NODE_MAJOR = +process.versions.node.split('.')[0];
+if (NODE_MAJOR < 20) { console.error(`❌ Node ${process.versions.node} 감지 — LH 수집은 Node 20+ 필요(Headers.getSetCookie 쿠키 파싱). 업그레이드 후 재실행.`); process.exit(1); }
+
 const BASE = 'https://apply.lh.or.kr/lhapply';
 const ROOT = new URL('./data/', import.meta.url);
 const RAW = new URL('raw/lh/', ROOT);
@@ -127,7 +131,10 @@ const uniq = [...new Map(found.map(x => [x.panId, x])).values()];
 console.log(`\n총 공고 ${uniq.length}건 (신규만 상세/다운로드)`);
 
 // ── 3) 신규 공고: 상세 스냅샷 + 첨부 전부 저장 ─────────────
+// 건별 try/catch — 한 공고의 네트워크 throw가 전체 런을 죽이지 않게(나머지 처리·index 보존). 실패는 모아서 끝에 가시화.
+const failed = [];
 for (const n of uniq) {
+ try {
   const dir = new URL(`${n.panId}/`, RAW);
   if (index[n.panId]?.done) {
     // 이미 받음 → 재다운로드 없이 상태·날짜만 갱신(상태는 시간따라 변함). index는 무조건 갱신(raw 없어도), meta는 best-effort.
@@ -176,10 +183,15 @@ for (const n of uniq) {
   isNew++;
   console.log(`  ✅ ${n.panId} ${n.title.slice(0, 30)} — 첨부 ${files.length}개`);
   await dwell(300);
+ } catch (e) {
+  console.log(`  ⚠️ ${n.panId} 처리 실패(건너뜀): ${e.message}`);
+  failed.push({ panId: n.panId, title: n.title, error: e.message });
+ }
 }
 
 mkdirSync(ROOT, { recursive: true });
 writeFileSync(IDX, JSON.stringify(index, null, 2));
+if (failed.length) console.log(`⚠️ 처리 실패 ${failed.length}건(index 미기록 — 다음 실행 시 재시도): ${failed.map(f => f.panId).join(', ')}`);
 if (REFRESH) {
   writeFileSync(new URL('new-pending.json', ROOT), JSON.stringify(newPending, null, 2));
   console.log(`\n[refresh] 상태 갱신 완료. 미추출 신규 ${newPending.length}건 → data/new-pending.json (다운로드/추출은 로컬 pipeline).`);

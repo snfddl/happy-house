@@ -1,6 +1,6 @@
 # 코드·아키텍처 진단 (2026-06-25)
 
-5개 소스(LH/청약홈/마이홈/SH/GH) 연동 완료 시점의 구조 점검. 멀티에이전트 병렬 진단(아키텍처·코드품질·자원효율) 결과 종합. **수정은 미착수 — 내일 전건 처리 예정.**
+5개 소스(LH/청약홈/마이홈/SH/GH) 연동 완료 시점의 구조 점검. 멀티에이전트 병렬 진단(아키텍처·코드품질·자원효율) 결과 종합. **P0–P3 전건 처리 완료(2026-06-25). 보류 항목만 의도적 deprioritize.**
 
 ## 한 줄 결론
 
@@ -38,12 +38,16 @@
 - [x] **panId 키 규약 일원화.** ~~접두사(`ah:`/`mh-`/`sh-`/`gh-`/LH무접두) 5곳 분산, applyhome panId(bare)≠index키(`ah:…`).~~
   - **완료(2026-06-25):** `collect-util.mjs`에 `SRC_PREFIX`+`makePanId(src,rawId)` 단일선언. **불변식 확립: index 키 === derived panId === `${접두}${원시ID}` (전 5소스).** 근본원인=applyhome은 collect(idxKey)와 derive(panId)가 별파일이라 각자 구성→불일치 → 양쪽 `makePanId('applyhome',no)`로 강제(콜론 접두는 기존 index.json 키 호환 위해 유지, 마이그레이션 0). myhome/sh/gh collect·count로그도 헬퍼/`SRC_PREFIX` 경유로 통일. `build-site` LIVE_OVERLAY에 불변식 주석. **검증: derived 재생성 후 applyhome 183건 전수 panId가 index 키와 일치(이전 0건)**, derived diff는 panId 라인만(183파일), 사이트 빌드 333건·`__id` 전부 `applyhome:ah:…`·드리프트 가드 통과. **footgun 해소 — 이제 어느 소스든 overlay 안전.**
 
-### P3 — 정리/정확성
+### P3 — 정리/정확성 — ✅ 완료(2026-06-25)
 
-- [ ] **죽은/참고코드 격리.** `extract-requirements.mjs`는 외부 LLM API 직접 호출(`:46`)+하드코딩 경로(`/Users/snfddl/…/CertiQ/.env`, `:10`)로 절대규칙(CLAUDE.md §1)과 정면 모순(실행은 안 되나 혼동). `lh-scrape.mjs`는 OpenAPI로 대체됨(`lh-collect.mjs:62` 주석), `test-lh-api.mjs`는 일회성 탐침. → `reference/`로 격리하거나 "DEAD/참고전용" 배너.
-- [ ] **slicer 절감 수치 정정.** `CLAUDE.md §3` "평균 ~34%"는 실측 평균 21%(265건 전수). 효과·요건손실0건은 검증됨, 수치만 정정(검증 안 된 수치 보고 금지 원칙).
-- [ ] **`lh-collect` top-level try/catch + 런타임 prereq 체크.** lh만 메인루프 catch 없어 fetch throw 시 부분저장 없이 크래시. `pdftotext`/`python3`/`claude`/Node20(`getSetCookie` 19.7+) 전제가 코드·문서 어디에도 미선언.
-- [ ] **수집 실패 가시화.** `pipeline.mjs:47`이 수집 에러를 catch로 삼키고 진행 → "신규 0건"을 정상으로 오인 가능. `extractOne` stderr도 완전 무시(`:159`)라 추출 실패 원인 미기록.
+- [x] **죽은/참고코드 격리.** ~~`extract-requirements.mjs`(외부 LLM API+하드코딩 경로, §1 위반)·`lh-scrape.mjs`(OpenAPI로 대체)·`test-lh-api.mjs`(일회성 탐침).~~
+  - **완료:** 3종을 `reference/`로 git mv(import·실행 0건 확인). `reference/README.md`에 각 사유·"실행금지" 명시. `CLAUDE.md §1`은 `reference/extract-requirements.mjs`로 경로 갱신. (prep-slices는 pickPdf 통일 때 `[DEAD]` 배너 선반영.)
+- [x] **slicer 절감 수치 정정.** ~~"평균 ~34%"~~
+  - **완료:** 슬라이서 전수 재실측(LH 265건) → **건별평균 21.0%·총합 20.3%·중앙값 18.5%**(전 소스 288건은 19.8%). `CLAUDE.md §3`·`DECISIONS.md` 둘 다 "~21%(전수 실측)"으로 정정. "34%"는 소표본 추정이었음.
+- [x] **`lh-collect` top-level try/catch + 런타임 prereq 체크.** ~~메인루프 catch 없어 fetch throw 시 크래시, 전제 미선언.~~
+  - **완료:** lh-collect 신규처리 루프를 **건별 try/catch**로(한 공고 throw가 전체 런·index 저장을 안 죽임), 실패는 모아 끝에 가시화. **Node 20+ 가드**(`getSetCookie`, 미만 즉시 중단). `pipeline.mjs`에 `pdftotext`/`claude`/`python3` 프리플라이트(부재 경고). `README.md`에 사전요건 섹션 추가. 스모크: 가드·프리플라이트 로직 검증.
+- [x] **수집 실패 가시화.** ~~`pipeline.mjs:47` 에러 삼킴, `extractOne` stderr 무시.~~
+  - **완료:** `extractOne`이 stderr 누적→실패 시 `exit code·stderr` 표면화(`↳` 라인), 추출 실패 N건 요약. 수집 단계 실패는 `collectFailed` 플래그로 끝에 "신규 0건은 정상 아닐 수 있음" 경고. lh-collect도 실패 panId 목록 출력.
 
 ### 보류 (의도적 deprioritize)
 

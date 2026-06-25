@@ -38,13 +38,20 @@ const ACTIVE = new Set(['접수중', '공고중', '정정공고중']);
 const log = (...a) => console.log(...a);
 const hr = t => log(`\n${'━'.repeat(58)}\n${t}\n${'━'.repeat(58)}`);
 
+// 사전요건 프리플라이트 — 외부 바이너리 부재 시 단계 도중 모호하게 실패하므로 미리 가시화(조건부 단계라 경고만, 중단 안 함).
+const missingBins = ['pdftotext', 'claude', 'python3'].filter(b => {
+  try { execFileSync('which', [b], { stdio: 'ignore' }); return false; } catch { return true; }
+});
+if (missingBins.length) log(`⚠️ 사전요건 누락: ${missingBins.join(', ')} — pdftotext(슬라이스)·claude(추출)·python3(xlsx파싱) 필요. 해당 단계가 실패할 수 있음.`);
+
 // ── 0. 수집 ───────────────────────────────────────────────────
+let collectFailed = false;
 if (!SKIP_COLLECT) {
   hr('[0/6] 수집 — lh-collect.mjs');
   try {
     execFileSync('node', [p(new URL('lh-collect.mjs', HERE)), ...collectArgs],
       { stdio: 'inherit', cwd: p(HERE) });
-  } catch (e) { log('⚠️ 수집 단계 오류(계속 진행):', e.message); }
+  } catch (e) { collectFailed = true; log('⚠️ 수집 단계 오류(계속 진행, 신규 0건은 정상 아닐 수 있음):', e.message); }
 } else log('[0/6] 수집 생략(--skip-collect)');
 
 // ── 1. 타깃선정: 활성 + 빈유형 백필 ───────────────────────────
@@ -146,13 +153,14 @@ function extractOne(it) {
   return new Promise(resolve => {
     const args = ['-p', buildPrompt(it), '--model', 'sonnet', '--permission-mode', 'acceptEdits', '--allowedTools', 'Read', 'Write'];
     const ps = spawn('claude', args, { cwd: p(HERE), stdio: ['ignore', 'pipe', 'pipe'] });
-    let out = '';
+    let out = '', err = '';
     ps.stdout.on('data', d => out += d);
-    ps.stderr.on('data', () => {});
+    ps.stderr.on('data', d => err += d);   // 실패 원인 추적용 — 성공 시 버림, 실패 시 표면화
     ps.on('close', code => {
       const ok = existsSync(it.sliced.replace('notice_sliced.txt', 'requirements.json'));
       log(`  ${ok ? '✅' : '❌'} ${it.type}:${it.panId.slice(-4)} ${out.trim().slice(0, 70)}`);
-      resolve({ ...it, ok: code === 0 && ok });
+      if (!ok) log(`     ↳ exit ${code}${err.trim() ? ` · stderr: ${err.trim().slice(-200)}` : ' · stderr 없음(requirements.json 미생성)'}`);
+      resolve({ ...it, ok: code === 0 && ok, err: ok ? '' : err.trim().slice(-500) });
     });
   });
 }
@@ -174,6 +182,8 @@ if (SEMI) {
 } else if (newTargets.length) {
   hr(`[3/6] 요건추출 — claude -p 헤드리스 (Sonnet, 동시성 ${CONC})`);
   extracted = await pool(newTargets, CONC, extractOne);
+  const extFailed = extracted.filter(e => !e.ok);
+  if (extFailed.length) log(`⚠️ 추출 실패 ${extFailed.length}/${newTargets.length}건: ${extFailed.map(e => e.panId.slice(-4)).join(', ')} — 원인은 위 ↳ stderr 라인 참조(검증게이트가 격리).`);
 }
 
 // ── 3.5 계층별 메타 정규화 ─────────────────────────────────────
@@ -210,4 +220,5 @@ const report = buildReport(verdicts, { 신규: newTargets.length, extraReview: n
 writeFileSync(new URL('pipeline-report.json', ROOT), JSON.stringify(report, null, 2));
 printReport(report, log);
 log(`\n리포트: data/pipeline-report.json`);
+if (collectFailed) log('⚠️ 이번 실행은 [0/6] 수집이 실패 — 위 신규 건수는 수집 누락으로 과소집계일 수 있음(네트워크/키 확인 후 재실행 권장).');
 if (report.실패.length) process.exitCode = 1;

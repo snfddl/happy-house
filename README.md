@@ -19,6 +19,12 @@ LH 등 공공임대주택 공고를 **수집 → 요건 자동 구조화 → 개
 - ✅ **무료 자동배포**: GitHub Actions cron(하루 3회 상태갱신) + push 트리거(즉시 배포) → GitHub Pages (`.github/workflows/refresh.yml`). 자세히는 `DEPLOY.md`
 - ⏳ **다음**: 알림 레이어. → `ROADMAP.md`
 
+## 사전요건
+
+- **Node 20+** — `Headers.getSetCookie`(LH 세션쿠키 파싱)에 필요. 미만이면 `lh-collect`가 명시적 중단.
+- **`pdftotext`**(poppler) — 공고문 PDF→텍스트(슬라이스 입력). · **`python3`** — 매입/전세 주택목록 xlsx 파싱. · **`claude`**(Claude Code CLI) — 헤드리스 요건추출(외부 LLM API 0).
+- `node pipeline.mjs`는 시작 시 위 바이너리 부재를 경고로 가시화한다(조건부 단계라 중단은 안 함).
+
 ## 빠른 실행
 
 ```bash
