@@ -714,10 +714,12 @@
     '경남':['창원시','진주시','통영시','사천시','김해시','밀양시','거제시','양산시','의령군','함안군','창녕군','고성군','남해군','하동군','산청군','함양군','거창군','합천군'],
     '제주':['제주시','서귀포시'],
   };
+  // 콤보박스 표시순: 가나다(ko localeCompare). 데이터/매칭값은 그대로, 렌더 시점만 정렬(행정코드 순이라 무작위로 보이던 것 정리).
+  const koSort=arr=>arr.slice().sort((a,b)=>a.localeCompare(b,'ko'));
   const sidoOptions=(cur,blank)=>'<option value="">'+esc(blank)+'</option>'
-    +Object.keys(KR_REGIONS).map(s=>'<option value="'+esc(s)+'"'+(s===cur?' selected':'')+'>'+esc(s)+'</option>').join('');
+    +koSort(Object.keys(KR_REGIONS)).map(s=>'<option value="'+esc(s)+'"'+(s===cur?' selected':'')+'>'+esc(s)+'</option>').join('');
   const sggOptions=(sido,cur)=>'<option value="">'+(sido?'전체':'시·도 먼저 선택')+'</option>'
-    +(KR_REGIONS[sido]||[]).map(s=>'<option value="'+esc(s)+'"'+(s===cur?' selected':'')+'>'+esc(s)+'</option>').join('');
+    +koSort(KR_REGIONS[sido]||[]).map(s=>'<option value="'+esc(s)+'"'+(s===cur?' selected':'')+'>'+esc(s)+'</option>').join('');
   // 무주택 기간 가점 구간(청약 가점표 2~32점, 1년 단위). 첫 원소=자동(만30세·혼인 기준 추정).
   const 무주택구간=['자동(만 30세·혼인 기준)','1년 미만','1~2년','2~3년','3~4년','4~5년','5~6년','6~7년','7~8년','8~9년','9~10년','10~11년','11~12년','12~13년','13~14년','14~15년','15년 이상'];
   // 무주택은 3-state(미선택=null → '확인필요'). bool 토글은 null을 표현 못 해 추측(기본 무주택) 위험.
@@ -817,7 +819,7 @@
     const hopeAdd=$(root+' #hopeAdd'); if(!hopeAdd) return;
     const hSido=$(root+' #hopeSido'), hSgg=$(root+' #hopeSgg');
     hSido.onchange=()=>{ hSgg.innerHTML='<option value="">'+(hSido.value?'전체':'시·군·구')+'</option>'
-      +(KR_REGIONS[hSido.value]||[]).map(s=>'<option value="'+esc(s)+'">'+esc(s)+'</option>').join(''); };
+      +koSort(KR_REGIONS[hSido.value]||[]).map(s=>'<option value="'+esc(s)+'">'+esc(s)+'</option>').join(''); };
     hopeAdd.onclick=()=>{
       const v=(hSgg.value||hSido.value||'').trim(); if(!v) return;
       P.희망=P.희망||{}; if(!Array.isArray(P.희망.지역)) P.희망.지역=[];
