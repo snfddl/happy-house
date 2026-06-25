@@ -15,6 +15,7 @@
 //       증분: requirements.json 이미 있으면 추출 스킵(108건 통째 재처리 안 함).
 import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
+import { validateFile, buildReport, printReport } from './validate-requirements.mjs';
 
 const HERE = new URL('./', import.meta.url);
 const ROOT = new URL('./data/', import.meta.url);
@@ -33,8 +34,6 @@ const ONLY = (opt('--only', '') || '').split(',').filter(Boolean);  // 특정 pa
 const collectArgs = argv.filter(a => !['--semi', '--skip-collect', '--force'].includes(a) && !a.startsWith('--conc=') && !a.startsWith('--only='));
 
 const ACTIVE = new Set(['접수중', '공고중', '정정공고중']);
-const METHODS = new Set(['추첨', '가점', '순차', '혼합']);
-const REQUIRED_KEYS = ['panId', '공고명', '유형', '선정방식', '자격요건', '공급형', '원문링크'];
 const log = (...a) => console.log(...a);
 const hr = t => log(`\n${'━'.repeat(58)}\n${t}\n${'━'.repeat(58)}`);
 
@@ -206,43 +205,15 @@ try { execFileSync('node', [p(new URL('inject-links.mjs', HERE))], { stdio: 'inh
 catch (e) { log('⚠️ 링크주입 오류:', e.message); }
 
 // ── 6. 검증 게이트 ────────────────────────────────────────────
-hr('[6/6] 검증 게이트 — 이상건 격리');
-const failed = [], review = [], passed = [];
-for (const it of (newTargets.length ? newTargets : [])) {
-  const reqPath = new URL(`${it.panId}/requirements.json`, DERIVED);
-  const dtl = `https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=${it.panId}`;
-  if (!existsSync(reqPath)) { failed.push({ panId: it.panId, type: it.type, 사유: '추출 실패(파일 없음)', dtl }); continue; }
-  let r;
-  try { r = JSON.parse(readFileSync(reqPath, 'utf8')); }
-  catch { failed.push({ panId: it.panId, type: it.type, 사유: 'JSON 파싱 실패', dtl }); continue; }
-  const miss = REQUIRED_KEYS.filter(k => !(k in r));
-  if (miss.length) { failed.push({ panId: it.panId, type: it.type, 사유: `필수필드 누락: ${miss.join(',')}`, dtl }); continue; }
-  if (!METHODS.has(r.선정방식)) { failed.push({ panId: it.panId, type: it.type, 사유: `선정방식 enum 위반: ${r.선정방식}`, dtl }); continue; }
-  // 경고(=검토필요, 실패 아님)
-  const warn = [];
-  const notes = (r._검증노트 || []).length;
-  if (notes >= 8) warn.push(`검증노트 ${notes}개`);
-  if (r.유형 !== it.type) warn.push(`유형 불일치(목록:${it.type}→추출:${r.유형})`);
-  const hasXlsx = xlsxTargets.includes(it.panId);
-  if (hasXlsx && !r.주택목록) warn.push('xlsx 있으나 주택목록 미주입');
-  if ((r.공급형 || []).length === 0 && !['전세임대'].includes(r.유형) && !r.주택목록) warn.push('공급형 비어있음');
-  if (warn.length) review.push({ panId: it.panId, type: it.type, 사유: warn.join('; '), dtl });
-  else passed.push(it.panId);
-}
+hr('[6/6] 검증 게이트 — 이상건 격리 (validate-requirements 공통)');
+const dtlOf = panId => `https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancInfo.do?panId=${panId}`;
+const verdicts = (newTargets.length ? newTargets : []).map(it => validateFile(
+  new URL(`${it.panId}/requirements.json`, DERIVED),
+  { panId: it.panId, type: it.type, dtl: dtlOf(it.panId), hasXlsx: xlsxTargets.includes(it.panId) },
+));
 // PDF없음/슬라이스실패도 검토필요로 surface(추출 자체 불가)
-for (const n of noPdf) review.push(n);
-const report = { 실행시각: new Date().toISOString(), 신규: newTargets.length, 통과: passed.length,
-  실패: failed, 검토필요: review };
+const report = buildReport(verdicts, { 신규: newTargets.length, extraReview: noPdf });
 writeFileSync(new URL('pipeline-report.json', ROOT), JSON.stringify(report, null, 2));
-
-log(`\n신규 ${newTargets.length}건 → ✅ 통과 ${passed.length} / ⚠️ 검토필요 ${review.length} / ❌ 실패 ${failed.length}`);
-if (failed.length) {
-  log('\n❌ 실패(사람이 처리 필요):');
-  for (const f of failed) log(`  ${f.panId} [${f.type}] ${f.사유}\n     ${f.dtl}`);
-}
-if (review.length) {
-  log('\n⚠️ 검토 권장(자동 통과시키지 않음):');
-  for (const f of review) log(`  ${f.panId} [${f.type}] ${f.사유}\n     ${f.dtl}`);
-}
+printReport(report, log);
 log(`\n리포트: data/pipeline-report.json`);
-if (failed.length) process.exitCode = 1;
+if (report.실패.length) process.exitCode = 1;

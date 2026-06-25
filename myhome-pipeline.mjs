@@ -5,6 +5,7 @@
 // 사용: node myhome-pipeline.mjs [--source=myhome|sh|gh] [--force] [--semi] [--conc=3]
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
+import { validateFile, buildReport, printReport } from './validate-requirements.mjs';
 
 const HERE = new URL('./', import.meta.url);
 const ROOT = new URL('./data/', import.meta.url);
@@ -90,7 +91,7 @@ for (const slug of slugs) {
     targets.push({ slug, meta, slicedPath, reqPath: p(reqPath) });
   } catch (e) { log(`  ⚠️ ${slug} 슬라이스 실패: ${e.message}`); }
 }
-log(`[1/3] 슬라이스 ${targets.length}건`);
+log(`[1/4] 슬라이스 ${targets.length}건`);
 if (!targets.length) { log('추출 대상 없음.'); process.exit(0); }
 if (SEMI) { log('[--semi] 추출 직전까지. 슬라이스 완료.'); process.exit(0); }
 
@@ -107,16 +108,25 @@ function extractOne(it) {
   });
 }
 async function poolRun(items, n, fn) { const res = []; let i = 0; await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { while (i < items.length) { const k = i++; res[k] = await fn(items[k]); } })); return res; }
-log(`[2/3] 요건추출 — claude -p (Sonnet, 동시성 ${CONC})`);
+log(`[2/4] 요건추출 — claude -p (Sonnet, 동시성 ${CONC})`);
 await poolRun(targets, CONC, extractOne);
 
 // ── 3. 계층 정규화 ────────────────────────────────────────────
 //   추출(Sonnet)이 계층 키/필드를 자유형으로 뱉으면 매처(tierLimit/tierKeyFor)가 캐논 키로 못 찾아 자산/소득 게이트가 조용히 누락됨.
 //   normalize-requirements.mjs를 --source로 같은 디렉터리에 적용(결정론·멱등). LH(pipeline.mjs)와 동일 패턴.
-log('[3/3] 계층별 메타 정규화 — normalize-requirements.mjs');
+log('[3/4] 계층별 메타 정규화 — normalize-requirements.mjs');
 const normalizer = p(new URL('normalize-requirements.mjs', HERE));
 try {
   const out = execFileSync('node', [normalizer, `--source=${SOURCE}`, ...targets.map(t => t.slug)], { cwd: p(HERE) }).toString('utf8');
   process.stdout.write(out);
 } catch (e) { log(`  ⚠️ 정규화 실패: ${e.message}`); }
-log('완료. build-site.mjs 재실행으로 사이트 반영.');
+
+// ── 4. 검증 게이트 (LH pipeline과 공통 모듈) ──────────────────
+log('[4/4] 검증 게이트 — validate-requirements 공통');
+const verdicts = targets.map(it => validateFile(
+  new URL(`${it.slug}/requirements.json`, DERIVED), { panId: it.meta.panId, type: it.meta.유형 }));
+const report = buildReport(verdicts, { 신규: targets.length });
+writeFileSync(new URL(`${SOURCE}-report.json`, ROOT), JSON.stringify(report, null, 2));
+printReport(report, log);
+log(`\n리포트: data/${SOURCE}-report.json · build-site.mjs 재실행으로 사이트 반영.`);
+if (report.실패.length) process.exitCode = 1;
