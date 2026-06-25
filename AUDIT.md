@@ -27,7 +27,8 @@
 
 ### P2 — 코드 부채
 
-- [ ] **`canonTier` 드리프트 가드.** `match-core.mjs:84-95` ↔ `normalize-requirements.mjs:17-28`이 주석 한 줄 빼고 바이트 동일. 계층 enum은 도메인 규칙이라 한쪽만 고치면 조용한 매칭 오류. `match-core`는 브라우저 인라인용이라 import 금지(`CLAUDE.md §4`) → 빌드/CI에 "두 함수 본문 동일성 assert" 추가로 드리프트 차단.
+- [x] **`canonTier` 드리프트 가드.** ~~`match-core.mjs:84-95` ↔ `normalize-requirements.mjs:17-28`이 주석 한 줄 빼고 바이트 동일. 계층 enum은 도메인 규칙이라 한쪽만 고치면 조용한 매칭 오류. `match-core`는 브라우저 인라인용이라 import 금지(`CLAUDE.md §4`) → 빌드/CI에 "두 함수 본문 동일성 assert" 추가로 드리프트 차단.~~
+  - **완료(2026-06-25):** `check-canon-drift.mjs` 신설 — 두 함수 본문을 중괄호 매칭으로 추출, 줄주석·들여쓰기·함수명 차이만 정규화로 흡수하고 규칙 본문(replace+8 if+return)을 바이트 비교. `build-site.mjs`가 빌드 전 `execFileSync`로 호출 → 로컬(process-all)·CI(refresh.yml의 빌드 스텝) 양쪽에서 드리프트 시 빌드 실패. 양 함수에 상호참조 주석 추가. 검증: 동의어 1개 주입 시 exit 1·diff 출력, 복원 시 통과.
 - [ ] **수집기 공통유틸 추출.** 5종이 `sani`(4곳, lh만 `String()` 누락 — 이미 불일치), `dwell`(5), `loadIndex`(5), `getArg`(4), `.env`로드(4), `dnorm`(2), `UA`(5), `fetchNoticeFiles`(3) 복붙. → `collect-util.mjs` 1벌로(수집기는 인라인 제약 없음, 정당하게 공유 가능). 순수함수라 위험 낮고 효과 큼.
 - [ ] **`statusOf` 3중 구현 통일.** `applyhome-collect.mjs:53`/`myhome-collect.mjs:61`/`myhome-pipeline.mjs:22` 시그니처 제각각(`([b,e])` vs `(b,e)` vs `(b,e,prev)`) — 같은 규칙 3곳, 변경 시 동시 수정 필요.
 - [ ] **`pickPdf` 통일 + panId 키 규약 일원화.** `pickPdf`가 `pipeline.mjs:95`/`prep-slices.mjs:10`/`myhome-pipeline.mjs:33` 3변형. panId 접두사(`ah:`/`mh-`/`sh-`/`gh-`/LH무접두)가 5곳 문자열 리터럴로 분산. applyhome은 derived `panId`(`2026…`)와 index 키(`ah:2026…`) 불일치 — LIVE_OVERLAY에 넣으면 조용히 실패.

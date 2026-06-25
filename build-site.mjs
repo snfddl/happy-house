@@ -2,6 +2,11 @@
 //   브라우저가 createMatcher(P)로 직접 매칭 → 프로필 수정 시 실시간 재계산. 서버 불필요(더블클릭 실행).
 //   템플릿=site/_template.html (placeholder: /*__DATA__*/ , /*__CORE__*/)
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+
+// 빌드 전 드리프트 가드 — 계층 캐논 함수(match-core canonTier ↔ normalize canonTierKey) 본문 동일성 assert.
+//   match-core는 브라우저 인라인용이라 import 불가 → 코드 공유 대신 빌드 게이트로 차단(드리프트 시 빌드 실패).
+execFileSync(process.execPath, ['check-canon-drift.mjs'], { cwd: new URL('./', import.meta.url), stdio: 'inherit' });
 
 const ROOT = new URL('./data/', import.meta.url);
 const SRC = [['lh', new URL('derived/lh/', ROOT)], ['applyhome', new URL('derived/applyhome/', ROOT)], ['myhome', new URL('derived/myhome/', ROOT)], ['sh', new URL('derived/sh/', ROOT)], ['gh', new URL('derived/gh/', ROOT)]];

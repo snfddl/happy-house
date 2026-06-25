@@ -16,6 +16,7 @@ const onlyPans = args.filter(a => !a.startsWith('--'));
 
 // ── 캐논 계층 enum ────────────────────────────────────────────
 //   행복주택 등에서 쓰는 공급계층. 동의어/표기변형을 흡수.
+//   match-core.mjs canonTier와 본문 동일해야 함(브라우저 인라인이라 공유 불가 → check-canon-drift.mjs가 빌드때 assert).
 export function canonTierKey(key) {
   const k = String(key).replace(/계층|\s|·|ㆍ|_|\(.*?\)/g, '');
   if (/대학생|취업준비생/.test(k)) return '대학생';

@@ -79,7 +79,7 @@ export function createMatcher(P, todayStr) {
     }
     return { s: 'check', m: `공고에 ${label} 기준 미기재 → 원문확인` };               // 공고 자체에 기준 없음
   }
-  // 계층 키 정규화(사용자 입력 → 캐논 enum). normalize-requirements.mjs와 동일 규칙(데이터는 빌드 전 정규화됨).
+  // 계층 키 정규화(사용자 입력 → 캐논 enum). normalize-requirements.mjs canonTierKey와 본문 동일해야 함(check-canon-drift.mjs가 빌드때 assert).
   const isMissing = v => v == null || v === '공고문미기재' || v === '미기재' || v === '' || (typeof v === 'string' && /계층별|상이/.test(v));
   function canonTier(key) {
     const k = String(key).replace(/계층|\s|·|ㆍ|_|\(.*?\)/g, '');
