@@ -162,9 +162,15 @@ for (const n of uniq) {
 
   // 상세에서 fileid→파일명 페어 (다운로드 전 필터용)
   const pairs = [...new Map([...detail.matchAll(/fileDownLoad\('(\d+)'\);">([^<]+)/g)].map(m => [m[1], m[2].trim()])).entries()];
+  // 형식 필터(CLAUDE §2): 요건추출=PDF·주택목록=xlsx만 파서 있음 → 그 외 파서0 형식(hwp/hwpx/zip/이미지/서식)은 다운로드 안 함(불변 raw 비대 방지, fileid만 기록해 재다운 가능).
+  //   단 hwp/hwpx는 "PDF 없을 때만" 본문 fallback 보존(§2). 확장자 미상은 fail-safe로 보존(요건 PDF 유실 방지).
+  const SKIP_EXT = /\.(hwp|hwpx|zip|png|jpe?g|gif|bmp|doc|docx|ppt|pptx|txt)$/i;
+  const FALLBACK_EXT = /\.(hwp|hwpx)$/i;
+  const hasPdf = pairs.some(([, nm]) => /\.pdf$/i.test(nm));
   const files = [];
   for (const [fid, dispName] of pairs) {
     if (SKIP_PAT.test(dispName)) { files.push({ fileid: fid, name: dispName, skipped: '팸플릿류' }); continue; } // 받지 않고 id만 기록
+    if (SKIP_EXT.test(dispName) && !(!hasPdf && FALLBACK_EXT.test(dispName))) { files.push({ fileid: fid, name: dispName, skipped: '비요건형식' }); continue; } // 파서 없는 형식 — id만 기록
     const fr = await req(`${BASE}/lhFile.do?fileid=${fid}`, { headers: { Referer: `${BASE}/apply/wt/wrtanc/selectWrtancInfo.do` } });
     const buf = Buffer.from(await fr.arrayBuffer());
     if (buf.length < 100 || /<!DOCTYPE html/i.test(buf.subarray(0, 200).toString('latin1'))) continue; // 에러응답 스킵
