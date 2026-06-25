@@ -14,9 +14,10 @@
 // 원칙: 결정론 단계(0~2,4~6)는 스크립트, 비결정론 추출(3)만 Claude Code 헤드리스 — 외부 LLM API 0.
 //       증분: requirements.json 이미 있으면 추출 스킵(108건 통째 재처리 안 함).
 import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from 'node:fs';
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { validateFile, buildReport, printReport } from './validate-requirements.mjs';
-import { pickPdf, pool } from './collect-util.mjs';
+import { pickPdf } from './collect-util.mjs';
+import { runHeadless } from './extract-core.mjs';
 
 const HERE = new URL('./', import.meta.url);
 const ROOT = new URL('./data/', import.meta.url);
@@ -121,58 +122,21 @@ log(`신규 ${newTargets.length}건 슬라이스 / 기존 스킵 ${skipped.lengt
 
 if (!newTargets.length) { log('\n✅ 신규 추출 대상 없음. (xlsx/링크 갱신만 수행)'); }
 
-// ── 3. 요건추출 (claude -p 헤드리스, 신규만) ──────────────────
-const V1_SCHEMA = readFileSync(new URL('schema-v1.jsonc', HERE), 'utf8');
-const RULES = readFileSync(new URL('extract-rules.txt', HERE), 'utf8');
-function buildPrompt(it) {
-  const reqPath = it.sliced.replace('notice_sliced.txt', 'requirements.json');
-  return `당신은 한국 LH 임대주택 공고문에서 입주 요건을 구조화 추출하는 전문가입니다. 외부 API 없이 주어진 텍스트만 근거로 작업합니다.
-
-[대상 공고]
-- panId: ${it.panId}
-- 유형: ${it.type}
-- 지역(목록기준): ${it.region}
-- 상태: ${it.status}
-- 마감일(목록기준): ${it.due}
-
-[작업 순서]
-1) Read 도구로 다음 파일(보일러플레이트 제거된 공고문 본문)을 읽으세요:
-   ${it.sliced}
-2) 본문을 정독하고 아래 정규 스키마 v1로 요건을 추출하세요. panId/유형/상태/마감일은 위 값을 기본으로, 지역(시군구)/공고일/접수시작/일정/단지/공급형/자격요건/순위규칙/배점표는 본문에서 정확히 채웁니다. 표(소득·임대료·배점)는 행/열을 신중히 대응시켜 숫자를 옮기세요.
-3) Write 도구로 다음 경로에 저장하세요(유효한 단일 JSON 객체, 기존 덮어쓰기):
-   ${reqPath}
-4) 저장 후 한 줄 요약(선정방식·공급형수·검증노트수)만 반환하세요.
-
-[정규 스키마 v1]
-${V1_SCHEMA}
-
-${RULES}`;
-}
-
-function extractOne(it) {
-  return new Promise(resolve => {
-    const args = ['-p', buildPrompt(it), '--model', 'sonnet', '--permission-mode', 'acceptEdits', '--allowedTools', 'Read', 'Write'];
-    const ps = spawn('claude', args, { cwd: p(HERE), stdio: ['ignore', 'pipe', 'pipe'] });
-    let out = '', err = '';
-    ps.stdout.on('data', d => out += d);
-    ps.stderr.on('data', d => err += d);   // 실패 원인 추적용 — 성공 시 버림, 실패 시 표면화
-    ps.on('close', code => {
-      const ok = existsSync(it.sliced.replace('notice_sliced.txt', 'requirements.json'));
-      log(`  ${ok ? '✅' : '❌'} ${it.type}:${it.panId.slice(-4)} ${out.trim().slice(0, 70)}`);
-      if (!ok) log(`     ↳ exit ${code}${err.trim() ? ` · stderr: ${err.trim().slice(-200)}` : ' · stderr 없음(requirements.json 미생성)'}`);
-      resolve({ ...it, ok: code === 0 && ok, err: ok ? '' : err.trim().slice(-500) });
-    });
-  });
-}
-
+// ── 3. 요건추출 (extract-core 헤드리스, mode=new, 신규만) ──────
 let extracted = [];
 if (SEMI) {
   hr('[3/6] 요건추출 — 생략(--semi)');
-  log(`wf-args.json 준비됨(${newTargets.length}건). 추출은 Workflow(lh-extract-requirements) 또는 재실행(--auto)으로.`);
+  log(`wf-args.json 준비됨(${newTargets.length}건). 추출은 워크플로우(extract-requirements) 또는 process-all로.`);
   process.exit(0);
 } else if (newTargets.length) {
   hr(`[3/6] 요건추출 — claude -p 헤드리스 (Sonnet, 동시성 ${CONC})`);
-  extracted = await pool(newTargets, CONC, extractOne);
+  const queue = newTargets.map(t => ({
+    mode: 'new', panId: t.panId, type: t.type,
+    slicedPath: t.sliced, reqPath: t.sliced.replace('notice_sliced.txt', 'requirements.json'),
+    header: { panId: t.panId, type: t.type, region: t.region, status: t.status, due: t.due },
+    label: `${t.type}:${t.panId.slice(-4)}`,
+  }));
+  extracted = await runHeadless(queue, CONC, log);
   const extFailed = extracted.filter(e => !e.ok);
   if (extFailed.length) log(`⚠️ 추출 실패 ${extFailed.length}/${newTargets.length}건: ${extFailed.map(e => e.panId.slice(-4)).join(', ')} — 원인은 위 ↳ stderr 라인 참조(검증게이트가 격리).`);
 }
