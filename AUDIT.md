@@ -21,7 +21,8 @@
 ### P0 — 사용자에게 잘못된 결과
 - [x] **#1 자산/자동차 게이트가 본인 계층의 더 엄격한 상한 무시.** ~~`tierLimit`이 top-level 값 있으면 계층별 무시 → 청년 3억 "지원가능" 오판(14공고 라이브).~~
   - **완료(2026-06-25):** `match-core.mjs:108` `tierLimit`을 **계층값 우선**으로 재작성(계층 해결 먼저, 미해결 시 top-level fallback). SCHEMA §5 위임 의도와 일치. 회귀테스트 `test-match-core.mjs` 신설(6케이스: 계층캡 초과→fail·이내→pass·계층미해결→top fallback·역방향 false-negative 방지·계층별없는공고 top-only). 검증: 6/6 통과, 드리프트 가드 OK, 사이트 재빌드 정상.
-- [ ] **#2 myhome-collect가 추출완료 요건을 조용히 되돌림.** `myhome-collect.mjs:114,124` — `requirements.json`을 done 체크 *이전*에 무조건 써서 PDF추출 소득/자산을 `공고문미기재`로 덮음(+매번 재추출 낭비). done 체크를 위로, 기존 파일은 상태/마감일만 패치(`gh:219` 식).
+- [x] **#2 myhome-collect가 추출완료 요건을 조용히 되돌림.** ~~requirements.json을 done 체크 *이전*에 무조건 bare envelope로 덮어 PDF추출 소득/자산을 `공고문미기재`로 퇴행(+매번 재추출).~~
+  - **완료(2026-06-25):** done 체크를 requirements.json 쓰기 *위로* 이동. 이미 done이면 기존 파일을 읽어 **상태/마감일만 패치**(gh-collect 식), `__pdf추출`·소득/자산/계층 보존. 신규 경로는 1회만 기록(중복 write 제거). `readFileSync` import 추가. 검증: 실제 보강파일 2건(도시근로자/2.51억/__pdf추출)에 done-branch 시뮬 → 보강분 100% 보존. (전체 live 재수집은 API키 필요로 미실행, 로직 검증.)
 - [x] **#3 부양가족수가 자녀를 나이·혼인 무관 전부 카운트.** ~~`(P.자녀||[]).length` → 가점 84점 과대계상.~~
   - **완료(2026-06-25):** `match-core.mjs` 미혼자녀를 **태아 또는 (생년월일 있고 만30세미만 & !기혼)**으로 필터(SCHEMA §6-3). 제외 시 notes에 사유. 웹 UI(미성년 자녀수만 입력)는 무영향, profile.json/CLI 임의 생년월일 케이스 정정. 회귀테스트 3케이스 추가(미성년+5·성인 불변·기혼 불변). 9/9 통과.
 

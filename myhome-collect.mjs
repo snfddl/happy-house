@@ -5,7 +5,7 @@
 //   → 마이홈은 LH 사각지대(지방 도시·개발공사 임대)만 보강. SH/GH는 자체시스템 운영으로 미포함될 수 있음(커버리지 한계).
 //   소득·자산 요건은 구조화 미제공 → 공고문 PDF(pcUrl) 추출 후속(LH식 파이프라인 재사용).
 // 사용: node myhome-collect.mjs [--since=2026-05-01] [--include-lh] [--probe]
-import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { UA, dwell, sani, dnorm, getArg, loadIndex, loadServiceKey, statusOf, makePanId, SRC_PREFIX } from './collect-util.mjs';
 
 const BASE = 'http://apis.data.go.kr/1613000/HWSPR02';
@@ -108,11 +108,17 @@ try {
       if (env.공고일 && env.공고일 < SINCE) { skippedOld++; continue; }
       kept++; byInstt[env.공급기관] = (byInstt[env.공급기관] || 0) + 1;
       const idxKey = env.panId, slug = `${it.pblancId}-${it.houseSn ?? 1}`;
-      // 마이홈은 LLM 추출 없음(메타 구조화) → envelope가 곧 requirements.json. derive 폴딩·결정론·멱등.
       const ddir = new URL(`${slug}/`, DERIVED);
+      const reqPath = new URL('requirements.json', ddir);
+      // 이미 받음 → 재다운로드·envelope 덮어쓰기 없이 상태·마감일만 패치. myhome-pipeline이 PDF추출로 보강한 소득/자산/계층(__pdf추출) 보존.
+      //   (과거버그: requirements.json을 done체크 전에 무조건 bare envelope로 써서 추출분을 조용히 되돌림 → '공고문미기재'로 퇴행+매번 재추출.)
+      if (index[idxKey]?.done) {
+        Object.assign(index[idxKey], { 상태: env.상태, 마감일: env.마감일 });
+        try { const r = JSON.parse(readFileSync(reqPath, 'utf8')); r.상태 = env.상태; r.마감일 = env.마감일; writeFileSync(reqPath, JSON.stringify(r, null, 2)); } catch {}
+        continue;
+      }
+      // 신규: 마이홈은 LLM 추출 없이 envelope가 곧 requirements.json(메타 구조화). 소득/자산은 myhome-pipeline PDF추출 후속.
       mkdirSync(ddir, { recursive: true });
-      writeFileSync(new URL('requirements.json', ddir), JSON.stringify(env, null, 2));
-      if (index[idxKey]?.done) { Object.assign(index[idxKey], { 상태: env.상태, 마감일: env.마감일 }); continue; }
       const dir = new URL(`${slug}/`, RAW);
       mkdirSync(dir, { recursive: true });
       if (!existsSync(new URL('item.json', dir))) writeFileSync(new URL('item.json', dir), JSON.stringify(it, null, 2));
@@ -121,7 +127,7 @@ try {
       try { files = await fetchNoticeFiles(it.pblancId, it.houseSn ?? 1, dir); } catch (e) { /* 상세접근 실패 무시 */ }
       env.files = files;
       writeFileSync(new URL('meta.json', dir), JSON.stringify(env, null, 2));
-      writeFileSync(new URL('requirements.json', ddir), JSON.stringify(env, null, 2));   // files 포함 갱신
+      writeFileSync(reqPath, JSON.stringify(env, null, 2));
       const pdfCnt = files.filter(f => !f.skipped && f.ext === '.pdf').length;
       index[idxKey] = { source: 'myhome', title: env.공고명, region: env.지역, type: env.유형, 공급기관: env.공급기관, 상태: env.상태, 마감일: env.마감일, files: files.length, done: true };
       isNew++;
