@@ -6,7 +6,7 @@
 // 원칙: raw/ 는 불변(원본 API 응답 detail.json/models.json). meta.json·index는 갱신 가능.
 //   외부 LLM API 미사용(구조화 JSON이라 추출 불필요). 상세: 청약홈_분양_API_노트.md
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
-import { dwell, dnorm, getArg, loadIndex, loadServiceKey } from './collect-util.mjs';
+import { dwell, dnorm, getArg, loadIndex, loadServiceKey, statusOf } from './collect-util.mjs';
 
 const SVC = 'https://api.odcloud.kr/api/ApplyhomeInfoDetailSvc/v1';
 // [라벨, 공고헤더 op, 주택형별 op, 기본kind]. 전 op HTTP 200 실측(2026-06-24).
@@ -41,12 +41,7 @@ const rceptOf = d => [dnorm(d.RCEPT_BGNDE ?? d.SUBSCRPT_RCEPT_BGNDE), dnorm(d.RC
 const spsplyOf = d => [dnorm(d.SPSPLY_RCEPT_BGNDE), dnorm(d.SPSPLY_RCEPT_ENDDE)];
 // 금액: APT/무순위/임의공급=LTTOT_TOP_AMOUNT, 오피스텔/민간임대=SUPLY_AMOUNT (만원)
 const amountOf = m => Number(m.LTTOT_TOP_AMOUNT ?? m.SUPLY_AMOUNT ?? 0);
-function statusOf([b, e]) {
-  if (b && TODAY < b) return '접수예정';
-  if (e && TODAY > e) return '접수마감';
-  if (b && e) return '접수중';
-  return null;
-}
+// 상태는 collect-util 캐논 statusOf(b, e) 사용 — 접수기간 [b,e] 배열은 호출부에서 스프레드.
 // 행 단위 분양/임대 판별: rent family거나, RENT_SECD_NM 또는 세부유형(HOUSE_DTL/DETAIL_SECD_NM)에 임대.
 // 주의: Urbty의 HOUSE_SECD_NM은 전 행이 "도시형/오피스텔/생활숙박시설/민간임대" 통짜 카테고리라 판별에 쓰면 안 됨 → 세부유형으로만.
 const rowKind = (famKind, d) => (famKind === 'rent' || /임대/.test(d.RENT_SECD_NM || '') || /임대/.test(d.HOUSE_DTL_SECD_NM ?? d.HOUSE_DETAIL_SECD_NM ?? '')) ? 'rent' : 'sale';
@@ -112,7 +107,7 @@ for (const [label, detailOp, mdlOp, famKind] of FAMILIES) {
       [kind === 'rent' ? '보증금만원' : '분양가만원']: amts.length ? { min: Math.min(...amts), max: Math.max(...amts) } : null,
       모집공고일: 공고일, 청약접수: dates, 특별공급접수: spsplyOf(d),
       당첨발표일: dnorm(d.PRZWNER_PRESNATN_DE), 입주예정월: d.MVN_PREARNGE_YM || null,
-      상태: statusOf(dates), url: d.PBLANC_URL, 시행사: d.BSNS_MBY_NM, 시공사: d.CNSTRCT_ENTRPS_NM,
+      상태: statusOf(...dates), url: d.PBLANC_URL, 시행사: d.BSNS_MBY_NM, 시공사: d.CNSTRCT_ENTRPS_NM,
       collectedAt: TODAY,
     };
 

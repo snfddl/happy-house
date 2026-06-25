@@ -6,6 +6,7 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { execFileSync, spawn } from 'node:child_process';
 import { validateFile, buildReport, printReport } from './validate-requirements.mjs';
+import { statusOf } from './collect-util.mjs';
 
 const HERE = new URL('./', import.meta.url);
 const ROOT = new URL('./data/', import.meta.url);
@@ -18,14 +19,7 @@ const FORCE = argv.includes('--force');
 const SEMI = argv.includes('--semi');
 const CONC = Math.max(1, parseInt((argv.find(a => a.startsWith('--conc=')) || '--conc=3').split('=')[1], 10));
 const log = (...a) => console.log(...a);
-const TODAY = new Date().toISOString().slice(0, 10);
-// 추출된 접수시작/마감일로 상태 결정론 재계산. 날짜 없으면 기존 상태 유지(GH/마이홈은 목록값, SH는 '공고중' 가정).
-function statusOf(b, e, prev) {
-  if (e && TODAY > e) return '접수마감';
-  if (b && TODAY < b) return '접수예정';
-  if (e) return '접수중';
-  return prev ?? null;
-}
+// 추출된 접수시작/마감일로 상태 결정론 재계산은 collect-util의 캐논 statusOf 사용(날짜 없으면 prev 유지).
 
 const V1_SCHEMA = readFileSync(new URL('schema-v1.jsonc', HERE), 'utf8');
 const RULES = readFileSync(new URL('extract-rules.txt', HERE), 'utf8');
