@@ -7,6 +7,15 @@ export function createMatcher(P, todayStr) {
   const age = P.생년월일 ? Math.floor((TODAY - new Date(P.생년월일)) / (365.25 * 864e5)) : null;
   const 미성년자녀 = (P.자녀 || []).filter(c => c.생년월일 && (TODAY - new Date(c.생년월일)) / (365.25 * 864e5) < 19 || c.태아).length;
   const won = n => (n == null ? '?' : (n / 1e4).toLocaleString() + '만');
+  // 시도명 캐논(2글자). 단축('경남')·정식('경상남도')·신자치('강원특별자치도'·'전북특별자치도') 혼재 → 비교 전 통일.
+  //   (프로필은 단축, 공고 지역은 소스마다 정식/단축 섞임 → exact 비교가 조용히 깨지던 #4.)
+  const 시도canon = s => {
+    if (!s) return null;
+    const t = String(s).replace(/\s/g, '');
+    for (const [a, b] of [['충청북', '충북'], ['충청남', '충남'], ['전라북', '전북'], ['전라남', '전남'], ['경상북', '경북'], ['경상남', '경남']])
+      if (t.startsWith(a)) return b;
+    return t.slice(0, 2);   // 서울특별시·경기도·강원특별자치도·전북특별자치도 등 → 앞 2글자
+  };
   const LH_LIST = 'https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026';
   // 동작하는 원문 링크 선택: LH 상세페이지(selectWrtancInfo.do)는 GET 시 "비정상 경로" 에러라 못 씀
   //   → LH는 공고문 PDF(lhFile.do, GET 검증됨), 분양(청약홈)은 상세페이지가 GET 정상.
@@ -367,7 +376,7 @@ export function createMatcher(P, todayStr) {
   function 청약순위(req) {
     if (P.청약저축?.가입 !== true) return { m: P.청약저축?.가입 === false ? '통장미가입' : '통장 미입력' };
     const reg = req.규제?.투기과열지구 || req.규제?.조정대상지역;
-    const capital = ['서울', '경기', '인천'].includes(P.거주지?.시도);
+    const capital = ['서울', '경기', '인천'].includes(시도canon(P.거주지?.시도));
     const th = reg ? 24 : capital ? 12 : 6;
     const g = P.청약저축?.가입개월;
     if (g == null) return { m: '가입기간 미입력' };
@@ -380,7 +389,7 @@ export function createMatcher(P, todayStr) {
     const 공고주소 = [req.지역, ...(req.단지 || []).map(d => d.주소)].join(' ');
     let mine = '기타지역';
     if (sgg && 공고주소.includes(sgg)) mine = '해당지역';
-    else if (sd && 공고시도 && sd === 공고시도) mine = '기타경기/광역';
+    else if (sd && 공고시도 && 시도canon(sd) === 시도canon(공고시도)) mine = '기타경기/광역';
     return { tier: mine, exists: tiers.includes(mine) };
   }
   function 특공Match(req) {
