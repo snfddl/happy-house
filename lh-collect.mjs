@@ -71,7 +71,11 @@ const startDt = (argv.find(a => a.startsWith('--since=')) || '--since=2026-05-01
 let API_KEY = process.env.DATA_GO_KR_SERVICE_KEY || '';
 try { for (const line of readFileSync(new URL('.env', import.meta.url), 'utf8').split('\n')) { const m = line.match(/^DATA_GO_KR_SERVICE_KEY=(.*)$/); if (m) API_KEY = m[1].trim(); } } catch {}
 const SERVICE_KEY = /%[0-9A-Fa-f]{2}/.test(API_KEY) ? decodeURIComponent(API_KEY) : API_KEY;
-if (!SERVICE_KEY) { console.error('❌ .env 의 DATA_GO_KR_SERVICE_KEY 가 비어있음 (LH 공식 API 호출 불가)'); process.exit(1); }
+if (!SERVICE_KEY) {
+  // CI(키 미주입)에서 --refresh로 호출되면 LH만 건너뛰고 정상종료 — SH/GH 등 키 불필요 소스가 이어서 돌 수 있게(refresh.yml).
+  if (REFRESH) { console.warn('⚠️ DATA_GO_KR_SERVICE_KEY 없음 — LH refresh 생략(키 필요). 키 불필요 소스(SH/GH)만 진행.'); process.exit(0); }
+  console.error('❌ .env 의 DATA_GO_KR_SERVICE_KEY 가 비어있음 (LH 공식 API 호출 불가)'); process.exit(1);
+}
 const LH_API = 'https://apis.data.go.kr/B552555/lhLeaseNoticeInfo1/lhLeaseNoticeInfo1';
 
 // CNP_CD 코드는 응답에 없고 CNP_CD_NM(전체 도명, "… 외" 멀티지역 포함)만 옴 → 코드 역매핑

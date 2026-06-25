@@ -6,8 +6,9 @@
 //   한계: 목록에 상태(접수중/마감)·마감일·소득/자산 요건 없음 → 등록일 기간컷 + 제목필터로 모집공고만 수집.
 //         접수기간/마감일/발표일은 (1) 상세 본문 작성자 기재분을 parseBodyDates로 백필, (2) 더 정확한 건 공고문 PDF 추출 후속(myhome식).
 //         상태는 백필 날짜로 statusOf 계산. 본문·PDF 모두 날짜 없는 상시모집만 '공고중'+마감일 null로 남음(사이트에서 '마감일 미상' 뱃지).
-// 사용: node sh-collect.mjs [--since=2026-05-01] [--include-sale] [--probe] [--reparse]
+// 사용: node sh-collect.mjs [--since=2026-05-01] [--include-sale] [--probe] [--reparse] [--refresh]
 //   --reparse : 기존 수집분 재처리(재다운로드 없음) — 제목필터 재적용(발표글 등 제거) + 상세 본문에서 접수기간/마감일/발표일 백필.
+//   --refresh : CI용 — 신규만 감지해 data/new-pending.json에 기록(다운로드/추출 안 함, 로컬 process-all이 처리). SH는 키 불필요.
 import { mkdirSync, writeFileSync, existsSync, readFileSync, rmSync } from 'node:fs';
 
 const ORIGIN = 'https://www.i-sh.co.kr';
@@ -20,6 +21,7 @@ const argv = process.argv.slice(2);
 const getArg = (k, d) => (argv.find(a => a.startsWith(`--${k}=`)) || `--${k}=${d}`).split('=')[1];
 const PROBE = argv.includes('--probe');
 const REPARSE = argv.includes('--reparse');
+const REFRESH = argv.includes('--refresh');   // CI 갱신: 신규 감지·new-pending 기록만(다운로드/추출은 로컬). 키 불필요.
 const INCLUDE_SALE = argv.includes('--include-sale');   // 기본은 임대만(분양은 청약홈이 담당)
 const SINCE = getArg('since', '2026-05-01');
 
@@ -47,6 +49,13 @@ const sani = s => String(s).replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, ' ').
 const dwell = ms => new Promise(r => setTimeout(r, ms));
 const TODAY = new Date().toISOString().slice(0, 10);
 function loadIndex() { try { return JSON.parse(readFileSync(IDX, 'utf8')); } catch { return {}; } }
+// new-pending.json 소스별 병합(CI에서 lh→sh→gh 순차 갱신 시 서로 덮어쓰지 않게). 이 소스 항목만 교체.
+function mergeNewPending(source, entries) {
+  let cur = []; try { cur = JSON.parse(readFileSync(new URL('new-pending.json', ROOT), 'utf8')); } catch {}
+  if (!Array.isArray(cur)) cur = [];
+  const others = cur.filter(x => !String(x.panId || '').startsWith(`${source}-`));
+  writeFileSync(new URL('new-pending.json', ROOT), JSON.stringify([...others, ...entries], null, 2));
+}
 async function getText(url) { const r = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'ko-KR,ko;q=0.9' } }); return await r.text(); }
 
 // 목록 한 페이지 파싱 → [{seq, title, 공고일}]
@@ -197,7 +206,7 @@ if (REPARSE) {
 }
 
 let isNew = 0, kept = 0, skippedOld = 0, skippedTitle = 0;
-const byBoard = {};
+const byBoard = {}, newPending = [];
 try {
   for (const b of BOARDS) {
     if (b[4] === '분양' && !INCLUDE_SALE) continue;
@@ -215,9 +224,13 @@ try {
         const env = toEnvelope(b, row, viewLink);
         kept++; byBoard[b[0]] = (byBoard[b[0]] || 0) + 1;
         const idxKey = env.panId, slug = row.seq;
+        if (index[idxKey]?.done) continue;   // 이미 받음 — 재다운 안 함(신선도는 build-site freshStatus)
+        if (REFRESH) {   // CI 갱신: 신규는 다운로드/추출 없이 목록만 기록(로컬 process-all이 처리)
+          newPending.push({ panId: env.panId, title: env.공고명, type: env.유형, region: env.지역, 상태: env.상태, 마감일: env.마감일 });
+          isNew++; continue;
+        }
         const ddir = new URL(`${slug}/`, DERIVED);
         mkdirSync(ddir, { recursive: true });
-        if (index[idxKey]?.done) { Object.assign(index[idxKey], {}); continue; }  // 이미 받음(상태 갱신원 없음)
         const dir = new URL(`${slug}/`, RAW);
         mkdirSync(dir, { recursive: true });
         const dv = await getText(viewLink);
@@ -244,6 +257,7 @@ try {
 } catch (e) { console.error(`❌ ${e.message}`); process.exit(1); }
 
 mkdirSync(ROOT, { recursive: true });
+if (REFRESH) { writeFileSync(IDX, JSON.stringify(index, null, 2)); mergeNewPending('sh', newPending); console.log(`\n[refresh] 미추출 신규 ${newPending.length}건 → data/new-pending.json (다운로드/추출은 로컬 process-all).`); process.exit(0); }
 writeFileSync(IDX, JSON.stringify(index, null, 2));
 console.log(`\n신규 ${isNew} · 유지 ${kept} · 기간밖 ${skippedOld} · 비모집(제목) ${skippedTitle}`);
 console.log(`게시판 분포(수집분): ${JSON.stringify(byBoard)}`);

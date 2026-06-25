@@ -5,7 +5,8 @@
 //   상세: POST /sb/sr/<board>/selectPbancDetailView.do (pbancNo·pbancKndCd·previewYn) → 첨부 <a>.
 //   첨부: GET /sr/<board>/selectFileDown.do?pbancNo=&atchFileSn=&atchFileDtlSn=&mode=1 (무세션, %PDF 실측).
 //   장점: 목록에 상태·마감일 제공(접수마감 자동 제외). 소득/자산은 공고문 PDF 추출 후속.
-// 사용: node gh-collect.mjs [--since=2026-05-01] [--probe]
+// 사용: node gh-collect.mjs [--since=2026-05-01] [--probe] [--refresh]
+//   --refresh : CI용 — 기존 상태/마감일 갱신 + 신규만 data/new-pending.json에 기록(다운로드/추출은 로컬 process-all). GH는 키 불필요.
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import https from 'node:https';
 import tls from 'node:tls';
@@ -73,6 +74,7 @@ const IDX = new URL('index.json', ROOT);
 const argv = process.argv.slice(2);
 const getArg = (k, d) => (argv.find(a => a.startsWith(`--${k}=`)) || `--${k}=${d}`).split('=')[1];
 const PROBE = argv.includes('--probe');
+const REFRESH = argv.includes('--refresh');   // CI 갱신: 기존 상태/마감일 갱신 + 신규는 new-pending 기록만(다운로드/추출 없음). 키 불필요.
 const SINCE = getArg('since', '2026-05-01');
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36';
@@ -91,6 +93,13 @@ const sani = s => String(s).replace(/[\/\\:*?"<>|]/g, '_').replace(/\s+/g, ' ').
 const dwell = ms => new Promise(r => setTimeout(r, ms));
 const TODAY = new Date().toISOString().slice(0, 10);
 function loadIndex() { try { return JSON.parse(readFileSync(IDX, 'utf8')); } catch { return {}; } }
+// new-pending.json 소스별 병합(CI에서 lh→sh→gh 순차 갱신 시 서로 덮어쓰지 않게). 이 소스 항목만 교체.
+function mergeNewPending(source, entries) {
+  let cur = []; try { cur = JSON.parse(readFileSync(new URL('new-pending.json', ROOT), 'utf8')); } catch {}
+  if (!Array.isArray(cur)) cur = [];
+  const others = cur.filter(x => !String(x.panId || '').startsWith(`${source}-`));
+  writeFileSync(new URL('new-pending.json', ROOT), JSON.stringify([...others, ...entries], null, 2));
+}
 
 async function postForm(url, fields, referer) {
   const body = new URLSearchParams(fields).toString();
@@ -196,7 +205,7 @@ if (PROBE) {
 
 const index = loadIndex();
 let isNew = 0, kept = 0, skippedOld = 0;
-const byBoard = {};
+const byBoard = {}, newPending = [];
 try {
   for (const b of BOARDS) {
     for (const [sv] of STATES) {
@@ -210,13 +219,17 @@ try {
           kept++; byBoard[b[0]] = (byBoard[b[0]] || 0) + 1;
           const idxKey = env.panId, slug = row.pbancNo;
           const ddir = new URL(`${slug}/`, DERIVED);
-          mkdirSync(ddir, { recursive: true });
           // 상태·마감일은 매 실행 갱신(목록제공). 이미 받았으면 메타만 갱신하고 재다운 안 함.
           if (index[idxKey]?.done) {
             Object.assign(index[idxKey], { 상태: env.상태, 마감일: env.마감일 });
             try { const r = JSON.parse(readFileSync(new URL('requirements.json', ddir), 'utf8')); r.상태 = env.상태; r.마감일 = env.마감일; writeFileSync(new URL('requirements.json', ddir), JSON.stringify(r, null, 2)); } catch {}
             continue;
           }
+          if (REFRESH) {   // CI 갱신: 신규는 다운로드/추출 없이 목록만 기록(로컬 process-all이 처리)
+            newPending.push({ panId: env.panId, title: env.공고명, type: env.유형, region: env.지역, 상태: env.상태, 마감일: env.마감일 });
+            isNew++; continue;
+          }
+          mkdirSync(ddir, { recursive: true });
           const dir = new URL(`${slug}/`, RAW);
           mkdirSync(dir, { recursive: true });
           const dv = await postForm(detailUrl(b), { pbancNo: row.pbancNo, pbancKndCd: row.pbancKndCd, previewYn: 'N' }, listUrl(b));
@@ -239,6 +252,7 @@ try {
 
 mkdirSync(ROOT, { recursive: true });
 writeFileSync(IDX, JSON.stringify(index, null, 2));
+if (REFRESH) { mergeNewPending('gh', newPending); console.log(`\n[refresh] 상태 갱신 완료. 미추출 신규 ${newPending.length}건 → data/new-pending.json (다운로드/추출은 로컬 process-all).`); process.exit(0); }
 console.log(`\n신규 ${isNew} · 유지 ${kept} · 기간밖 ${skippedOld}`);
 console.log(`게시판 분포(수집분): ${JSON.stringify(byBoard)}`);
 console.log(`gh index ${Object.keys(index).filter(k => k.startsWith('gh-')).length}건. 소득/자산은 공고문 PDF 추출 후속.`);
