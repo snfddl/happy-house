@@ -143,15 +143,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020050/files/67098591__대전서구집주인임대주택예비입주자모집공고문(260604).pdf",
     "첨부": [
       {
-        "name": "대전서구집주인임대주택예비입주자모집공고문(260604).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67098588"
-      },
-      {
         "name": "대전서구집주인임대주택예비입주자모집공고문(260604).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67098591"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

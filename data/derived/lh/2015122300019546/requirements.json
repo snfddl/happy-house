@@ -161,40 +161,17 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300019546/files/66095429__[공고문]2026년다자녀전세임대입주자수시모집.pdf",
     "첨부": [
       {
-        "name": "[공고문]2026년다자녀전세임대입주자수시모집.hwpx",
-        "ext": ".hwpx",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66095428"
-      },
-      {
         "name": "[공고문]2026년다자녀전세임대입주자수시모집.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66095429"
       },
       {
-        "name": "1.2026년다자녀전세임대입주자모집QnA.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66095414"
-      },
-      {
-        "name": "2-1.금융정보등(금융ㆍ신용ㆍ보험정보)제공동의서및유의사항.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66095415"
-      },
-      {
         "name": "2-2.샘플_금융정보제공동의서.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66095416"
-      },
-      {
-        "name": "3.자산보유사실확인서및유의사항.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66095417"
-      },
-      {
-        "name": "4.개인정보수집이용및제3자제공동의서(양식)_전세임대.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66095418"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

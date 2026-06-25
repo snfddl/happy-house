@@ -362,20 +362,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020174/files/67344202__정선신동영구임대주택예비입주자모집공고문(26.06.22공고).pdf",
     "첨부": [
       {
-        "name": "정선신동영구임대주택예비입주자모집공고문(26.06.22공고).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67344196"
-      },
-      {
         "name": "정선신동영구임대주택예비입주자모집공고문(26.06.22공고).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67344202"
-      },
-      {
-        "name": "정선신동신청서양식.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67345052"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

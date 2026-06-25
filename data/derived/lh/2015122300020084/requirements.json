@@ -367,15 +367,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020084/files/67183512__광주효천3·효천7·진월8입주자격완화예비입주자모집(`26.06.11.공고).pdf",
     "첨부": [
       {
-        "name": "광주효천3·효천7·진월8입주자격완화예비입주자모집(`26.06.11.공고).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67183505"
-      },
-      {
         "name": "광주효천3·효천7·진월8입주자격완화예비입주자모집(`26.06.11.공고).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67183512"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

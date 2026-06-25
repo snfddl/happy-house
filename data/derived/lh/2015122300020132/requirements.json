@@ -113,30 +113,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020132/files/67264294__제주지역행복주택2026년전세형.pdf",
     "첨부": [
       {
-        "name": "제주지역행복주택2026년전세형.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67264289"
-      },
-      {
         "name": "제주지역행복주택2026년전세형.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67264294"
-      },
-      {
-        "name": "개인정보수집,이용및제3자제공동의서.hwpx",
-        "ext": ".hwpx",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67252111"
-      },
-      {
-        "name": "예비신혼부부용확인서(예비신혼부부신청확인서,세대구성확인서).hwpx",
-        "ext": ".hwpx",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67252112"
-      },
-      {
-        "name": "예비입주자중복선정불가및대기자명부제외사항확인서.hwpx",
-        "ext": ".hwpx",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67252113"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

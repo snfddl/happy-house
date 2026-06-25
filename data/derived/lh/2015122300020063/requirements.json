@@ -169,20 +169,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020063/files/67127633__26.06.15.(행복주택)통영북신예비입주자모집공고문.pdf",
     "첨부": [
       {
-        "name": "26.06.15.(행복주택)통영북신예비입주자모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67127632"
-      },
-      {
         "name": "26.06.15.(행복주택)통영북신예비입주자모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67127633"
-      },
-      {
-        "name": "일반공급제출서류_행복주택.zip",
-        "ext": ".zip",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67127644"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

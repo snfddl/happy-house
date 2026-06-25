@@ -289,15 +289,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020133/files/67251616__충주호암행복주택자격완화입주자모집공고문[26.06.15].pdf",
     "첨부": [
       {
-        "name": "충주호암행복주택자격완화입주자모집공고문[26.06.15].hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67251601"
-      },
-      {
         "name": "충주호암행복주택자격완화입주자모집공고문[26.06.15].pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67251616"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

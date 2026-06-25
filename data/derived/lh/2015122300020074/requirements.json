@@ -139,30 +139,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020074/files/67161360__260608동해묵호국민임대주택예비입주자입주자격완화(1단계)상시모집공고문.pdf",
     "첨부": [
       {
-        "name": "260608동해묵호국민임대주택예비입주자입주자격완화(1단계)상시모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67161357"
-      },
-      {
         "name": "260608동해묵호국민임대주택예비입주자입주자격완화(1단계)상시모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67161360"
-      },
-      {
-        "name": "동해묵호51형평면도_1.png",
-        "ext": ".png",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67161386"
-      },
-      {
-        "name": "동해묵호59형평면도_1.png",
-        "ext": ".png",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67161395"
-      },
-      {
-        "name": "상시모집서류양식.zip",
-        "ext": ".zip",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67161459"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

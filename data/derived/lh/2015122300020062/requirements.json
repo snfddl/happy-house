@@ -103,15 +103,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020062/files/67127456__(260610)오산운암6단지50년공공임대주택예비입주자모집공고문.pdf",
     "첨부": [
       {
-        "name": "(260610)오산운암6단지50년공공임대주택예비입주자모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67127455"
-      },
-      {
         "name": "(260610)오산운암6단지50년공공임대주택예비입주자모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67127456"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

@@ -335,45 +335,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020104/files/67228953__260612횡성우천2통합공공임대주택(일자리연계형)공고문.pdf",
     "첨부": [
       {
-        "name": "260612횡성우천2통합공공임대주택(일자리연계형)공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67228951"
-      },
-      {
         "name": "260612횡성우천2통합공공임대주택(일자리연계형)공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67228953"
-      },
-      {
-        "name": "[양식1-필수]개인정보수집이용및제3자제공동의서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67203621"
-      },
-      {
-        "name": "[양식2-필수]금융정보등제공동의서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67203627"
-      },
-      {
-        "name": "[양식3-필수]자산보유사실확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67203629"
-      },
-      {
-        "name": "[양식4-필수]예비입주자중복선정불가사항확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67203633"
-      },
-      {
-        "name": "[양식5-해당자]예비신혼부부신청확인서및세대구성확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67203638"
-      },
-      {
-        "name": "[양식6-해당자]위임장.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67203640"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

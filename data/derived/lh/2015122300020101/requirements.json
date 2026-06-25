@@ -191,11 +191,6 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020101/files/67215195__붙임1.26년1차일반매입임대모집공고문.pdf",
     "첨부": [
       {
-        "name": "붙임1.26년1차일반매입임대모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67215194"
-      },
-      {
         "name": "붙임1.26년1차일반매입임대모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67215195"
@@ -251,5 +246,7 @@
       "2형",
       "3형"
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

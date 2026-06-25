@@ -332,20 +332,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020110/files/67224713__대구국가산단행복주택입주자모집공고문_26.06.12(최종).pdf",
     "첨부": [
       {
-        "name": "대구국가산단행복주택입주자모집공고문_26.06.12(최종).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67224712"
-      },
-      {
         "name": "대구국가산단행복주택입주자모집공고문_26.06.12(최종).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67224713"
-      },
-      {
-        "name": "(양식)신청양식_행복주택.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67224711"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

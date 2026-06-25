@@ -169,11 +169,6 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020179/files/67360863__2026년2차대구경북지역기숙사형청년주택입주자모집공고문.pdf",
     "첨부": [
       {
-        "name": "2026년2차대구경북지역기숙사형청년주택입주자모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67360861"
-      },
-      {
         "name": "2026년2차대구경북지역기숙사형청년주택입주자모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67360863"
@@ -182,12 +177,9 @@
         "name": "2026년2차대구경북지역기숙사형청년매입임대공급대상주택목록.xlsx",
         "ext": ".xlsx",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67360864"
-      },
-      {
-        "name": "26년기숙사형청년주택_QnA.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67360865"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

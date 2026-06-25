@@ -518,25 +518,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020057/files/67126689__(260605)파주시_행복주택_예비입주자_모집공고문.pdf",
     "첨부": [
       {
-        "name": "(260605)파주시_행복주택_예비입주자_모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67126688"
-      },
-      {
         "name": "(260605)파주시_행복주택_예비입주자_모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67126689"
-      },
-      {
-        "name": "파주시_행복주택_평면도.zip",
-        "ext": ".zip",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67126710"
-      },
-      {
-        "name": "동의서및양식등.zip",
-        "ext": ".zip",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67126709"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

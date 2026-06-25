@@ -273,7 +273,7 @@
       },
       "고유면적수": 8,
       "목록": [
-        37,
+        37.0,
         50.2,
         55.2,
         57.5,
@@ -308,11 +308,6 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020190/files/67378764__[충북지역본부]신혼·신생아매입임대Ⅱ(전세형)예비입주자모집공고(260624공고).pdf",
     "첨부": [
       {
-        "name": "[충북지역본부]신혼·신생아매입임대Ⅱ(전세형)예비입주자모집공고(260624공고).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67378761"
-      },
-      {
         "name": "[충북지역본부]신혼·신생아매입임대Ⅱ(전세형)예비입주자모집공고(260624공고).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67378764"
@@ -321,12 +316,9 @@
         "name": "260624공고_신혼.신생아매입임대주택Ⅱ(전세형)공급대상주택목록(충북).xlsx",
         "ext": ".xlsx",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67378161"
-      },
-      {
-        "name": "26년신혼신생아매입임대Ⅱ(전세형)_QnA.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67378241"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

@@ -1,23 +1,27 @@
 # happy-house — 프로젝트 규칙
 
 LH 등 임대주택 공고 수집·요건 추출·알림 개인용 서비스.
-설계 상세는 `SCHEMA.md`, 스크래핑 RE 노트는 `LH_SCRAPE_NOTES.md`, **신규 공고 처리 파이프라인은 `PIPELINE.md`** 참고.
+**전체 아키텍처는 `ARCHITECTURE.md`**, 설계 상세는 `SCHEMA.md`, 스크래핑 RE 노트는 `LH_SCRAPE_NOTES.md`, 신규 공고 처리 파이프라인은 `PIPELINE.md` 참고.
 
-**진입점: `node pipeline.mjs`** — 수집→타깃선정→슬라이스→요건추출(헤드리스)→xlsx파싱→링크주입→검증게이트를 신규 공고만 증분 처리(완전자동). 외부 LLM API 0.
+**진입점: `node process-all.mjs`** — 전 5소스(LH·청약홈·마이홈·SH·GH)를 수집→파생/요건추출→정규화→검증게이트→사이트빌드까지 통합 처리하는 얇은 시퀀서. 외부 LLM API 0.
+  - **LH 단일 파이프라인은 그 하위 단계인 `node pipeline.mjs`** (수집→타깃선정→슬라이스→요건추출(헤드리스)→xlsx파싱→링크주입→검증게이트, 신규만 증분). 한 소스만 돌릴 땐 기존 진입점 직접 호출도 그대로 유효.
 
 ## 1. 절대 규칙
 
 - **외부 LLM API 사용 금지.** Anthropic/OpenAI/Gemini 등 유료 LLM API를 코드에서 호출하지 않는다.
   - 공고문 요건 추출 같은 LLM 작업은 **Claude Code 에이전트(이 세션/슬래시 명령/워크플로우)로** 수행한다 — API 키·과금 없음 (CertiQ의 vision 추출 패턴과 동일).
-  - `extract-requirements.mjs`의 API 호출 방식은 참고용일 뿐, 실제 파이프라인에서는 쓰지 않는다.
+  - `reference/extract-requirements.mjs`의 API 호출 방식은 참고용일 뿐, 실제 파이프라인에서는 쓰지 않는다(죽은코드 격리 — `reference/README.md`).
 
-## 2. 수집 (lh-collect.mjs)
+## 2. LH 수집 (lh-collect.mjs)
+
+(청약홈·마이홈·SH·GH 수집 규칙은 각 `*-collect.mjs` 헤더와 `ARCHITECTURE.md` 참고. 아래는 주 소스인 LH 기준.)
 
 - 대상: **전국 × 전 임대유형**. 기간은 **2026-05-01 이후** 공고만 (과거/마감 공고 제외).
 - 상태: **접수중·공고중·정정공고중**만 추출 대상. **접수마감 제외.**
   - 단, 어떤 유형에 활성 공고가 0건이면 **가장 최근 접수마감 1건**을 백필(유형 커버리지 유지).
 - 첨부는 **.pdf 우선** (HWP→PDF 변환은 불안정하므로 회피, PDF 없을 때만 fallback).
-- **팸플릿류(평면도·조감도 책자 등 요건 없는 홍보물) 제외** — fileid만 meta에 기록, 다운로드 안 함.
+- **형식 필터(다운로드 단계)**: 파서 있는 **.pdf(요건추출)·.xlsx(주택목록)만 다운로드**. hwp/hwpx는 **그 공고에 PDF 없을 때만** fallback 보존. zip·이미지·서식 등 파서0 형식은 **fileid만 meta에 `skipped:'비요건형식'`로 기록, 다운로드 안 함**(불변 raw 비대 방지·재다운 가능). 확장자 미상은 fail-safe 보존.
+- **팸플릿류(평면도·조감도 책자 등 요건 없는 홍보물) 제외** — fileid만 meta에 기록(`skipped:'팸플릿류'`), 다운로드 안 함.
 - 원본 보관: `data/raw/` 는 **불변(immutable)**. 재파싱 대비 원본 PDF 보존. `data/derived/` 는 재생성 가능.
 - 신규 감지: `data/index.json` diff. 이미 받은 공고는 재다운로드 없이 상태·날짜만 갱신.
 
@@ -26,8 +30,10 @@ LH 등 임대주택 공고 수집·요건 추출·알림 개인용 서비스.
 - 텍스트형 PDF는 **pdftotext -layout** 로 추출(OCR 불필요), 이미지형만 OCR.
 - **추출 전 슬라이서(`slice-notice.mjs`, 레버 A) 적용** — 유형공통 보일러플레이트(신청방법·제출서류·산정방법·유의사항·시공·편의시설) 제거. 결정론적·무손실.
   - 제거는 **섹션 제목 블랙리스트로만** 판단. 요건 섹션(신청자격·선정기준·임대조건·소득자산기준)은 절대 제거 안 됨.
-  - 못 알아보는 섹션은 **무조건 보존(fail-safe)**. 전 유형 검증 결과 요건표 손실 0건, 평균 ~34% 입력 절감.
+  - 못 알아보는 섹션은 **무조건 보존(fail-safe)**. 전 유형 검증 결과 요건표 손실 0건, 평균 ~21% 입력 절감(LH 265건 전수 실측: 건별평균 21.0%·총합 20.3%·중앙값 18.5%).
 - **추출 모델 = Sonnet.** Haiku는 품질 부적합(쓰지 않음). Opus는 검증/감수용.
+- **추출 골격 = `extract-core.mjs` 단일 소스** (buildExtractPrompt mode=new[LH 신규생성]/merge[myhome·sh·gh envelope MERGE] · runHeadless · postProcess · 큐 `extract-queue.json`). pipeline·myhome-pipeline·`/update` 워크플로우가 공유.
+- **추출 실행 경로**: 로컬 대화형은 **`/update` 스킬(워크플로우 병렬·빠름)** 권장, 무인 cron은 `node process-all.mjs`(헤드리스 `claude -p`·conc 3·느림). **품질 동일**(같은 프롬프트·스키마), 속도만 다름. 상세는 `PIPELINE.md`·`ARCHITECTURE.md`.
 - 출력은 `SCHEMA.md` §5 **정규 스키마 v1** 형태로 `data/derived/lh/<panId>/requirements.json` 에 저장.
   - 선정방식은 enum 1개, 소득기준은 항상 object, 임대료는 항상 배열. 못 채운 필드는 `_검증노트`에 기록.
   - 자격완화로 소득 배제 시 `소득기준.종류:"없음"` + 비고에 근거. 자산/자동차상한은 숫자(원)·"없음"·"공고문미기재".
@@ -48,6 +54,6 @@ LH 등 임대주택 공고 수집·요건 추출·알림 개인용 서비스.
 ## 5. 배포 / 운영 (DEPLOY.md)
 
 - **무료 자동배포**: GitHub Actions + Pages. **결정론 단계만 CI에서**(키 0) — 수집(`--refresh`)·정규화·빌드·배포. cron 하루 3회 상태/마감일 갱신 + main push 시 즉시 빌드·배포.
-- **요건추출(LLM)은 CI에서 하지 않는다.** 신규 공고는 CI가 GitHub 이슈로 알리고, **로컬 `node pipeline.mjs`** 로 추출·정규화 후 커밋·push(외부 API 0 규칙 유지).
+- **요건추출(LLM)은 CI에서 하지 않는다.** 신규 공고는 CI가 GitHub 이슈로 알리고, **로컬 `node process-all.mjs`**(LH만이면 `pipeline.mjs`)로 추출·정규화 후 커밋·push(외부 API 0 규칙 유지).
 - `data/raw/`(불변·대용량)와 개인 `profile.json`은 **gitignore**(공개 repo 유출 방지). CI 빌드는 `--seed` 없이 빈 프로필.
 - `build-site.mjs`는 빌드 때 `index.json`의 최신 상태/마감일을 오버레이(신선도). `lh-collect --refresh`는 다운로드 없이 상태만 갱신·신규는 `new-pending.json`에 기록.

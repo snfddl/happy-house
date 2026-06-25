@@ -130,15 +130,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300019919/files/66866406__2025년5월13일청년신혼부부매입임대리츠_입주자상시모집(미임대)_양산.pdf",
     "첨부": [
       {
-        "name": "2025년5월13일청년신혼부부매입임대리츠_입주자상시모집(미임대)_양산.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66866404"
-      },
-      {
         "name": "2025년5월13일청년신혼부부매입임대리츠_입주자상시모집(미임대)_양산.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66866406"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

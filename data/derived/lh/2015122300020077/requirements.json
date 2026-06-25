@@ -217,11 +217,6 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020077/files/67164087__기장웨이브리즈(A-2BL)행복주택예비입주자모집공고문.pdf",
     "첨부": [
       {
-        "name": "기장웨이브리즈(A-2BL)행복주택예비입주자모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67164042"
-      },
-      {
         "name": "기장웨이브리즈(A-2BL)행복주택예비입주자모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67164087"
@@ -230,17 +225,9 @@
         "name": "[예시]공통제출서류작성샘플(참고용).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67164162"
-      },
-      {
-        "name": "별지1.공통제출서류(예비자,개인정보,자산보유,금융정보).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67164149"
-      },
-      {
-        "name": "별지2.추가제출서류(예비신혼부부신청시).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67164160"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

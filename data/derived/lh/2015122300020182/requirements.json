@@ -303,11 +303,6 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020182/files/67363519__260615구미시김천시의성군행복주택예비입주자모집.pdf",
     "첨부": [
       {
-        "name": "260615구미시김천시의성군행복주택예비입주자모집.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67363516"
-      },
-      {
         "name": "260615구미시김천시의성군행복주택예비입주자모집.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67363519"
@@ -338,5 +333,7 @@
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67361328"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

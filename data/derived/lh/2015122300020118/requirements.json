@@ -270,15 +270,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020118/files/67235544__(정정공고)광주용산,쌍촌,월산행복주택예비입주자모집공고문(26.06.10공고).pdf",
     "첨부": [
       {
-        "name": "(정정공고)광주용산,쌍촌,월산행복주택예비입주자모집공고문(26.06.10공고).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67235541"
-      },
-      {
         "name": "(정정공고)광주용산,쌍촌,월산행복주택예비입주자모집공고문(26.06.10공고).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67235544"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

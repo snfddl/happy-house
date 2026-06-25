@@ -212,15 +212,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020159/files/67286865__(26.06.15)장성삼계행복주택예비입주자모집공고문(정정).pdf",
     "첨부": [
       {
-        "name": "(26.06.15)장성삼계행복주택예비입주자모집공고문(정정).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67286864"
-      },
-      {
         "name": "(26.06.15)장성삼계행복주택예비입주자모집공고문(정정).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67286865"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

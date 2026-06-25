@@ -235,15 +235,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020099/files/67196950__음성맹동행복주택입주자모집(공고2026.06.15).pdf",
     "첨부": [
       {
-        "name": "음성맹동행복주택입주자모집(공고2026.06.15).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67196952"
-      },
-      {
         "name": "음성맹동행복주택입주자모집(공고2026.06.15).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67196950"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

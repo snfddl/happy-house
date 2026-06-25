@@ -1,19 +1,22 @@
 // normalize-requirements.mjs — 추출된 requirements.json의 '계층별' 메타를 결정론적으로 정규화(canonical schema v1).
 //   추출(Sonnet)은 계층 키/필드명을 자유형으로 뱉어 같은 개념이 제각각(자산상한 vs 총자산상한, 신혼부부·한부모가족 vs …계층).
 //   이 패스가 동의어→캐논으로 표준화 + 만원→원 숫자화 + 키 충돌 병합. 무손실·멱등(두 번 돌려도 동일). 외부 LLM 0.
-//   사용: node normalize-requirements.mjs [--report] [panId ...]
+//   사용: node normalize-requirements.mjs [--source=lh|myhome|sh|gh] [--report] [panId ...]
+//     --source= : 정규화할 소스 디렉터리(data/derived/<source>/). 기본 lh.
 //     --report  : 쓰지 않고 변경 요약만 출력
-//     panId 인자 : 해당 공고만(없으면 data/derived/lh 전체)
+//     panId 인자 : 해당 공고만(없으면 data/derived/<source> 전체)
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 
 const HERE = new URL('./', import.meta.url);
-const DERIVED = new URL('data/derived/lh/', HERE);
 const args = process.argv.slice(2);
+const SOURCE = (args.find(a => a.startsWith('--source=')) || '--source=lh').split('=')[1];
+const DERIVED = new URL(`data/derived/${SOURCE}/`, HERE);
 const REPORT = args.includes('--report');
 const onlyPans = args.filter(a => !a.startsWith('--'));
 
 // ── 캐논 계층 enum ────────────────────────────────────────────
 //   행복주택 등에서 쓰는 공급계층. 동의어/표기변형을 흡수.
+//   match-core.mjs canonTier와 본문 동일해야 함(브라우저 인라인이라 공유 불가 → check-canon-drift.mjs가 빌드때 assert).
 export function canonTierKey(key) {
   const k = String(key).replace(/계층|\s|·|ㆍ|_|\(.*?\)/g, '');
   if (/대학생|취업준비생/.test(k)) return '대학생';
@@ -32,6 +35,7 @@ const FIELD_SYN = {
   자산상한: ['자산상한', '총자산상한', '총자산', '자산', '가산자산표'],
   자동차상한: ['자동차상한', '자동차'],
   소득기준: ['소득기준', '소득', '소득상한', '소득상한%', '소득상한_기본', '소득상한기준', '소득기준비고'],
+  소득가구원수별: ['소득가구원수별', '소득표', '가구원수별소득'],
   청약요건: ['청약요건', '청약'],
   연령: ['연령', '나이'],
   무주택: ['무주택'],
@@ -62,6 +66,8 @@ function pickAmount(vals) {
 }
 function mergeVals(canon, vals) {
   if (AMOUNT_FIELDS.has(canon)) return pickAmount(vals.map(parseAmt));
+  const obj = vals.find(v => v && typeof v === 'object');   // 구조형 필드(예: 소득가구원수별 표)는 그대로 보존(문자열화 금지)
+  if (obj) return obj;
   const strs = [...new Set(vals.filter(v => v != null && v !== '').map(String))];
   return strs.length ? strs.join(' / ') : (vals[0] ?? null);
 }
@@ -105,8 +111,20 @@ function normTargetList(arr) {
 
 // ── 한 공고 정규화 ────────────────────────────────────────────
 function normalizeReq(r) {
+  // 통합 envelope 스탬프(SCHEMA.md §4): id=panId. source는 --source 인자(myhome/sh/gh는 수집기가 이미 채움 → 보존). 멱등.
+  const envBefore = `${r.source}|${r.상품군}`;
+  if (r.no && !r.panId) { r.panId = r.no; delete r.no; }
+  r.source = r.source || SOURCE; r.상품군 = r.상품군 || '임대';
+  // 일부 추출이 접수/마감을 top-level(접수시작·마감일) 대신 `일정` 객체에 자유문장으로만 둠 → 매처(req.마감일=D-day)가 읽도록 hoist(멱등)
+  let dateHoisted = false;
+  if (r.마감일 == null && r.일정 && typeof r.일정 === 'object') {
+    const txt = r.일정.접수 || r.일정.신청접수 || r.일정.신청 || r.일정.청약접수 || '';
+    const ds = [...String(txt).matchAll(/(\d{4})[.\-](\d{2})[.\-](\d{2})/g)].map(m => `${m[1]}-${m[2]}-${m[3]}`);
+    if (ds.length) { r.접수시작 = r.접수시작 ?? ds[0]; r.마감일 = ds[ds.length - 1]; dateHoisted = true; }
+  }
+  const envChanged = dateHoisted || `${r.source}|${r.상품군}` !== envBefore;
   const zq = r.자격요건;
-  if (!zq || typeof zq !== 'object') return { changed: false };
+  if (!zq || typeof zq !== 'object') return { changed: envChanged };
   const before = JSON.stringify(zq);
   if (zq.계층별 && typeof zq.계층별 === 'object' && !Array.isArray(zq.계층별)) zq.계층별 = normalizeCb(zq.계층별);
   if (Array.isArray(zq.대상계층)) zq.대상계층 = normTargetList(zq.대상계층);
@@ -115,7 +133,7 @@ function normalizeReq(r) {
     const p = parseAmt(zq[f]);
     zq[f] = typeof p === 'number' ? p : p === '없음' ? '없음' : '공고문미기재';
   }
-  return { changed: JSON.stringify(zq) !== before };
+  return { changed: envChanged || JSON.stringify(zq) !== before };
 }
 
 // ── 실행 ──────────────────────────────────────────────────────

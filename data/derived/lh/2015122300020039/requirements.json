@@ -183,15 +183,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020039/files/67045003__제천청전공공실버(영구임대)예비입주자모집공고문(260615).pdf",
     "첨부": [
       {
-        "name": "제천청전공공실버(영구임대)예비입주자모집공고문(260615).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67045000"
-      },
-      {
         "name": "제천청전공공실버(영구임대)예비입주자모집공고문(260615).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67045003"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

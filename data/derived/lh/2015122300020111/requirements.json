@@ -319,11 +319,6 @@
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67218230"
       },
       {
-        "name": "붙임1(공고문)26년대전충남_일반매입임대_예비입주자_모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67218228"
-      },
-      {
         "name": "붙임1(공고문)26년대전충남_일반매입임대_예비입주자_모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67218229"
@@ -363,5 +358,7 @@
     },
     "방수분포": {},
     "주택형": []
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

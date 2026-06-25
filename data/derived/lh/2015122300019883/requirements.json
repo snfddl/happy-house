@@ -269,11 +269,6 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300019883/files/66691476__(정정)(260429)2026년1차입주자모집공고문(게시용).pdf",
     "첨부": [
       {
-        "name": "(정정)(260429)2026년1차입주자모집공고문(게시용).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66691469"
-      },
-      {
         "name": "(정정)(260429)2026년1차입주자모집공고문(게시용).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66691476"
@@ -284,5 +279,7 @@
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66691477"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

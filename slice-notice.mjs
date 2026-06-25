@@ -23,6 +23,9 @@ function splitTopSections(text) {
   const heads = []; // {idx, num, title}
   let expect = 1;
   for (let i = 0; i < lines.length; i++) {
+    // 목차(TOC) 줄 제외: "1. 공급일정 …… 4" 처럼 점선 리더+페이지번호로 끝나는 줄은 진짜 섹션헤더가 아님.
+    //   (SH 등 목차 있는 공고에서 목차를 섹션으로 오인 → 마지막 항목 섹션이 본문 전체를 삼키고 통째 제거되던 버그)
+    if (/[.·…ㆍ‥]{3,}\s*\d{1,3}\s*$/.test(lines[i])) continue;
     const m = lines[i].match(/^\s{0,5}(\d{1,2})\.\s*([가-힣].{0,40})/);
     if (!m) continue;
     const num = +m[1];
@@ -41,14 +44,15 @@ function splitTopSections(text) {
   return sections;
 }
 
-// 보존 섹션 안에서 ■/▣/○/◦ 하위 보일러플레이트 블록 제거
+// 보존 섹션 안에서 ■/▣/○/◦ 하위 보일러플레이트 블록 제거.
+//   #9 fail-safe(라인 단위): 제거대상 하위블록(산정·접수방법 등 *절차 설명*)이라도 요건표 라인(RISK_LINE: 소득/자산/배점 기준값)은 보존.
+//   DROP_SUB 블록은 절차문이라 요건표 자체는 보존 섹션에 있음(전수 확인). 의심 라인만 살려 손실 0 보장하되 절차 본문은 제거(절감 유지).
 function stripSubBlocks(secLines) {
   const out = [];
   let dropping = false;
   for (const ln of secLines) {
-    const isHead = /^\s*[■▣◆●○◦▶]/.test(ln);
-    if (isHead) dropping = DROP_SUB.test(ln);
-    if (!dropping) out.push(ln);
+    if (/^\s*[■▣◆●○◦▶]/.test(ln)) dropping = DROP_SUB.test(ln);
+    if (!dropping || RISK_LINE.test(ln)) out.push(ln);   // 보존 라인이거나, 제거블록이어도 요건표 라인이면 보존
   }
   return out;
 }
@@ -63,7 +67,14 @@ function slice(text) {
     if (!s.keep) {
       const hits = raw.split('\n').filter(l => RISK_LINE.test(l));
       risk += hits.length;
-      report.push({ title: s.title, action: hits.length ? `⚠️제거(요건표의심 ${hits.length}행)` : '제거', chars: raw.length, sample: hits[0] });
+      // fail-safe: 버리려던 섹션에 요건표(소득/자산/배점 등 기준값)가 있으면 제거하지 않고 보존.
+      //   보일러플레이트 제거는 토큰절감 최적화일 뿐 — 요건 손실 위험이 있으면 보존이 절대우선(CLAUDE.md §3).
+      if (hits.length) {
+        report.push({ title: s.title, action: `보존(제거대상이나 요건표 ${hits.length}행 → fail-safe 보존)`, chars: raw.length, sample: hits[0] });
+        kept.push(s.lines ? stripSubBlocks(s.lines).join('\n') : raw);
+        continue;
+      }
+      report.push({ title: s.title, action: '제거', chars: raw.length });
       continue;
     }
     const body = s.lines ? stripSubBlocks(s.lines).join('\n') : raw;

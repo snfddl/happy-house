@@ -320,30 +320,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300019782/files/66429489__충남도청이전도시RM6BL영구임대예비자모집공고문(2026.06.08).pdf",
     "첨부": [
       {
-        "name": "충남도청이전도시RM6BL영구임대예비자모집공고문(2026.06.08).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66429485"
-      },
-      {
         "name": "충남도청이전도시RM6BL영구임대예비자모집공고문(2026.06.08).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66429489"
-      },
-      {
-        "name": "개인정보수집,이용및제3자제공동의서등(업로드용).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66429511"
-      },
-      {
-        "name": "영구임대공급신청서(일반).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66429501"
-      },
-      {
-        "name": "영구임대주택공급신청서(주거약자용).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66429507"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

@@ -176,11 +176,6 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020087/files/67197654__26년1차비분양전환형든든전세주택매입임대입주자모집공고문(경남).pdf",
     "첨부": [
       {
-        "name": "26년1차비분양전환형든든전세주택매입임대입주자모집공고문(경남).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67197653"
-      },
-      {
         "name": "26년1차비분양전환형든든전세주택매입임대입주자모집공고문(경남).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67197654"
@@ -189,11 +184,6 @@
         "name": "(경남지역본부)26년1차든든전세매입임대주택주택목록(비분양전환형).xlsx",
         "ext": ".xlsx",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67197652"
-      },
-      {
-        "name": "든든전세주택(비분양전환형)_QnA.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67197655"
       }
     ]
   },
@@ -216,11 +206,11 @@
         51.2,
         54.8,
         57.1,
-        59,
+        59.0,
         59.3,
         59.6,
         59.8,
-        60,
+        60.0,
         67.5,
         76.8,
         81.3,
@@ -249,5 +239,7 @@
       "70~80㎡",
       "80㎡ 이상"
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

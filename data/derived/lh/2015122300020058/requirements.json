@@ -89,15 +89,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020058/files/67121078__익산한스빌국민임대주택예비입주자자격완화모집공고문(2026.06.05).pdf",
     "첨부": [
       {
-        "name": "익산한스빌국민임대주택예비입주자자격완화모집공고문(2026.06.05).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67121077"
-      },
-      {
         "name": "익산한스빌국민임대주택예비입주자자격완화모집공고문(2026.06.05).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67121078"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

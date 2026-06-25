@@ -106,15 +106,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300019874/files/66713864__집주인임대주택_예비입주자_모집공고문_서울지역본부.pdf",
     "첨부": [
       {
-        "name": "집주인임대주택_예비입주자_모집공고문_서울지역본부.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66713863"
-      },
-      {
         "name": "집주인임대주택_예비입주자_모집공고문_서울지역본부.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66713864"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

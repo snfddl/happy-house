@@ -298,35 +298,12 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020139/files/67270020__260616_고양창릉A-4BL신혼희망타운행복주택_모집공고문.pdf",
     "첨부": [
       {
-        "name": "260616_고양창릉A-4BL신혼희망타운행복주택_모집공고문.hwpx",
-        "ext": ".hwpx",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67270019"
-      },
-      {
         "name": "260616_고양창릉A-4BL신혼희망타운행복주택_모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67270020"
-      },
-      {
-        "name": "[공통제출서류]개인정보수집이용및제3자제공동의서,금융정보등제공동의서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67263845"
-      },
-      {
-        "name": "[공통제출서류]예비입주자중복선정불가및대기자명부제외사항확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67263846"
-      },
-      {
-        "name": "[공통제출서류]자산보유사실확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67263847"
-      },
-      {
-        "name": "[예비신혼부부_추가제출서류]공동신청확인서,세대구성확인서(예비신혼부부에공급신청하는자).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67263848"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }

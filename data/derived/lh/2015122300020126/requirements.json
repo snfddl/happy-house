@@ -552,11 +552,6 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020126/files/67253294__화성시_행복주택_입주자격완화_예비입주자_모집공고문[소득,자산요건완화](2026.06.16).pdf",
     "첨부": [
       {
-        "name": "화성시_행복주택_입주자격완화_예비입주자_모집공고문[소득,자산요건완화](2026.06.16).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67253288"
-      },
-      {
         "name": "화성시_행복주택_입주자격완화_예비입주자_모집공고문[소득,자산요건완화](2026.06.16).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67253294"
@@ -567,5 +562,7 @@
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67253299"
       }
     ]
-  }
+  },
+  "source": "lh",
+  "상품군": "임대"
 }
