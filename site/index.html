@@ -757,9 +757,13 @@ function createMatcher(P, todayStr) {
 
     const 직계존속 = P.부양가족?.직계존속 ?? 0;
     const 배우자 = P.혼인상태 === '혼인중' ? 1 : 0;
-    const 미혼자녀 = (P.자녀 || []).length;
+    // 부양 직계비속 = 미혼·만30세미만(SCHEMA §6-3). 과거버그: (P.자녀||[]).length로 성인·기혼 자녀까지 +5점씩 → 가점 과대계상.
+    //   웹 UI는 미성년 자녀수만 받아 전부 만19세 미만이라 무영향이나, profile.json/CLI는 임의 생년월일 가능 → 일괄 필터로 정정.
+    const 미혼자녀 = (P.자녀 || []).filter(c =>
+      c.태아 || (c.생년월일 && (TODAY - new Date(c.생년월일)) / (365.25 * 864e5) < 30 && !c.기혼)).length;
     const 부양수 = 배우자 + 미혼자녀 + 직계존속;
     const 부양점 = Math.min(35, 5 + 부양수 * 5);
+    if ((P.자녀 || []).length > 미혼자녀) notes.push(`자녀 ${(P.자녀 || []).length - 미혼자녀}명 부양제외(만30세이상/기혼)`);
 
     let 통장점;
     if (!P.청약저축?.가입) 통장점 = 0;
