@@ -152,19 +152,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020066/files/67135280__청주지북A4행복주택입주자격완화추가모집(공고2026.06.05.)_v2.pdf",
     "첨부": [
       {
-        "name": "청주지북A4행복주택입주자격완화추가모집(공고2026.06.05.)_v2.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67135279"
-      },
-      {
         "name": "청주지북A4행복주택입주자격완화추가모집(공고2026.06.05.)_v2.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67135280"
-      },
-      {
-        "name": "필수제출서류양식.zip",
-        "ext": ".zip",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67135281"
       }
     ]
   },

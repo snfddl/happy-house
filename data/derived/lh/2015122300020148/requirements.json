@@ -232,19 +232,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020148/files/67266899__인제서화_고령자복지주택(국민임대)_입주자모집공고문(260608).pdf",
     "첨부": [
       {
-        "name": "인제서화_고령자복지주택(국민임대)_입주자모집공고문(260608).hwpx",
-        "ext": ".hwpx",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67266897"
-      },
-      {
         "name": "인제서화_고령자복지주택(국민임대)_입주자모집공고문(260608).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67266899"
-      },
-      {
-        "name": "제출서류(양식)_고령자복지.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67266908"
       }
     ]
   },

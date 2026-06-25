@@ -125,11 +125,6 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300019875/files/66658914__예비입주자모집공고문(26.05.06.).pdf",
     "첨부": [
       {
-        "name": "예비입주자모집공고문(26.05.06.).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66658911"
-      },
-      {
         "name": "예비입주자모집공고문(26.05.06.).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66658914"

@@ -146,19 +146,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020038/files/67202854__군산시든든전세주택입주자모집공고문(분양전환형).pdf",
     "첨부": [
       {
-        "name": "군산시든든전세주택입주자모집공고문(분양전환형).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67202853"
-      },
-      {
         "name": "군산시든든전세주택입주자모집공고문(분양전환형).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67202854"
-      },
-      {
-        "name": "2026년분양전환형든든전세주택_QnA.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67202851"
       },
       {
         "name": "군산시든든전세공급주택목록.xlsx",
@@ -183,7 +173,7 @@
       "고유면적수": 2,
       "목록": [
         84.8,
-        85
+        85.0
       ]
     },
     "임대조건": {

@@ -126,29 +126,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300019376/files/65733876__[공고문]2026년청년전세임대1순위입주자수시모집.pdf",
     "첨부": [
       {
-        "name": "[공고문]2026년청년전세임대1순위입주자수시모집.hwpx",
-        "ext": ".hwpx",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=65733875"
-      },
-      {
         "name": "[공고문]2026년청년전세임대1순위입주자수시모집.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=65733876"
-      },
-      {
-        "name": "1.2026년청년전세임대1순위입주자수시모집QnA.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=65733877"
-      },
-      {
-        "name": "2.개인정보수집이용및제3자제공동의서(양식).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=65733878"
-      },
-      {
-        "name": "3.복학확약각서양식.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=65733879"
       }
     ]
   },

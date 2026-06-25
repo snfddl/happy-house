@@ -293,34 +293,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020135/files/67254245__20260615김해시행복주택예비입주자모집.pdf",
     "첨부": [
       {
-        "name": "20260615김해시행복주택예비입주자모집.hwpx",
-        "ext": ".hwpx",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67254241"
-      },
-      {
         "name": "20260615김해시행복주택예비입주자모집.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67254245"
-      },
-      {
-        "name": "1.(공통)필수제출서류.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67251825"
-      },
-      {
-        "name": "2.(해당자)대학생-복학예정각서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67251839"
-      },
-      {
-        "name": "3.(해당자)예비신혼부부-신청및세대구성확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67251846"
-      },
-      {
-        "name": "4.(해당자)위임장_대리신청시작성.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67251850"
       }
     ]
   },

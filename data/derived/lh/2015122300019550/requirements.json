@@ -162,59 +162,14 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300019550/files/66096152__[공고문]2026년신혼·신생아전세임대Ⅰ입주자수시모집.pdf",
     "첨부": [
       {
-        "name": "[공고문]2026년신혼·신생아전세임대Ⅰ입주자수시모집.hwpx",
-        "ext": ".hwpx",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66096150"
-      },
-      {
         "name": "[공고문]2026년신혼·신생아전세임대Ⅰ입주자수시모집.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66096152"
       },
       {
-        "name": "1.2026년신혼신생아전세임대ⅠㆍⅡ주요문의사항QnA.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66096106"
-      },
-      {
-        "name": "2-1.금융정보등(금융ㆍ신용ㆍ보험정보)제공동의서및유의사항.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66096107"
-      },
-      {
         "name": "2-2.샘플_금융정보제공동의서.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66096108"
-      },
-      {
-        "name": "3.자산보유사실확인서및유의사항.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66096109"
-      },
-      {
-        "name": "4.개인정보수집이용및제3자제공동의서(양식)_전세임대.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66096110"
-      },
-      {
-        "name": "5.한부모가족세대구성확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66096111"
-      },
-      {
-        "name": "6.예비신혼부부세대구성확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66096112"
-      },
-      {
-        "name": "7.예비신혼부부전세임대신청위임장.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66096113"
-      },
-      {
-        "name": "8.예비신혼부부전세임대신청확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66096114"
       }
     ]
   },

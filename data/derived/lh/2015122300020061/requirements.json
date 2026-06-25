@@ -183,19 +183,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020061/files/67127583__26.06.15.(행복주택,자격완화)진주혁신3예비입주자모집공고문.pdf",
     "첨부": [
       {
-        "name": "26.06.15.(행복주택,자격완화)진주혁신3예비입주자모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67127582"
-      },
-      {
         "name": "26.06.15.(행복주택,자격완화)진주혁신3예비입주자모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67127583"
-      },
-      {
-        "name": "자격완화(소득·자산배제)제출서류_행복주택.zip",
-        "ext": ".zip",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67127616"
       }
     ]
   },

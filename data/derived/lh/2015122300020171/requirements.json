@@ -309,11 +309,6 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020171/files/67320211__일반매입임대주택예비입주자모집공고문(20260618)-정정.pdf",
     "첨부": [
       {
-        "name": "일반매입임대주택예비입주자모집공고문(20260618)-정정.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67320210"
-      },
-      {
         "name": "일반매입임대주택예비입주자모집공고문(20260618)-정정.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67320211"

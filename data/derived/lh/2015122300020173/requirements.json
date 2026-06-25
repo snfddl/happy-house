@@ -170,19 +170,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020173/files/67335598__(260622)파주운정3_A34BL_입주자격완화_예비자모집공고.pdf",
     "첨부": [
       {
-        "name": "(260622)파주운정3_A34BL_입주자격완화_예비자모집공고.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67335291"
-      },
-      {
         "name": "(260622)파주운정3_A34BL_입주자격완화_예비자모집공고.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67335598"
-      },
-      {
-        "name": "(양식)개인정보동의서등.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67335630"
       }
     ]
   },

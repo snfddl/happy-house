@@ -180,11 +180,6 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020094/files/67197244__26년1차분양전환형든든전세주택매입임대입주자모집공고문(경남).pdf",
     "첨부": [
       {
-        "name": "26년1차분양전환형든든전세주택매입임대입주자모집공고문(경남).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67197243"
-      },
-      {
         "name": "26년1차분양전환형든든전세주택매입임대입주자모집공고문(경남).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67197244"
@@ -193,11 +188,6 @@
         "name": "(경남지역본부)26년1차든든전세매입임대주택주택목록(분양전환형).xlsx",
         "ext": ".xlsx",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67197242"
-      },
-      {
-        "name": "든든전세주택(분양전환형)_QnA.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67197245"
       }
     ]
   },
@@ -212,7 +202,7 @@
     },
     "전용면적": {
       "최소": 59.49,
-      "최대": 85,
+      "최대": 85.0,
       "구간분포": {
         "50㎡~": 180
       },
@@ -228,7 +218,7 @@
         84.3,
         84.5,
         84.9,
-        85
+        85.0
       ]
     },
     "임대조건": {

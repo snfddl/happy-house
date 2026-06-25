@@ -215,19 +215,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020045/files/67112547__공주금흥행복주택예비자모집공고문.pdf",
     "첨부": [
       {
-        "name": "공주금흥행복주택예비자모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67112544"
-      },
-      {
         "name": "공주금흥행복주택예비자모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67112547"
-      },
-      {
-        "name": "공주월송3행복주택예비자모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67112550"
       },
       {
         "name": "공주월송3행복주택예비자모집공고문.pdf",
@@ -235,44 +225,9 @@
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67112555"
       },
       {
-        "name": "공주월송4행복주택예비자모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67112558"
-      },
-      {
         "name": "공주월송4행복주택예비자모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67112561"
-      },
-      {
-        "name": "[양식1-필수]개인정보수집이용및제3자제공동의서(개정).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67065827"
-      },
-      {
-        "name": "[양식2-필수]금융정보제공동의서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67065828"
-      },
-      {
-        "name": "[양식3-필수]자산보유사실확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67065830"
-      },
-      {
-        "name": "[양식4-필수](예비)입주자중복선정불가사항확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67065833"
-      },
-      {
-        "name": "[양식5-해당자]예비신혼부부신청확인서및세대구성확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67065836"
-      },
-      {
-        "name": "[양식6-해당자만]위임장(대리인신청시).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67065838"
       }
     ]
   },

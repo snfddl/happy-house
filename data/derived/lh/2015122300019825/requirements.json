@@ -498,44 +498,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300019825/files/66885570__천안아산행복주택자격완화예비입주자공고문(26.05.20공고).pdf",
     "첨부": [
       {
-        "name": "천안아산행복주택자격완화예비입주자공고문(26.05.20공고).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66885564"
-      },
-      {
         "name": "천안아산행복주택자격완화예비입주자공고문(26.05.20공고).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66885570"
-      },
-      {
-        "name": "붙임1.(필수)개인정보수집이용및제3자제공동의서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66792545"
-      },
-      {
-        "name": "붙임2.(필수)예비입주자중복선정불가및대기자명부제외사항확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66792547"
-      },
-      {
-        "name": "붙임3.(필수)입주자격완화확약서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66792549"
-      },
-      {
-        "name": "붙임4.각서(복학예정인자로대학생에공급신청한자).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66792552"
-      },
-      {
-        "name": "붙임5.공동신청확인서,세대구성확인서(예비신혼부부에공급신청하는자).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66792553"
-      },
-      {
-        "name": "붙임6.위임장(대리인신청시).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66792558"
       }
     ]
   },

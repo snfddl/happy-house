@@ -242,39 +242,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020134/files/67256295__20260615밀양가곡행복주택예비입주자모집.pdf",
     "첨부": [
       {
-        "name": "20260615밀양가곡행복주택예비입주자모집.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67256294"
-      },
-      {
         "name": "20260615밀양가곡행복주택예비입주자모집.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67256295"
-      },
-      {
-        "name": "카달로그_밀양가곡행복주택.pdf",
-        "ext": ".pdf",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67251641"
-      },
-      {
-        "name": "1.(공통)필수제출서류.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67251653"
-      },
-      {
-        "name": "2.(해당자)대학생-복학예정각서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67251686"
-      },
-      {
-        "name": "3.(해당자)예비신혼부부-신청및세대구성확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67251692"
-      },
-      {
-        "name": "4.(해당자)위임장_대리신청시작성.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67251697"
       }
     ]
   },

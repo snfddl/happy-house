@@ -272,11 +272,6 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020073/files/67208631__2026.06.15여수수정,서교행복주택예비입주자모집.pdf",
     "첨부": [
       {
-        "name": "2026.06.15여수수정,서교행복주택예비입주자모집.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67208630"
-      },
-      {
         "name": "2026.06.15여수수정,서교행복주택예비입주자모집.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67208631"

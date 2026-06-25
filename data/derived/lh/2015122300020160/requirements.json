@@ -198,19 +198,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020160/files/67296788__영암남풍행복주택_예비입주자모집공고문(20260615공고).pdf",
     "첨부": [
       {
-        "name": "(260615)목포용해5(법원),목포용해6(포미),영암용앙3행복주택예비입주자공고.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67296785"
-      },
-      {
         "name": "(260615)목포용해5(법원),목포용해6(포미),영암용앙3행복주택예비입주자공고.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67296786"
-      },
-      {
-        "name": "영암남풍행복주택_예비입주자모집공고문(20260615공고).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67296787"
       },
       {
         "name": "영암남풍행복주택_예비입주자모집공고문(20260615공고).pdf",

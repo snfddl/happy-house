@@ -255,11 +255,6 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020157/files/67297436__(경기북부)2026년2차신혼·신생아매입임대Ⅱ(전세형)예비입주자모집공고문.pdf",
     "첨부": [
       {
-        "name": "(경기북부)2026년2차신혼·신생아매입임대Ⅱ(전세형)예비입주자모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67297435"
-      },
-      {
         "name": "(경기북부)2026년2차신혼·신생아매입임대Ⅱ(전세형)예비입주자모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67297436"
@@ -268,11 +263,6 @@
         "name": "(경기북부)2026년2차신혼·신생아매입임대Ⅱ(전세형)공급대상주택목록.xlsx",
         "ext": ".xlsx",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67297434"
-      },
-      {
-        "name": "2026년신혼·신생아매입임대Ⅱ(전세형)_QnA.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67285008"
       }
     ]
   },
@@ -299,7 +289,7 @@
         47.6,
         48.8,
         55.9,
-        60,
+        60.0,
         72.5,
         77.4,
         81.7,

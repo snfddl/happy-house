@@ -797,29 +797,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300019969/files/67026274__산청산청1블록통합공공임대주택입주자모집공고(20260528공고).pdf",
     "첨부": [
       {
-        "name": "산청산청1블록통합공공임대주택입주자모집공고(20260528공고).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67026272"
-      },
-      {
         "name": "산청산청1블록통합공공임대주택입주자모집공고(20260528공고).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67026274"
-      },
-      {
-        "name": "[양식1~4]필수제출서류.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67026277"
-      },
-      {
-        "name": "[양식5-해당자]예비신혼부부제출서류.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67026283"
-      },
-      {
-        "name": "[양식6-해당자]위임장.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67026286"
       }
     ]
   },

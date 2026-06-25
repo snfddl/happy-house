@@ -301,19 +301,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300019897/files/66706770__당진석문국가산업단지A4BL영구임대예비자모집공고문(2026.06.08).pdf",
     "첨부": [
       {
-        "name": "당진석문국가산업단지A4BL영구임대예비자모집공고문(2026.06.08).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66706768"
-      },
-      {
         "name": "당진석문국가산업단지A4BL영구임대예비자모집공고문(2026.06.08).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66706770"
-      },
-      {
-        "name": "개인정보수집,이용및제3자제공동의서등(업로드용).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66706772"
       }
     ]
   },

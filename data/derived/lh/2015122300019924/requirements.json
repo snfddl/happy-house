@@ -321,11 +321,6 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300019924/files/66793650__(260511)영구임대예비입주자표준모집공고문-나주용산.pdf",
     "첨부": [
       {
-        "name": "(260511)영구임대예비입주자표준모집공고문-나주용산.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66793645"
-      },
-      {
         "name": "(260511)영구임대예비입주자표준모집공고문-나주용산.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=66793650"

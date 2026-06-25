@@ -24,10 +24,22 @@ node pipeline.mjs --skip-collect --force --only=020038,020094   # 특정 공고(
 | 0 | 수집 | `lh-collect.mjs` | 결정론 | index.json diff로 **신규만** 다운로드. 팸플릿 제외. raw 불변 |
 | 1 | 타깃선정 | (내장) | 결정론 | 접수중·공고중·정정 − **접수마감**(+유형별 활성0이면 최근 마감 1건 백필) → `extract-targets.json` |
 | 2 | 신규판별+슬라이스 | `slice-notice.mjs` | 결정론 | **requirements.json 없는 건만**. pdftotext→보일러플레이트 제거→`notice_sliced.txt`. PDF없음/실패는 격리 |
-| 3 | 요건추출 | `claude -p` (Sonnet) | **에이전트** | 신규만, 동시성 제한. `schema-v1.jsonc`+`extract-rules.txt`로 프롬프트. 각자 requirements.json 기록 |
+| 3 | 요건추출 | **워크플로우**(권장) 또는 `claude -p` (Sonnet) | **에이전트** | 신규만. `schema-v1.jsonc`+`extract-rules.txt`로 프롬프트. 각자 requirements.json 기록. ↓경로 비교 |
 | 4 | xlsx파싱 | `parse-housing-xlsx.py` | 결정론 | 신규 中 xlsx 보유분. `housing_list.json` + `주택목록` 주입 |
 | 5 | 링크주입 | `inject-links.mjs` | 결정론 | meta.json 기반 `원문링크`(상세·PDF·첨부) 주입 |
 | 6 | 검증게이트 | (내장) | 결정론 | 스키마/필수필드 체크. **이상건은 통과시키지 않고 격리** → `data/pipeline-report.json` |
+
+## 요건추출 [3단계] 실행 경로 — 워크플로우 vs 헤드리스 (로컬 전용)
+
+추출은 두 경로가 있고 **결과·품질은 동일**(같은 `buildPrompt`·`schema-v1.jsonc`·`extract-rules.txt`). **속도만 다르다.** `--semi`가 만든 `wf-args.json`(슬라이스 본문 경로 목록)이 공통 입력.
+
+| 경로 | 무엇 | 속도 | 언제 |
+|---|---|---|---|
+| **워크플로우 `lh-extract-requirements`** (권장) | 슬라이스 본문을 병렬 에이전트(동시 ~16)로 추출 | **빠름** — 19건 ~3분 | **사람이 세션에서 직접 돌릴 때.** 기본으로 이걸 쓴다 |
+| **헤드리스 `claude -p`** (`pipeline.mjs` 내장) | 건당 별도 claude 프로세스, conc 3 기본 | 느림 — 건당 풀세션 부팅(수십 초)·동시 3 | **무인 cron 등 대화형 세션이 없을 때만**의 fallback |
+
+- `pipeline.mjs`/`process-all.mjs`를 그냥 실행하면 무인용 헤드리스 경로로 간다(느림). 로컬에서 신규를 빠르게 처리하려면 **`pipeline.mjs --semi`로 `wf-args.json`만 만든 뒤 워크플로우로 추출**하고, 이후 결정론 후속([3.5]정규화·[4]xlsx·[5]링크·[6]검증)은 `--skip-collect`로 마무리하거나 개별 실행한다.
+- 워크플로우 추출 후 후속은 신규로 자동 인식되지 않으므로(이미 requirements.json 존재) **정규화·xlsx·링크·검증을 명시적으로** 돌려야 한다.
 
 ## 증분(incremental) 원칙
 

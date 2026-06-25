@@ -118,34 +118,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020164/files/67307876__강화신문126B행복주택예비입주자모집공고문(26.06.18공고의건).pdf",
     "첨부": [
       {
-        "name": "강화신문126B행복주택예비입주자모집공고문(26.06.18공고의건).hwpx",
-        "ext": ".hwpx",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67307872"
-      },
-      {
         "name": "강화신문126B행복주택예비입주자모집공고문(26.06.18공고의건).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67307876"
-      },
-      {
-        "name": "[별지1](공통)필수제출서류.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67307903"
-      },
-      {
-        "name": "[별지2](대리인신청시제출)위임장.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67307904"
-      },
-      {
-        "name": "[샘플]필수제출서류.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67307905"
-      },
-      {
-        "name": "[샘플]행복주택추가제출서류견본.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67307906"
       }
     ]
   },

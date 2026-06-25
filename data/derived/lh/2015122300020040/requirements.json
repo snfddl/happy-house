@@ -316,11 +316,6 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020040/files/67056973__부산동부권매입임대예비입주자모집공고문(26.06.05).pdf",
     "첨부": [
       {
-        "name": "부산동부권매입임대예비입주자모집공고문(26.06.05).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67056968"
-      },
-      {
         "name": "부산동부권매입임대예비입주자모집공고문(26.06.05).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67056973"

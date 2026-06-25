@@ -222,24 +222,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020115/files/67225075__울산광역시행복주택예비입주자모집공고문(26.06.15).pdf",
     "첨부": [
       {
-        "name": "울산광역시행복주택예비입주자모집공고문(26.06.15).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67225073"
-      },
-      {
         "name": "울산광역시행복주택예비입주자모집공고문(26.06.15).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67225075"
-      },
-      {
-        "name": "붙임1.양식_제출서류(행복주택).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67225070"
-      },
-      {
-        "name": "붙임2.청약대행접수신청서(행복)(26.06.15공고).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67225072"
       }
     ]
   },

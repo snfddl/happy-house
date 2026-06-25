@@ -194,19 +194,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020120/files/67236088__(게시용)장항성주행복주택입주자격완화추가예비입주자모집공고문(20260615).pdf",
     "첨부": [
       {
-        "name": "(게시용)장항성주행복주택입주자격완화추가예비입주자모집공고문(20260615).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67236086"
-      },
-      {
         "name": "(게시용)장항성주행복주택입주자격완화추가예비입주자모집공고문(20260615).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67236088"
-      },
-      {
-        "name": "(게시용)행복주택서류제출양식(완화지구).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67236093"
       }
     ]
   },

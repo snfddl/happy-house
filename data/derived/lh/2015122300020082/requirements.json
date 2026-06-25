@@ -258,19 +258,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020082/files/67308931__(게시용)대전상서행복주택입주자격완화예비자모집공고문(공고일2026.06.22).pdf",
     "첨부": [
       {
-        "name": "(게시용)대전상서행복주택입주자격완화예비자모집공고문(공고일2026.06.22).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67308813"
-      },
-      {
         "name": "(게시용)대전상서행복주택입주자격완화예비자모집공고문(공고일2026.06.22).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67308931"
-      },
-      {
-        "name": "(게시용)대전상서(산업단지형)행복주택신청관련양식(공고일2026.06.22).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67308815"
       }
     ]
   },

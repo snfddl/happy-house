@@ -557,44 +557,14 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020168/files/67311765__★(260619)대구북구,중구,남구,서구행복주택예비입주자모집공고문.pdf",
     "첨부": [
       {
-        "name": "★(260619)대구북구,중구,남구,서구행복주택예비입주자모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67311761"
-      },
-      {
         "name": "★(260619)대구북구,중구,남구,서구행복주택예비입주자모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67311765"
       },
       {
-        "name": "단지및동호배치도,평면도(서대구영무예다음행복30형).pdf",
-        "ext": ".pdf",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67318556"
-      },
-      {
-        "name": "평면도(앞산봉덕영무예다음행복,39).pdf",
-        "ext": ".pdf",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67318546"
-      },
-      {
-        "name": "(별첨1~4)서류제출대상자_전원_필수제출_서류(개인정보제공,자산보유,금융정보제공_등).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67316872"
-      },
-      {
         "name": "(별첨1~4작성샘플)_대구경북지역본부.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67316887"
-      },
-      {
-        "name": "(별첨5)예비신혼부부_신청확인서_및_세대구성확인서(예비신혼부부만_제출).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67316889"
-      },
-      {
-        "name": "(별첨6)각서(대학생계층_복학예정자만_제출).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67316894"
       }
     ]
   },

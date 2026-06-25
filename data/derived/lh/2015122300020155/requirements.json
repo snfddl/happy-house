@@ -236,19 +236,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020155/files/67286209__(26.06.15)광주첨단H-1,2BL행복주택예비입주자모집공고문(정정).pdf",
     "첨부": [
       {
-        "name": "(26.06.15)광주첨단H-1,2BL행복주택예비입주자모집공고문(정정).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67286208"
-      },
-      {
         "name": "(26.06.15)광주첨단H-1,2BL행복주택예비입주자모집공고문(정정).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67286209"
-      },
-      {
-        "name": "광주첨단(H-1BL)창업인제출서류.zip",
-        "ext": ".zip",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67286737"
       }
     ]
   },

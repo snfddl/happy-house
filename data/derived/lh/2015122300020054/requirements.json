@@ -332,44 +332,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020054/files/67222028__담양삼만통합공공임대일자리연계형지원주택추가모집공고문(20260611).pdf",
     "첨부": [
       {
-        "name": "담양삼만통합공공임대일자리연계형지원주택추가모집공고문(20260611).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67222026"
-      },
-      {
         "name": "담양삼만통합공공임대일자리연계형지원주택추가모집공고문(20260611).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67222028"
-      },
-      {
-        "name": "[양식1-필수]개인정보수집이용및제3자제공동의서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67104021"
-      },
-      {
-        "name": "[양식2-필수]금융정보등제공동의서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67104024"
-      },
-      {
-        "name": "[양식3-필수]자산보유사실확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67104026"
-      },
-      {
-        "name": "[양식4-필수]예비입주자중복선정불가사항확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67104032"
-      },
-      {
-        "name": "[양식5-해당자]예비신혼부부신청확인서및세대구성확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67104036"
-      },
-      {
-        "name": "[양식6-해당자]위임장.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67104037"
       }
     ]
   },

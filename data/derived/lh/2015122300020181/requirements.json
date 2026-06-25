@@ -250,10 +250,10 @@
         49.6,
         59.7,
         59.9,
-        60,
+        60.0,
         84.6,
         84.9,
-        85
+        85.0
       ]
     },
     "임대조건": {
@@ -282,11 +282,6 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020181/files/67361152__2026년2차대구경북지역신혼ㆍ신생아Ⅱ매입임대_전세형입주자모집공고문.pdf",
     "첨부": [
       {
-        "name": "2026년2차대구경북지역신혼ㆍ신생아Ⅱ매입임대_전세형입주자모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67361151"
-      },
-      {
         "name": "2026년2차대구경북지역신혼ㆍ신생아Ⅱ매입임대_전세형입주자모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67361152"
@@ -295,11 +290,6 @@
         "name": "2026년2차대구경북지역신혼ㆍ신생아매입임대Ⅱ(전세형)공급대상주택목록.xlsx",
         "ext": ".xlsx",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67361153"
-      },
-      {
-        "name": "26년신혼？신생아매입임대Ⅱ(전세형)_QnA.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67361155"
       }
     ]
   },

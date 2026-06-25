@@ -247,19 +247,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020042/files/67060600__포항블루밸리행복주택선착순동호지정입주자모집공고(2026.06.19.).pdf",
     "첨부": [
       {
-        "name": "포항블루밸리행복주택선착순동호지정입주자모집공고(2026.06.19.).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67060597"
-      },
-      {
         "name": "포항블루밸리행복주택선착순동호지정입주자모집공고(2026.06.19.).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67060600"
-      },
-      {
-        "name": "(양식)신청서류양식.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67060577"
       },
       {
         "name": "포항블루밸리동호수표(게시용).pdf",

@@ -446,39 +446,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020177/files/67359408__(정정공고)2026.06.15.대정통합공공임대예비입주자모집공고문.pdf",
     "첨부": [
       {
-        "name": "(정정공고)2026.06.15.대정통합공공임대예비입주자모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67359407"
-      },
-      {
         "name": "(정정공고)2026.06.15.대정통합공공임대예비입주자모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67359408"
-      },
-      {
-        "name": "(통합공공임대)예비신혼부부신청확인서및세대구성확인서.hwpx",
-        "ext": ".hwpx",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67359436"
-      },
-      {
-        "name": "양식2.개인정보수집이용및제3자제공동의서,금융정보등제공동의서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67359427"
-      },
-      {
-        "name": "양식3.금융정보등(금융ㆍ신용ㆍ보험정보)제공동의서(공공주택특별법시행규칙).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67359429"
-      },
-      {
-        "name": "양식4.자산보유사실확인서(제6조제4항관련).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67359431"
-      },
-      {
-        "name": "양식5.예비입주자중복선정불가및대기자명부제외사항확인서.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67359432"
       }
     ]
   },

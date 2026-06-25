@@ -545,34 +545,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020059/files/67298360__충북남부_행복주택_입주자격완화_예비자모집공고문(2026.06.18).pdf",
     "첨부": [
       {
-        "name": "충북남부_행복주택_입주자격완화_예비자모집공고문(2026.06.18).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67298359"
-      },
-      {
         "name": "충북남부_행복주택_입주자격완화_예비자모집공고문(2026.06.18).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67298360"
-      },
-      {
-        "name": "붙임1_공통제출서류(개인정보수집,금융정보,자산보유,예비자중복선정)_전원필수제출.hwpx",
-        "ext": ".hwpx",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67298333"
-      },
-      {
-        "name": "붙임2_위임장(대리인이현장접수하는경우에만제출)_해당자만제출.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67298334"
-      },
-      {
-        "name": "붙임3_각서(복학예정인자로대학생에공급신청한자)_해당자만제출.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67298335"
-      },
-      {
-        "name": "붙임4_예비신혼부부신청확인서및세대구성확인서_해당자만제출.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67298336"
       }
     ]
   },

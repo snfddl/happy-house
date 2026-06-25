@@ -372,19 +372,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020108/files/67212690__(2026.06.15공고)대전중구？서구행복주택예비입주자모집.pdf",
     "첨부": [
       {
-        "name": "(2026.06.15공고)대전중구？서구행복주택예비입주자모집.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67212689"
-      },
-      {
         "name": "(2026.06.15공고)대전중구？서구행복주택예비입주자모집.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67212690"
-      },
-      {
-        "name": "서류제출양식(LH).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67212841"
       }
     ]
   },

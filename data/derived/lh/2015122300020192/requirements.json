@@ -207,7 +207,7 @@
         17.3,
         18.5,
         18.7,
-        19,
+        19.0,
         19.1,
         19.4,
         19.8,
@@ -217,11 +217,11 @@
         22.2,
         22.5,
         22.9,
-        23,
+        23.0,
         24.2,
         25.1,
         25.9,
-        26,
+        26.0,
         26.2,
         26.3,
         26.8,
@@ -261,11 +261,6 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020192/files/67380743__[충북지역본부]청년매입임대예비입주자모집공고(260624공고).pdf",
     "첨부": [
       {
-        "name": "[충북지역본부]청년매입임대예비입주자모집공고(260624공고).hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67380735"
-      },
-      {
         "name": "[충북지역본부]청년매입임대예비입주자모집공고(260624공고).pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67380743"
@@ -274,11 +269,6 @@
         "name": "260624공고_청년매입임대주택공급대상주택목록(충북).xlsx",
         "ext": ".xlsx",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67380895"
-      },
-      {
-        "name": "26년청년매입임대_QnA.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67380901"
       }
     ]
   },

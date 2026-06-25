@@ -252,19 +252,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020109/files/67235103__2026.06.15.창원반계창업지원주택예비입주자모집공고문.pdf",
     "첨부": [
       {
-        "name": "2026.06.15.창원반계창업지원주택예비입주자모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67235102"
-      },
-      {
         "name": "2026.06.15.창원반계창업지원주택예비입주자모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67235103"
-      },
-      {
-        "name": "[별지](공통)필수반계행복주택제출서류.zip",
-        "ext": ".zip",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67215961"
       }
     ]
   },

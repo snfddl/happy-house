@@ -501,19 +501,9 @@
     "로컬PDF": "/Users/snfddl/project/active/happy-house/data/raw/lh/2015122300020105/files/67220886__공고문_260611공고_평택시.안성시지역행복주택입주자격완화예비입주자모집공고문.pdf",
     "첨부": [
       {
-        "name": "공고문_260611공고_평택시.안성시지역행복주택입주자격완화예비입주자모집공고문.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67220885"
-      },
-      {
         "name": "공고문_260611공고_평택시.안성시지역행복주택입주자격완화예비입주자모집공고문.pdf",
         "ext": ".pdf",
         "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67220886"
-      },
-      {
-        "name": "첨부_1.양식_제출서류(산단행복주택)_260611공고.hwp",
-        "ext": ".hwp",
-        "다운로드": "https://apply.lh.or.kr/lhapply/lhFile.do?fileid=67220888"
       }
     ]
   },
