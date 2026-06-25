@@ -29,14 +29,16 @@
 ### P1 — 정확도/지속가능성
 - [x] **#4 시도명 단축/정식 불일치로 분양 지역우선·청약순위 깨짐.** ~~`'경상남도 창원'` vs `'경남'` exact 비교 실패.~~
   - **완료(2026-06-25):** `match-core`에 `시도canon`(단축·정식·신자치 → 2글자) 추가, 청약순위 수도권 판정·지역우선 tier 비교에 적용. 회귀테스트 2케이스(정식명 '서울특별시' 수도권 인식·'경남'↔'경상남도' 동일시도). 12/12 통과. (gateResidence 등 substring 케이스는 시군구가 통상 매칭 살리는 fail-safe라 별도 — #15 인근.)
-- [ ] **#5 `LIVE_OVERLAY` 하드코딩 `{lh,gh}`.** `build-site.mjs:16` — CI refresh하는 sh 누락. panId 불변식 성립하니 `source∈liveIdx` 일반화.
+- [x] **#5 `LIVE_OVERLAY` 하드코딩 `{lh,gh}`.** ~~CI refresh하는 sh 누락.~~
+  - **완료(2026-06-25):** 오버레이를 전 소스 일반화 — `liveIdx[r.panId]`가 존재하면 적용(하드코딩 set 제거). panId 불변식이 어느 소스든 키 해소 보장, freshStatus가 백스톱. 검증: 재빌드 333건, sh가 이제 index 상태 반영(공고중17·예정2·마감1), 이상분포 0.
 - [ ] **#6 매처 tier 필드명 canon이 드리프트 가드 밖.** 가드가 tier *키*만 보호 → normalize 스킵/동의어 누락 시 자산게이트 조용히 통과. `tierLimit`에 필드명 fallback 또는 가드 확장.
 
 ### P2 — 부채
 - [ ] **#7 lh-collect SKIP_PAT에 `평면도`·`카달로그` 누락.** `lh-collect.mjs:27` → 홍보 PDF ~27MB 다운로드(§2 위반). 다른 수집기엔 `평면도` 있음.
 - [ ] **#8 공유유틸 추출 미완.** `mergeNewPending`(sh/gh 동일)·`fetchNoticeFiles`(sh/gh/myhome 유사)·toEnvelope 플레이스홀더·SKIP_PAT 4벌 → #7 근본원인. collect-util로 추출.
 - [ ] **#9 슬라이서 sub-block 제거에 RISK_LINE fail-safe 없음.** `slice-notice.mjs:48-57` — top-level만 가드. 현재 손실 0이나 미보장. sub-block에도 RISK_LINE 적용.
-- [ ] **#10 freshStatus↔statusOf 불일치(미래 접수시작).** `build-site.mjs:22-25` — `if (b && TODAY<b) return '접수예정'` 추가 또는 statusOf 호출.
+- [x] **#10 freshStatus↔statusOf 불일치(미래 접수시작).** ~~빌드 신선도가 미래 접수시작을 '접수중'으로 오표시.~~
+  - **완료(2026-06-25):** `freshStatus`에 `if (b && TODAY<b) return '접수예정'` 추가(prev 보존 보수성은 유지). 검증: 미래 접수시작 LH 71건(2026-06-26~07월)이 과거 '공고중' 오표시 → 정확히 '접수예정'으로 정정.
 - [ ] **#11 index.json 무한누적**(485건 66% 마감) · **#12 gh-collect TODAY 재선언** · **#13 pipeline/myhome-pipeline 스캐폴딩 중복**.
 
 ### P3 — 정리/정직성

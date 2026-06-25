@@ -10,17 +10,14 @@ execFileSync(process.execPath, ['check-canon-drift.mjs'], { cwd: new URL('./', i
 
 const ROOT = new URL('./data/', import.meta.url);
 const SRC = [['lh', new URL('derived/lh/', ROOT)], ['applyhome', new URL('derived/applyhome/', ROOT)], ['myhome', new URL('derived/myhome/', ROOT)], ['sh', new URL('derived/sh/', ROOT)], ['gh', new URL('derived/gh/', ROOT)]];
-// 수집기가 index에 최신 상태·마감일을 갱신하는 소스(빌드때 liveIdx[r.panId]로 덮어쓰기).
-//   ★ 키 규약: liveIdx 키 === r.panId (전 소스 불변식, collect-util makePanId 보장). 과거 applyhome만 panId=bare vs key='ah:…'라
-//     overlay에 넣으면 조용히 실패했음 → 규약 일원화로 해소. 이제 어느 소스든 안전히 추가 가능(추가는 별도 판단).
-const LIVE_OVERLAY = new Set(['lh', 'gh']);
 const TODAY = new Date().toISOString().slice(0, 10);
 
-// 빌드시 신선도 결정론 재계산. 마감일이 지났으면 '접수마감'으로(수집/추출 후 시간이 흘러도 빌드 TODAY가 권위).
-//   보수적: 마감 외에는 기존 상태 보존 → '정정공고중'·'공고중' 같은 활성 뉘앙스를 '접수중'으로 평탄화하지 않음.
+// 빌드시 신선도 결정론 재계산. 마감일 경과→접수마감, 접수시작 전→접수예정(거짓 '접수중'·'공고중' 방지, statusOf와 정렬).
+//   그 외엔 기존 상태 보존(보수적) → '정정공고중' 등 활성 뉘앙스를 '접수중'으로 평탄화하지 않음.
 const ACTIVE = new Set(['접수중', '공고중', '정정공고중', '접수예정']);
 function freshStatus(b, e, prev) {
-  if (e && TODAY > e) return '접수마감';        // 마감일 경과 → 마감(유일한 결정론 강등)
+  if (e && TODAY > e) return '접수마감';        // 마감일 경과 → 마감(결정론 강등)
+  if (b && TODAY < b) return '접수예정';         // 접수시작 전 → 예정(아직 안 열린 공고를 '접수중'으로 오표시 방지)
   return prev ?? (e ? '접수중' : null);           // 그 외엔 기존 상태 보존
 }
 
@@ -37,9 +34,11 @@ for (const [src, base] of SRC) {
     if (!existsSync(f)) continue;
     const r = JSON.parse(readFileSync(f, 'utf8'));
     if (r.원문링크) delete r.원문링크.로컬PDF; // 개인 절대경로(/Users/…) 공개 site 유출 방지
-    const li = LIVE_OVERLAY.has(src) ? liveIdx[r.panId] : null;
+    // index 신선도 오버레이 — 전 소스 일반화(panId 불변식으로 liveIdx[r.panId] 어느 소스든 해소; 과거 {lh,gh} 하드코딩은 CI refresh하는 sh 등 누락).
+    //   수집/refresh가 매 실행 index의 상태·마감일을 갱신 → 빌드 때 requirements에 덮어 신선도 유지. 미존재 키는 freshStatus 백스톱만.
+    const li = liveIdx[r.panId];
     if (li) { if (li.상태) r.상태 = li.상태; if ('마감일' in li) r.마감일 = li.마감일; }
-    // 마감일 지난 건은 TODAY 기준 '접수마감'으로 강등(오버레이 없는 applyhome/myhome/sh도 신선도 유지).
+    // 마감일 지난 건은 TODAY 기준 '접수마감'으로 강등(오버레이 없는/미존재 건도 신선도 유지).
     r.상태 = freshStatus(r.접수시작, r.마감일, r.상태);
     // SH 등 날짜 자체가 없는 활성건: 거짓 '공고중' 대신 '마감일 미상'으로 정직 표시(수시모집은 접수시작이 있어 제외).
     if (!r.마감일 && !r.접수시작 && ACTIVE.has(r.상태)) r.마감일미상 = true;
