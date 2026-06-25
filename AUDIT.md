@@ -13,7 +13,8 @@
 - [x] **정규화 소스 확장.** ~~`normalize-requirements.mjs:10`이 `data/derived/lh/`만 정규화 → myhome/sh/gh 계층 키가 자유형(`신혼부부·한부모가족`)으로 남아, 매처 `tierLimit`/`tierKeyFor`(`match-core.mjs:97-112`)가 캐논 키(`신혼·한부모`)로 못 찾음 → **자산/소득 게이트 조용히 누락**. `myhome-pipeline.mjs:114`가 이 누락을 스스로 인정(placeholder).~~
   - **수정완료(2026-06-25):** `normalize-requirements.mjs`에 `--source=`(기본 lh, 하위호환) 추가·`DERIVED` 파라미터화, `r.source='lh'` 강제스탬프 → `r.source || SOURCE`(myhome/sh/gh 자체 source 보존)로. `myhome-pipeline.mjs:113` placeholder → `execFileSync`로 `--source=${SOURCE}` 실호출. 검증: sh `대상계층` 자유형(`보호대상 한부모가족`·`자립준비청년`)이 캐논(`신혼·한부모`·`청년`)으로 변환·중복제거됨, source 오염 0건.
 - [x] **신선도 상태 재계산.** ~~SH는 모든 공고를 `상태:'공고중'`으로 박고 갱신원 없음(`sh-collect.mjs:103,154`) → 마감돼도 영원히 "공고중". applyhome은 collect 시점 meta값 고정(`applyhome-derive.mjs:52`), `build-site.mjs:8` LIVE_OVERLAY=`{lh,gh}`에 둘 다 없어 오버레이 보정도 못 받음.~~
-  - **수정완료(2026-06-25):** `build-site.mjs`에 `freshStatus(b,e,prev)` 추가 — 마감일 경과건만 `TODAY` 기준 `접수마감`으로 결정론 강등(그 외 상태는 보존해 `정정공고중` 등 활성뉘앙스 평탄화 안 함), 오버레이 후 전 레코드 적용. 검증: 199건 정직 강등, 활성 잔존 누수 0. 날짜 자체 없는 활성건(SH 4건)은 `마감일미상` 플래그→`match-core`(두 결과객체)·`_template.html ddayHtml` "마감일 미상" 뱃지로 정직 표시(수시모집은 접수시작 있어 제외).
+  - **수정완료(2026-06-25):** `build-site.mjs`에 `freshStatus(b,e,prev)` 추가 — 마감일 경과건만 `TODAY` 기준 `접수마감`으로 결정론 강등(그 외 상태는 보존해 `정정공고중` 등 활성뉘앙스 평탄화 안 함), 오버레이 후 전 레코드 적용. 검증: 199건 정직 강등, 활성 잔존 누수 0. 날짜 자체 없는 활성건은 `마감일미상` 플래그→`match-core`(두 결과객체)·`_template.html ddayHtml` "마감일 미상" 뱃지로 정직 표시.
+  - **SH 날짜 정밀화(2026-06-25, 사용자 지적 반영):** SH 마감일은 사실 대부분 첨부 PDF 추출로 이미 확보(18/20)됨 — 앞 진단의 "SH는 HWP뿐" 전제가 오류였음. 잔여 누락 4건 진단→처리: ②발표글 2건(`입주대상자/서류심사대상자 발표`)은 모집공고 아님 → `sh-collect.mjs SKIP_TITLE`에 `대상자\s*발표` 추가로 제외(index+derived+raw 삭제), ①PDF없이 HWP만 첨부된 303858은 상세 본문 작성자 기재 신청기간을 `parseBodyDates`로 백필(접수 5.4~마감 5.22 → 접수마감), ①상시모집 304968만 마감일 null 유지(`마감일미상` 뱃지 정당). 신규 수집에도 본문 백필 적용, 기존분은 `--reparse`(재다운로드 없이 제목필터 재적용+본문 백필). 22건 전수 파서 검증: 접수기간·발표일 오탐 0.
 
 ### P1 — 지속가능성 (쓰기 경로 LH 편중)
 
