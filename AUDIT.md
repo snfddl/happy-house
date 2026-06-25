@@ -1,4 +1,49 @@
-# 코드·아키텍처 진단 (2026-06-25)
+# 코드·아키텍처 진단
+
+---
+
+# Round 2 — blank-slate 재감사 (2026-06-25)
+
+메모리·`AUDIT.md`를 잠시 치우고 컨텍스트 0의 fresh 서브에이전트 3대(아키텍처·**정확도/매칭**·코드품질)로 재감사. Round 1이 놓친 이슈, 특히 **매칭 계산의 정답성** 문제가 다수 발견됨.
+
+## 왜 Round 1이 비슷한 문제를 놓쳤나 (회고)
+
+1. **Round 1은 매칭 *로직*을 안 봤다.** 3레인이 전부 쓰기경로·구조에 쏠려, `match-core`는 "단일 소스라 잘 통합됨"이라고 *배선*만 칭찬하고 *정답성*(자격/순위/가점)은 미검증. Round 2 P0 3건이 전부 match-core 안 — **재발이 아니라 처음부터 범위 밖.**
+2. **절반만 끝낸 fix의 나머지가 새 버그 자리.** Round 1 "공통유틸 추출"이 `fetchNoticeFiles`·`mergeNewPending`·`SKIP_PAT`을 "의도적 제외"로 남김 → 드리프트 방지가 목적이던 dedup이 정작 드리프트 위험 큰 중복을 남겨, lh SKIP_PAT만 `평면도` 누락 드리프트 발생(#7·#8). 드리프트 가드도 *키*만 막고 *필드명*은 안 막음(#6).
+3. **알고도 유예한 것이 재등장.** LIVE_OVERLAY 일반화는 "안전하다" 주석만 달고 미실행(#5).
+4. **Audit ≠ 행동검증.** Round 1은 정독만 했고 매처를 *실행*한 적이 없음. Round 2 정확도 레인은 실제 프로필로 `/tmp` 테스트 ~14개를 돌려 버그를 잡음 — 입력을 만들어야만 드러나는 행동 버그는 정독으로 체계적으로 놓침.
+5. **앵커링.** Round 1의 "읽기경로는 잘 통합" 결론이 이후 주의를 "쓰기경로가 문제"로 고정. blank-slate가 그 프레임을 깸.
+
+**재발 방지:** ① match-core 회귀 테스트 고정 ② 공유유틸 추출 끝까지 ③ 드리프트 가드 필드명까지 확장.
+
+## Round 2 작업 목록
+
+### P0 — 사용자에게 잘못된 결과
+- [ ] **#1 자산/자동차 게이트가 본인 계층의 더 엄격한 상한 무시.** `match-core.mjs:108-114` `tierLimit` — top-level 값이 있으면 그것만 쓰고 계층별 무시. 행복주택 top 3.45억 vs 청년 2.51억 → 총자산 3억 청년 "지원가능" 오판. **14개 공고 라이브.**(직접 검증) → 본인 계층 값 우선/더 엄격한 쪽으로 평가.
+- [ ] **#2 myhome-collect가 추출완료 요건을 조용히 되돌림.** `myhome-collect.mjs:114,124` — `requirements.json`을 done 체크 *이전*에 무조건 써서 PDF추출 소득/자산을 `공고문미기재`로 덮음(+매번 재추출 낭비). done 체크를 위로, 기존 파일은 상태/마감일만 패치(`gh:219` 식).
+- [ ] **#3 부양가족수가 자녀를 나이·혼인 무관 전부 카운트.** `match-core.mjs:348` `(P.자녀||[]).length` → 가점 84점 과대계상. 미혼·만30세미만으로 필터.
+
+### P1 — 정확도/지속가능성
+- [ ] **#4 시도명 단축/정식 불일치로 분양 지역우선·청약순위 깨짐.** `match-core.mjs:364,376` — `'경상남도 창원'` vs `'경남'` 등. 양쪽 시도명 정규화.
+- [ ] **#5 `LIVE_OVERLAY` 하드코딩 `{lh,gh}`.** `build-site.mjs:16` — CI refresh하는 sh 누락. panId 불변식 성립하니 `source∈liveIdx` 일반화.
+- [ ] **#6 매처 tier 필드명 canon이 드리프트 가드 밖.** 가드가 tier *키*만 보호 → normalize 스킵/동의어 누락 시 자산게이트 조용히 통과. `tierLimit`에 필드명 fallback 또는 가드 확장.
+
+### P2 — 부채
+- [ ] **#7 lh-collect SKIP_PAT에 `평면도`·`카달로그` 누락.** `lh-collect.mjs:27` → 홍보 PDF ~27MB 다운로드(§2 위반). 다른 수집기엔 `평면도` 있음.
+- [ ] **#8 공유유틸 추출 미완.** `mergeNewPending`(sh/gh 동일)·`fetchNoticeFiles`(sh/gh/myhome 유사)·toEnvelope 플레이스홀더·SKIP_PAT 4벌 → #7 근본원인. collect-util로 추출.
+- [ ] **#9 슬라이서 sub-block 제거에 RISK_LINE fail-safe 없음.** `slice-notice.mjs:48-57` — top-level만 가드. 현재 손실 0이나 미보장. sub-block에도 RISK_LINE 적용.
+- [ ] **#10 freshStatus↔statusOf 불일치(미래 접수시작).** `build-site.mjs:22-25` — `if (b && TODAY<b) return '접수예정'` 추가 또는 statusOf 호출.
+- [ ] **#11 index.json 무한누적**(485건 66% 마감) · **#12 gh-collect TODAY 재선언** · **#13 pipeline/myhome-pipeline 스캐폴딩 중복**.
+
+### P3 — 정리/정직성
+- [ ] **#14** tier 소득표 세대원수 행 없으면 유효 pass→확인필요 강등(공통표 fallback) · **#15** 희망지역 substring 오매칭(`광주`→경기 광주시) · **#16** 루트 `dl_67253288`(342KB HWP)·prep-slices 죽은코드 정리 · **#17** LH derived 5건 `상태:null` 백필.
+
+### 검증된 강점 (유지)
+panId 불변식·statusOf 단일캐논·raw 불변·검증게이트·GH TLS·증분처리·매처 fail-safe('확인필요' 보수성)·슬라이서 top-level fail-safe(138 PDF 손실 0)·맞벌이/특공/미성년자녀 게이트 정확.
+
+---
+
+# Round 1 — 초기 진단 (2026-06-25)
 
 5개 소스(LH/청약홈/마이홈/SH/GH) 연동 완료 시점의 구조 점검. 멀티에이전트 병렬 진단(아키텍처·코드품질·자원효율) 결과 종합. **P0–P3 전건 처리 완료(2026-06-25). 보류 항목만 의도적 deprioritize.**
 
