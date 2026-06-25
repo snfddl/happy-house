@@ -26,7 +26,7 @@ const idxPath = new URL('index.json', ROOT);
 const liveIdx = existsSync(idxPath) ? JSON.parse(readFileSync(idxPath, 'utf8')) : {};
 
 // 1) requirements 수집(원문 그대로 + source/id 태깅)
-const reqs = [];
+let reqs = [];
 for (const [src, base] of SRC) {
   if (!existsSync(base)) continue;
   for (const n of readdirSync(base)) {
@@ -46,6 +46,21 @@ for (const [src, base] of SRC) {
     reqs.push(r);
   }
 }
+
+// 1.5) 정정공고 중복 제거 — LH는 정정 시 정정본을 새 panId로 발급하고 원본은 '정정공고중' 상태로 남겨
+//   원본·정정본이 둘 다 수집된다(meta에 상호참조 없음). 동일 (소스·공고명·유형·지역) 그룹에 '정정공고중'
+//   원본과 비-'정정공고중' 정정본이 함께 있으면 원본만 제외(정정본 표시). 차수만 다른 동일제목은 건드리지 않음(보수적).
+const dupKey = r => `${r.__src}|${(r.공고명 || '').replace(/\s+/g, '')}|${r.유형 || ''}|${r.지역 || ''}`;
+const dupGroups = new Map();
+for (const r of reqs) { const k = dupKey(r); if (!dupGroups.has(k)) dupGroups.set(k, []); dupGroups.get(k).push(r); }
+const dupDropped = [];
+reqs = reqs.filter(r => {
+  if (r.상태 !== '정정공고중') return true;
+  const hasRevision = dupGroups.get(dupKey(r)).some(o => o !== r && o.상태 !== '정정공고중');
+  if (hasRevision) { dupDropped.push(r.panId); return false; }
+  return true;
+});
+if (dupDropped.length) console.log(`정정공고 원본 ${dupDropped.length}건 제외(정정본 존재): ${dupDropped.join(', ')}`);
 
 // 2) 프로필 — 기본은 빈 스켈레톤(공유용: 방문자가 직접 입력). --seed 면 내 profile.json 주입(개인용)
 const EMPTY_PROFILE = {
