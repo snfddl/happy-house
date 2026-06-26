@@ -36,6 +36,8 @@ Workflow({ scriptPath: "<repo>/update-extract.workflow.mjs",
 node normalize-requirements.mjs --source=lh      # 갱신된 소스마다(--source=sh 등). 계층 캐논 정규화, 멱등
 python3 parse-housing-xlsx.py --all              # 매입/전세임대 주택목록 xlsx 주입(LH 등)
 node inject-links.mjs                            # 원문링크 주입
+node inject-deadline-time.mjs                    # 공고문 본문→마감시각 추출(당일 컷오프용). 결정론·LLM0·멱등
+node prune-expired.mjs                           # 마감 후 60일(기본) 지난 derived 정리. 멱등
 node build-site.mjs                              # 드리프트 가드 + 5소스 통합 → site/index.html
 ```
 - 모두 결정론·멱등이라 전체 재실행 안전(신규만 골라낼 필요 없음).
