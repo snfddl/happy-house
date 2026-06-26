@@ -162,6 +162,8 @@
   .price-line .pk{font-weight:620;flex:0 0 auto}
   .price-line .pv{font-family:var(--mono);font-weight:640;color:var(--ink-2);letter-spacing:-.02em;text-align:right}
   .price-line .pv small{font-family:var(--sans);font-weight:560;color:var(--muted)}
+  .spec-line{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .spec-line span{font-size:11.5px;color:var(--ink-2);font-weight:560;background:var(--surface-2);border:1px solid var(--line-2);border-radius:6px;padding:2px 8px}
   .card-foot{margin-top:auto;padding-top:10px;border-top:1px solid var(--line-2);
     display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted)}
   .card-foot .foot-r{display:inline-flex;align-items:center;gap:11px}
@@ -336,8 +338,9 @@
     .profile-chip span.full{display:none}.controls{top:60px}}
 
   /* ── 지도 연동 ── */
-  .chips-bar{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;margin-top:9px}
+  .chips-bar{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin-top:9px}
   .chips-bar .chips{margin-top:0}
+  .chips-bar .count{flex:0 0 auto;padding-right:12px;border-right:1px solid var(--line-2)}
   .view-toggle{display:flex;align-items:center;gap:12px;margin-left:auto}
   .vbtn{display:none;align-items:center;gap:5px;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
   .vbtn.on{background:var(--accent-ink,#2563eb);color:#fff;border-color:transparent}
@@ -444,9 +447,9 @@
       </select>
     </div>
     <div class="chips-bar">
+      <span class="count" id="count">—</span>
       <div class="chips" id="chips"></div>
       <div class="view-toggle">
-        <span class="count" id="count">—</span>
         <label class="boundschk" title="지도를 움직이면 화면에 보이는 공고만 목록에 표시"><input type="checkbox" id="boundsChk"> 이 지도 영역만</label>
         <button class="vbtn" id="mapToggle" type="button">🗺 지도</button>
       </div>
@@ -630,6 +633,20 @@
     return '<div class="price-line"><span class="pk">'+pb.k+'</span>'
       +'<span class="pv">'+esc(pb.v)+(pb.unit?' <small>'+esc(pb.unit)+'</small>':'')+'</span></div>';
   }
+  // 보조 스펙(전용면적 범위·모집세대) — 금액 줄 바로 아래. 공급형 rows에서 결정론 집계.
+  function specLine(x){
+    const rows=x.공급형||[];
+    const ar=minmax(rows.map(u=>u.전용));
+    const areaT=ar?'전용 '+area(ar[0])+(ar[1]!==ar[0]?'~'+area(ar[1]):'')+'㎡':null;
+    const units=x.상품구조==='분양'
+      ? rows.reduce((s,u)=>s+(u.일반||0)+(u.특공||0),0)
+      : rows.reduce((s,u)=>s+(u.세대||0),0);
+    const parts=[];
+    if(areaT) parts.push('📐 '+areaT);
+    if(units>0) parts.push('🏘 '+units.toLocaleString()+'세대');
+    if(rows.length>1) parts.push(rows.length+'개 주택형');
+    return parts.length?'<div class="spec-line">'+parts.map(p=>'<span>'+esc(p)+'</span>').join('')+'</div>':'';
+  }
   const srcLabel=s=>({lh:'LH',applyhome:'청약홈',myhome:'마이홈',sh:'SH',gh:'GH'}[s]||(s||'').toUpperCase());
   // 구글 캘린더 '일정 추가' 템플릿 URL — 접수마감일 종일 이벤트(인증·API 불필요, 링크만으로 추가).
   function gcalUrl(x){
@@ -652,6 +669,7 @@
       +selectBlock(x)
       +(면적H?'<div class="cfacts">'+면적H+'</div>':'')
       +priceLine(x)
+      +specLine(x)
       +'<div class="card-foot"><span class="src">'+(x.상품구조==='분양'?'🏗️':'🔑')+' '+srcLabel(x.source)+'</span>'
       +'<span class="foot-r"><span class="more">주택형별 ▸</span>'
       +(x.상세링크?'<a href="'+esc(x.상세링크)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+(x.source==='applyhome'?'청약홈':'공고·청약')+' ↗</a>':'')+'</span></div>'
