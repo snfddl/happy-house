@@ -857,7 +857,12 @@
     $('#list').style.display=r.length?'':'none';
     const total=LIST.filter(x=>!state.activeOnly||isActive(x)).length;
     $('#count').innerHTML='<b>'+r.length+'</b>건'+(r.length!==total?' / 전체 '+total+'건':'');
-    $$('.card').forEach(c=>c.onclick=()=>{ const x=LIST.find(y=>y.id===c.dataset.id); if(x) modal(x); });
+    $$('.card').forEach(c=>{
+      const x=LIST.find(y=>y.id===c.dataset.id); if(!x) return;
+      c.onclick=()=>focusOnMap(x);                                   // 카드 클릭 → 지도 이동
+      const more=c.querySelector('.more'); if(more) more.onclick=e=>{ e.stopPropagation(); modal(x); };  // 상세
+      const h=c.querySelector('h3'); if(h){ h.style.cursor='pointer'; h.onclick=e=>{ e.stopPropagation(); modal(x); }; }
+    });
   }
 
   // ── 지도(Leaflet, 키 0·벤더 인라인) ── 핀=단지 좌표, 클릭→카드 하이라이트+상세. 타일만 네트워크 필요.
@@ -865,8 +870,9 @@
   let map=null, mLayer=null, mById=new Map();
   function initMap(){
     if(!hasL||map) return;
-    map=L.map('map',{zoomControl:true}).setView([36.4,127.8],7);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+    const KR=[[32.5,124.0],[39.9,132.3]];   // 지도를 한국으로 고정 — 세계지도/타지역 패닝·줌아웃 차단
+    map=L.map('map',{zoomControl:true,minZoom:6,maxBounds:KR,maxBoundsViscosity:1.0}).setView([36.4,127.8],7);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,minZoom:6,noWrap:true,bounds:KR,attribution:'© OpenStreetMap'}).addTo(map);
     mLayer=L.layerGroup().addTo(map);
     // '이 지도 영역만' ON일 때만 가시영역으로 목록 필터. apply는 지도를 움직이지 않으므로 재귀 없음.
     map.on('moveend',()=>{ if(state.mapBoundsOn){ state.mapBounds=map.getBounds(); apply(); } });
@@ -891,6 +897,7 @@
         const [dla,dln]=jitter(x.id,p.확정도);
         const mk=L.marker([p.lat+dla,p.lng+dln],{icon:pinIcon(x.판정,false),riseOnHover:true});
         mk.bindPopup('<b>'+esc(x.공고명||'')+'</b><br><span class="pp-type">'+esc(x.유형||'')+(p.단지명&&p.단지명!==x.공고명?' · '+esc(p.단지명):'')+(p.확정도==='시군구'?' · 위치 대략(시군구)':'')+'</span>');
+        mk._판정=x.판정;
         mk.on('click',()=>{ selectCard(x.id); modal(x); });
         mk.on('mouseover',function(){ this.openPopup(); });
         mLayer.addLayer(mk);
@@ -900,6 +907,22 @@
     });
     const noPin=items.length-mById.size;
     $('#mapNote').innerHTML='🗺 '+mById.size+'개 공고 표시'+(noPin>0?' · 위치정보 없음 '+noPin+'건':'');
+  }
+  // 핀 강조 — 지정 id의 핀만 sel 아이콘(나머지 원복).
+  function highlightPin(id){
+    mById.forEach((mks,mid)=>mks.forEach(mk=>mk.setIcon(pinIcon(mk._판정, mid===id))));
+  }
+  // 카드 클릭 → 지도가 해당 위치로 이동 + 핀 강조·팝업(좌표 없으면 무동작). 상세는 핀/주택형별 클릭.
+  function focusOnMap(x){
+    if(!map) return;
+    const ps=(x.좌표목록||[]).filter(p=>p.lat!=null);
+    if(!ps.length) return;
+    if(window.innerWidth<1024 && !document.body.classList.contains('mapview')) toggleMapView(true);
+    highlightPin(x.id);
+    if(ps.length===1) map.flyTo([ps[0].lat,ps[0].lng], Math.max(map.getZoom(),12), {duration:.5});
+    else map.flyToBounds(L.latLngBounds(ps.map(p=>[p.lat,p.lng])).pad(0.3), {maxZoom:13,duration:.5});
+    const mks=mById.get(x.id);
+    if(mks&&mks[0]) setTimeout(()=>mks[0].openPopup(),360);
   }
   // 핀 클릭 → 해당 카드 하이라이트·스크롤(모바일은 목록뷰로 전환).
   function selectCard(id){
