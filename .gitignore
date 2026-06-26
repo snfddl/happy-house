@@ -18,6 +18,8 @@ data/extract-targets.json
 data/wf-args.json
 data/extract-queue.json
 data/slice-manifest.json
+data/analysis-queue.json
+data/analysis-results.json
 
 # 의존성/임시/잡파일
 node_modules/

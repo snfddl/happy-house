@@ -30,6 +30,18 @@ Workflow({ scriptPath: "<repo>/update-extract.workflow.mjs",
 - 헤드리스(`claude -p` conc 3)보다 빠름(19건 ≈ 3분). 완료 통지까지 대기. 큐 비면 생략.
 - 실패 항목(반환 null)은 보고하고, 필요 시 재실행.
 
+### 2.5 무순위/잔여 AI 참고분석 (비결정론, Sonnet 에이전트 — 선택)
+'무순위/잔여' 분양만 대상(미달·이탈 사유가 가치·사실성 높음. 민영 일반분양 시세코멘트는 책임·신뢰도상 제외).
+```bash
+node build-analysis-queue.mjs    # 활성 무순위/잔여 중 참고분석 없는 건 → data/analysis-queue.json (각 항목 prompt 포함)
+```
+- 큐가 비면 생략. 안 비면 각 항목 `prompt`를 **Sonnet 에이전트로 병렬 실행**(웹검색·외부 API 0). 각 에이전트는 `{"요약","확신도","출처":[]}` JSON만 반환.
+- 반환들을 `{ "<no>": {요약,확신도,출처}, ... }` 형태로 `data/analysis-results.json`에 모은 뒤:
+```bash
+node inject-analysis.mjs         # requirements.json '참고분석'에 주입(생성일 부여). 멱등
+```
+- 모델=Sonnet 충분(검색+사실요약, 추출과 동류 — CLAUDE.md §3). 결과는 '참고용·원문확인' 디스클레이머와 확신도·출처가 사이트에 함께 노출됨.
+
 ### 3. 정제 + 통합 + 빌드 (결정론, node — 멱등)
 추출된 소스에 대해 순서대로:
 ```bash

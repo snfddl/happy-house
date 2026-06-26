@@ -258,6 +258,11 @@
   .m-links a:hover{background:var(--accent-ink)}
   .m-links a.outline{background:transparent;color:var(--accent-ink);border:1.5px solid var(--accent)}
   .m-links a.outline:hover{background:var(--accent);color:#fff}
+  .anal-sec h4 .conf{margin-left:8px;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;vertical-align:middle}
+  .conf.c-상{color:#15803d;background:#dcfce7} .conf.c-중{color:#b45309;background:#fef3c7} .conf.c-하{color:#b91c1c;background:#fee2e2}
+  .anal{font-size:13.5px;line-height:1.6;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;white-space:normal}
+  .anal-src{font-size:11.5px;color:var(--faint);margin-top:7px;word-break:break-all}
+  .anal-disc{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.45}
   .note{font-size:11.5px;color:var(--faint);margin-top:14px;line-height:1.5}
 
   /* Drawer (프로필 편집) */
@@ -486,7 +491,7 @@
       return Object.assign(r,{id:req.__id,source:req.__src,상품구조:req.상품구조||(r.공급형태==='분양'?'분양':'임대'),
         상세링크:(req.원문링크&&req.원문링크.상세페이지)||null,
         공고PDF:(req.원문링크&&req.원문링크.공고문PDF)||null,
-        마감시각:req.마감시각||null,
+        마감시각:req.마감시각||null, 참고분석:req.참고분석||null,
         시도목록:siList(r.지역||req.지역)}, extras(req));
     });
   }
@@ -633,13 +638,20 @@
       if(x.상품구조==='분양') extA.push('<a class="outline" target="_blank" rel="noopener" href="https://m.land.naver.com/search/result/'+encodeURIComponent(nm)+'">🏠 네이버 부동산(시세)</a>');
     }
     const ext=extA.length?'<div class="sec"><h4>외부 검색 <small>시세·입지·후기 직접 확인</small></h4><div class="m-links">'+extA.join('')+'</div></div>':'';
+    // AI 참고 분석(무순위/잔여 분양 한정) — 외부 웹 검색요약. 참고용·원문확인 디스클레이머 + 확신도·출처·생성일 노출.
+    const an=x.참고분석;
+    const anH=(an&&an.요약)?'<div class="sec anal-sec"><h4>AI 참고 분석 <small>검색 요약·참고용</small><span class="conf c-'+(an.확신도||'중')+'">확신도 '+(an.확신도||'-')+'</span></h4>'
+      +'<div class="anal">'+esc(an.요약).replace(/\n/g,'<br>')+'</div>'
+      +((an.출처&&an.출처.length)?'<div class="anal-src">출처: '+an.출처.map(esc).join(' · ')+'</div>':'')
+      +'<div class="anal-disc">⚠ '+(an.생성일?esc(an.생성일)+' 기준 ':'')+'AI가 외부 웹을 검색해 정리한 참고 정보입니다. 분양가·세대수·일정 등은 시점·출처에 따라 다를 수 있으니 반드시 원문 공고로 확인하세요.</div>'
+      +'</div>':'';
     $('#modal').innerHTML=
       '<div class="m-head"><button class="m-close" onclick="closeModal()">✕</button>'
       +'<div class="row1"><span class="badge b-'+x.판정+'">'+x.판정+'</span>'+typeTag(x)+ddayHtml(x)+'</div>'
       +'<h2>'+esc(x.공고명)+'</h2><div class="mloc">📍 '+esc(x.지역||'-')+' · '+srcLabel(x.source)+'</div></div>'
       +'<div class="m-body">'+verdictH
       +'<div class="sec"><h4>'+pb.k+'</h4><div class="price" style="display:inline-block;min-width:200px"><div class="v" style="font-size:20px">'+esc(pb.v)+(pb.unit?' <small>'+esc(pb.unit)+'</small>':'')+'</div></div></div>'
-      +metaH+scoreH+schedH+(unitsT?'<div class="sec"><h4>주택형별</h4>'+unitsT+'</div>':'')+spctH+links+ext
+      +anH+metaH+scoreH+schedH+(unitsT?'<div class="sec"><h4>주택형별</h4>'+unitsT+'</div>':'')+spctH+links+ext
       +'<div class="note">⚠ 자동 매칭 결과입니다. 최종 신청자격·일정·금액은 반드시 원문 공고로 확인하세요. "확인필요/참고/추정"은 시스템이 단정하지 않은 항목입니다.</div></div>';
     $('#ov').classList.add('show'); document.body.style.overflow='hidden';
   }
