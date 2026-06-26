@@ -1273,12 +1273,22 @@ function createMatcher(P, todayStr) {
   const sectorOf=x=>공공유형.has(x.유형)?'공공':'민간';
   // 단일 필터 판정 — except로 지정한 필터 하나는 건너뜀(faceted 카운트용: 그 필터 빼고 나머지로 거른 모수).
   const inRegion=x=>(x.시도목록||[]).includes(state.region)||(x.시도목록||[]).includes('전국');
+  // 유형 대분류/소분류 — 한 드롭다운에 분양 공급방식·임대 프로그램이 평평히 섞이던 걸 4대분류로 묶음.
+  // 임대는 프로그램(행복/국민/영구…)보다 '공공임대냐 매입이냐'가 우선이라 대분류로, 세부는 드릴다운. (sector 공공/민간은 별개 축)
+  const TYPE_GROUPS=[
+    ['분양',['공공분양','민영분양','무순위/잔여','임의공급','오피스텔/도시형']],
+    ['공공임대',['행복주택','행복주택(신혼희망)','국민임대','영구임대','통합공공임대','공공임대','50년공공임대']],
+    ['매입·전세임대',['매입임대','전세임대','집주인임대']],
+    ['민간·특화임대',['공공지원민간임대','임대']],
+  ];
+  const GROUP_OF={}; TYPE_GROUPS.forEach(([g,ts])=>ts.forEach(t=>GROUP_OF[t]=g));
+  const groupOf=t=>GROUP_OF[t]||'기타';
   function pass(x,except){
     if(except!=='activeOnly'&&state.activeOnly&&!isActive(x))return false;
     if(except!=='판정'&&state.판정&&x.판정!==state.판정)return false;
     if(except!=='supply'&&state.supply&&x.공급형태!==state.supply)return false;
     if(except!=='sector'&&state.sector&&sectorOf(x)!==state.sector)return false;
-    if(except!=='type'&&state.type&&x.유형!==state.type)return false;
+    if(except!=='type'&&state.type){ if(state.type.slice(0,2)==='g:'){ if(groupOf(x.유형)!==state.type.slice(2))return false; } else if(x.유형!==state.type)return false; }
     if(except!=='region'&&state.region&&!inRegion(x))return false;
     if(except!=='regionOnly'&&state.regionOnly&&x.희망지역매칭!==true)return false;
     if(except!=='분양류'&&state.분양류&&!(x.공급형태==='분양'||x.분양전환===true))return false;
@@ -1327,9 +1337,22 @@ function createMatcher(P, todayStr) {
     // 유형 옵션 — 지역 등 다른 활성필터로 거른 모수 기준 건수(faceted). 그 유형 자신만 제외하고 카운트.
     const tbase=LIST.filter(x=>pass(x,'type')), tcnt={};
     tbase.forEach(x=>{ if(x.유형) tcnt[x.유형]=(tcnt[x.유형]||0)+1; });
-    const types=[...new Set(LIST.map(x=>x.유형))].filter(Boolean).sort();
-    const cur=$('#typeSel').value;
-    $('#typeSel').innerHTML='<option value="">전체 유형</option>'+types.map(t=>'<option value="'+esc(t)+'"'+(t===cur?' selected':'')+'>'+esc(t)+' ('+(tcnt[t]||0)+')</option>').join('');
+    const present=new Set(LIST.map(x=>x.유형).filter(Boolean));
+    const cur=$('#typeSel').value, seen=new Set();
+    let th='<option value="">전체 유형</option>';
+    for(const [g,ts] of TYPE_GROUPS){
+      ts.forEach(t=>seen.add(t));
+      const members=ts.filter(t=>present.has(t)&&((tcnt[t]||0)>0||t===cur));   // (0)건 소분류 숨김(현재 선택은 유지)
+      const gcount=ts.reduce((s,t)=>s+(tcnt[t]||0),0);
+      if(!members.length&&cur!=='g:'+g) continue;
+      th+='<optgroup label="'+esc(g)+'">'
+        +'<option value="g:'+esc(g)+'"'+('g:'+g===cur?' selected':'')+'>'+esc(g)+' 전체 ('+gcount+')</option>'
+        +members.map(t=>'<option value="'+esc(t)+'"'+(t===cur?' selected':'')+'>  · '+esc(t)+' ('+(tcnt[t]||0)+')</option>').join('')
+        +'</optgroup>';
+    }
+    const others=[...present].filter(t=>!seen.has(t)&&((tcnt[t]||0)>0||t===cur));   // 매핑 안 된 유형 fail-safe
+    if(others.length) th+='<optgroup label="기타">'+others.map(t=>'<option value="'+esc(t)+'"'+(t===cur?' selected':'')+'>'+esc(t)+' ('+(tcnt[t]||0)+')</option>').join('')+'</optgroup>';
+    $('#typeSel').innerHTML=th;
     // 지역(시·도) 옵션 — 지역 외 활성필터로 거른 모수 기준. '전국' 공고는 모든 지역서 노출되므로 옵션서 제외하되 각 지역 건수에 합산.
     const rbase=LIST.filter(x=>pass(x,'region')), cnt={};
     rbase.forEach(x=>(x.시도목록||[]).forEach(s=>{ if(s!=='전국') cnt[s]=(cnt[s]||0)+1; }));
