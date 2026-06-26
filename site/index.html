@@ -1016,7 +1016,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
   .map-note{position:absolute;left:10px;bottom:10px;z-index:500;background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:11.5px;color:var(--ink-2);max-width:75%;box-shadow:0 1px 4px rgba(0,0,0,.08)}
   .pin{width:16px;height:16px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4);box-sizing:border-box}
   .pin.지원가능{background:#16a34a}.pin.확인필요{background:#d97706}.pin.지원불가{background:#dc2626}
-  .pin.sel{width:22px;height:22px;z-index:1000!important;box-shadow:0 0 0 3px rgba(37,99,235,.45),0 1px 4px rgba(0,0,0,.5)}
+  .pin.sel{width:30px;height:30px;z-index:1000!important;border-width:3px;box-shadow:0 0 0 4px rgba(37,99,235,.55),0 3px 8px rgba(0,0,0,.55);animation:pinpulse 1.3s ease-out infinite}
+  @keyframes pinpulse{0%{box-shadow:0 0 0 3px rgba(37,99,235,.6),0 3px 8px rgba(0,0,0,.55)}70%{box-shadow:0 0 0 16px rgba(37,99,235,0),0 3px 8px rgba(0,0,0,.55)}100%{box-shadow:0 0 0 3px rgba(37,99,235,0),0 3px 8px rgba(0,0,0,.55)}}
   .leaflet-popup-content{margin:9px 11px;font-size:12.5px;line-height:1.45}
   .leaflet-popup-content b{font-size:13px}
   .leaflet-popup-content .pp-type{color:var(--faint,#888);font-size:11px}
@@ -2034,7 +2035,8 @@ function createMatcher(P, todayStr) {
     const ext=extA.length?'<div class="sec"><h4>외부 검색 <small>시세·입지·후기 직접 확인</small></h4><div class="m-links">'+extA.join('')+'</div></div>':'';
     // AI 참고 분석(무순위/잔여 분양 한정) — 외부 웹 검색요약. 참고용·원문확인 디스클레이머 + 확신도·출처·생성일 노출.
     const an=x.참고분석;
-    const anH=(an&&an.요약)?'<div class="sec anal-sec"><h4>AI 참고 분석 <small>검색 요약·참고용</small><span class="conf c-'+(an.확신도||'중')+'">확신도 '+(an.확신도||'-')+'</span></h4>'
+    const confTxt=an?({상:'높음',중:'보통',하:'낮음'}[an.확신도]||an.확신도||'-'):'-';   // '확신도 중' 어색 → '신뢰도 보통'
+    const anH=(an&&an.요약)?'<div class="sec anal-sec"><h4>AI 참고 분석 <small>검색 요약·참고용</small><span class="conf c-'+(an.확신도||'중')+'">신뢰도 '+confTxt+'</span></h4>'
       +'<div class="anal">'+analHtml(an.요약)+'</div>'
       +((an.출처&&an.출처.length)?'<div class="anal-src">출처: '+an.출처.map(esc).join(' · ')+'</div>':'')
       +'<div class="anal-disc">⚠ '+(an.생성일?esc(an.생성일)+' 기준 ':'')+'AI가 외부 웹을 검색해 정리한 참고 정보입니다. 분양가·세대수·일정 등은 시점·출처에 따라 다를 수 있으니 반드시 원문 공고로 확인하세요.</div>'
@@ -2148,7 +2150,7 @@ function createMatcher(P, todayStr) {
     const a=((h%360)+360)%360*Math.PI/180, r=0.004+(((h>>9)&7)*0.0006);
     return [Math.sin(a)*r, Math.cos(a)*r];
   }
-  const pinIcon=(판정,sel)=>L.divIcon({className:'',html:'<div class="pin '+판정+(sel?' sel':'')+'"></div>',iconSize:[16,16],iconAnchor:[8,16],popupAnchor:[0,-15]});
+  const pinIcon=(판정,sel)=>L.divIcon({className:'',html:'<div class="pin '+판정+(sel?' sel':'')+'"></div>',iconSize:sel?[30,30]:[16,16],iconAnchor:sel?[15,30]:[8,16],popupAnchor:[0,sel?-28:-15]});
   function updateMap(items){
     if(!hasL) return;
     initMap(); if(!map) return;
