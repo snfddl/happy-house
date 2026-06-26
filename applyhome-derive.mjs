@@ -11,7 +11,7 @@ const RAW = new URL('raw/applyhome/', ROOT);
 const DERIVED = new URL('derived/applyhome/', ROOT);
 const TODAY = new Date().toISOString().slice(0, 10);
 
-const num = v => (v == null || v === '' ? 0 : Number(v));
+const num = v => (v == null || v === '' ? 0 : Number(String(v).replace(/,/g, '')));   // API 금액은 "125,000" 천단위 쉼표 문자열 → 쉼표 제거 후 Number(미제거 시 NaN→분양가 null)
 const pf = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; }; // "059.9928A"→59.9928 / "37.8000"→37.8
 const amt = m => num(m.LTTOT_TOP_AMOUNT ?? m.SUPLY_AMOUNT);   // 분양가/공급금액(만원). 임대는 보증금
 const 형명 = m => m.HOUSE_TY || m.TP || null;
