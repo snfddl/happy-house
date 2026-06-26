@@ -106,6 +106,8 @@
   .tag.sector{font-weight:620}
   .tag.sector.pub{color:#1d4ed8;background:#eef3ff}
   .tag.sector.priv{color:#5b6472;background:#f1f3f6}
+  .tag.resale{color:#9a3412;background:#ffedd5}
+  .tag.reg{color:#b91c1c;background:#fee2e2}
   .dday{margin-left:auto;font-size:11.5px;font-weight:720;font-family:var(--mono);color:var(--ink-2);
     background:var(--surface-2);border:1px solid var(--line-2);border-radius:7px;padding:3px 8px}
   .dday.soon{color:var(--no);background:var(--no-bg);border-color:var(--no-line)}
@@ -443,7 +445,8 @@
   function extras(req){
     const 분양=req.상품구조==='분양';
     const e={ 공고일:req.공고일||null, 접수기간:[req.접수시작||null, req.마감일||null],
-      당첨발표:req.당첨자발표||null, 단지주소:(req.단지&&req.단지[0]&&req.단지[0].주소)||null };
+      당첨발표:req.당첨자발표||null, 단지주소:(req.단지&&req.단지[0]&&req.단지[0].주소)||null,
+      단지명:(req.단지&&req.단지[0]&&req.단지[0].단지명)||req.공고명||null, 규제:req.규제||null };
     if(분양){
       const rows=(req.공급형||[]).map(f=>({형명:f.형명,전용:f.전용면적,분양가만원:f.분양가만원,일반:f.일반공급호수,특공:f.특별공급&&f.특별공급.합계}));
       const 특공={}; (req.공급형||[]).forEach(f=>Object.entries(f.특별공급||{}).forEach(([k,v])=>{ if(k!=='합계'&&v>0) 특공[k]=(특공[k]||0)+v; }));
@@ -506,7 +509,11 @@
   function typeTag(x){
     const conv=x.분양전환?'<span class="tag conv">분양전환</span>':'';
     const sec=sectorOf(x), secT='<span class="tag sector '+(sec==='공공'?'pub':'priv')+'">'+sec+'</span>';
-    return '<span class="tag '+(x.상품구조==='분양'?'sale':'rent')+'">'+esc(x.유형)+'</span>'+secT+conv;
+    const 재공급=['무순위/잔여','임의공급'].includes(x.유형);   // 통장·순위 무관 추첨/선착순으로 '다시 분양'되는 물량 — 눈에 띄게
+    const tTag='<span class="tag '+(x.상품구조==='분양'?'sale':'rent')+(재공급?' resale':'')+'">'+(재공급?'🔁 ':'')+esc(x.유형)+'</span>';
+    const reg=x.규제?[x.규제.투기과열지구&&'투기과열',x.규제.조정대상지역&&'조정대상',x.규제.분양가상한제&&'분양가상한'].filter(Boolean):[];
+    const regT=reg.length?'<span class="tag reg" title="규제지역 — 전매제한·대출·실거주의무 등 강화">⚠ '+reg.join('·')+'</span>':'';
+    return tTag+secT+conv+regT;
   }
   // 핵심 자격요건 칩: 실격(✕)>확인필요(?)>통과(✓). "키:상세" 분리해 키 강조 + 상세 표기.
   function gateChips(x){
@@ -616,13 +623,23 @@
     if(x.공고PDF) linkA.push('<a href="'+esc(x.공고PDF)+'" target="_blank" rel="noopener" class="outline">공고문 PDF ↓</a>');
     const gcal=gcalUrl(x); if(gcal) linkA.push('<a href="'+gcal+'" target="_blank" rel="noopener" class="outline">📅 접수마감 캘린더 추가 ↗</a>');
     const links=linkA.length?'<div class="m-links">'+linkA.join('')+'</div>':'';
+    // 외부 검색 딥링크 — 시세·입지·후기는 결국 따로 검색하게 되니 단지명/주소로 1클릭 연결(분석 생성 아님·무위험).
+    const nm=(x.단지명||x.공고명||'').trim();
+    const extA=[];
+    if(nm){
+      const q=encodeURIComponent(nm+(x.상품구조==='분양'?' 분양':''));
+      extA.push('<a class="outline" target="_blank" rel="noopener" href="https://search.naver.com/search.naver?query='+q+'">🔎 네이버 검색</a>');
+      extA.push('<a class="outline" target="_blank" rel="noopener" href="https://map.kakao.com/?q='+encodeURIComponent(x.단지주소||nm)+'">📍 지도·입지</a>');
+      if(x.상품구조==='분양') extA.push('<a class="outline" target="_blank" rel="noopener" href="https://m.land.naver.com/search/result/'+encodeURIComponent(nm)+'">🏠 네이버 부동산(시세)</a>');
+    }
+    const ext=extA.length?'<div class="sec"><h4>외부 검색 <small>시세·입지·후기 직접 확인</small></h4><div class="m-links">'+extA.join('')+'</div></div>':'';
     $('#modal').innerHTML=
       '<div class="m-head"><button class="m-close" onclick="closeModal()">✕</button>'
       +'<div class="row1"><span class="badge b-'+x.판정+'">'+x.판정+'</span>'+typeTag(x)+ddayHtml(x)+'</div>'
       +'<h2>'+esc(x.공고명)+'</h2><div class="mloc">📍 '+esc(x.지역||'-')+' · '+srcLabel(x.source)+'</div></div>'
       +'<div class="m-body">'+verdictH
       +'<div class="sec"><h4>'+pb.k+'</h4><div class="price" style="display:inline-block;min-width:200px"><div class="v" style="font-size:20px">'+esc(pb.v)+(pb.unit?' <small>'+esc(pb.unit)+'</small>':'')+'</div></div></div>'
-      +metaH+scoreH+schedH+(unitsT?'<div class="sec"><h4>주택형별</h4>'+unitsT+'</div>':'')+spctH+links
+      +metaH+scoreH+schedH+(unitsT?'<div class="sec"><h4>주택형별</h4>'+unitsT+'</div>':'')+spctH+links+ext
       +'<div class="note">⚠ 자동 매칭 결과입니다. 최종 신청자격·일정·금액은 반드시 원문 공고로 확인하세요. "확인필요/참고/추정"은 시스템이 단정하지 않은 항목입니다.</div></div>';
     $('#ov').classList.add('show'); document.body.style.overflow='hidden';
   }
