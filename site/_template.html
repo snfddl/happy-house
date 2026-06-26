@@ -348,7 +348,8 @@
   .boundschk input{accent-color:var(--accent-ink,#2563eb);width:15px;height:15px}
   .mainsplit{display:flex;gap:16px;align-items:flex-start}
   .list-col{flex:1 1 0;min-width:0}
-  .mapwrap{flex:0 0 40%;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#e9eef2;position:relative}
+  /* z-index:0 으로 stacking context 생성 → Leaflet 내부 z-index(컨트롤 1000·팝업 700 등)를 가둬 모달·드로어 아래로. */
+  .mapwrap{flex:0 0 40%;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#e9eef2;position:relative;z-index:0}
   #map{width:100%;height:100%}
   body.nomap .mapwrap{display:none}
   .map-note{position:absolute;left:10px;bottom:10px;z-index:500;background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:11.5px;color:var(--ink-2);max-width:75%;box-shadow:0 1px 4px rgba(0,0,0,.08)}
@@ -859,7 +860,7 @@
     $('#count').innerHTML='<b>'+r.length+'</b>건'+(r.length!==total?' / 전체 '+total+'건':'');
     $$('.card').forEach(c=>{
       const x=LIST.find(y=>y.id===c.dataset.id); if(!x) return;
-      c.onclick=()=>focusOnMap(x);                                   // 카드 클릭 → 지도 이동
+      c.onclick=()=>highlightPin(x.id);                              // 카드 클릭 → 지도에서 해당 핀 강조(이동 없음)
       const more=c.querySelector('.more'); if(more) more.onclick=e=>{ e.stopPropagation(); modal(x); };  // 상세
       const h=c.querySelector('h3'); if(h){ h.style.cursor='pointer'; h.onclick=e=>{ e.stopPropagation(); modal(x); }; }
     });
