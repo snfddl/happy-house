@@ -644,9 +644,9 @@
     const bd=x.배점내역;
     const scoreH=(bd&&bd.length)?'<div class="sec"><h4>예상 배점 내역'+(x.예상배점?' <small>'+esc(String(x.예상배점).split(' ')[0])+'</small>':'')+'</h4>'
       +'<div class="tbl-wrap"><table class="units"><thead><tr><th style="text-align:left">배점 항목</th><th>내 점수</th><th>만점</th></tr></thead><tbody>'
-      +bd.map(it=>'<tr><td style="text-align:left">'+esc(it.항목)+'</td><td>'+(it.자동?'<b>'+it.점수+'</b>':'<span class="muted">미입력</span>')+'</td><td>'+it.만점+'</td></tr>').join('')
-      +'<tr><td style="text-align:left"><b>합계</b></td><td><b>'+bd.reduce((s,it)=>s+(it.자동?it.점수:0),0)+'</b></td><td><b>'+bd.reduce((s,it)=>s+it.만점,0)+'</b></td></tr>'
-      +'</tbody></table></div><div class="tbl-note">자동계산은 거주기간·자녀수·청약납입·무주택기간 항목만. 그 외(수급·장애·부양 등)는 해당 시 가산되며 원문 기준 확인.</div></div>':'';
+      +bd.map(it=>'<tr><td style="text-align:left">'+esc(it.항목)+'</td><td>'+(it.자동?(it.최소?'<span class="muted" title="미입력 — 배점표 최저구간 기준 최소 보장점수. 거주기간 등 입력 시 상향">최소 <b>'+it.점수+'</b></span>':'<b>'+it.점수+'</b>'):'<span class="muted">미입력</span>')+'</td><td>'+it.만점+'</td></tr>').join('')
+      +'<tr><td style="text-align:left"><b>'+(bd.some(it=>it.최소)?'최소 합계':'합계')+'</b></td><td><b>'+bd.reduce((s,it)=>s+(it.자동?it.점수:0),0)+'</b></td><td><b>'+bd.reduce((s,it)=>s+it.만점,0)+'</b></td></tr>'
+      +'</tbody></table></div><div class="tbl-note">자동계산은 거주기간·자녀수·청약납입·무주택기간 항목만. <b>미입력 항목은 최저구간 기준 ‘최소 보장점’으로 표시</b>(값 입력 시 상향). 그 외(수급·장애·부양 등)는 해당 시 가산되며 원문 기준 확인.</div></div>':'';
     const linkA=[];
     if(x.상세링크) linkA.push('<a href="'+esc(x.상세링크)+'" target="_blank" rel="noopener">'+srcLabel(x.source)+(x.source==='applyhome'?' 공고':' 공고·청약 페이지')+' ↗</a>');
     if(x.공고PDF) linkA.push('<a href="'+esc(x.공고PDF)+'" target="_blank" rel="noopener" class="outline">공고문 PDF ↓</a>');

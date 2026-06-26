@@ -336,22 +336,23 @@ export function createMatcher(P, todayStr) {
   }
   function estimateScore(req) {
     const tbl = req.배점표 || []; if (!tbl.length) return null;
-    let got = 0, max = 0; const used = [], skipped = [], items = [];
+    let got = 0, max = 0, floors = 0; const used = [], skipped = [], items = [];
     // 괄호 부연(예: "대학생 거주지(부모 거주지)")은 제거 후 핵심 라벨만 — 기계적 자르기로 괄호 깨지는 것 방지
     const lbl = s => String(s).replace(/[（(].*$/, '').replace(/\s+/g, ' ').trim().slice(0, 22);
     for (const item of tbl) {
       const name = item.항목 || ''; const bands = item.구간 || [];
       const top = Math.max(0, ...bands.map(b => b[1] || 0)); max += top;
-      let v = null;
-      if (/거주\s*기간|연속\s*거주/.test(name)) v = (P.거주개월 ?? 0) / 12;
+      // floored: 입력이 없어 0으로 처리 → 배점표 최저구간(0점 구간 없으면 바닥점수)이 잡힘. 확정 아닌 '최소 보장점'으로 구분(입력 시 상향).
+      let v = null, floored = false;
+      if (/거주\s*기간|연속\s*거주/.test(name)) { floored = P.거주개월 == null; v = (P.거주개월 ?? 0) / 12; }
       else if (/자녀/.test(name)) v = 미성년자녀;
-      else if (/납입\s*횟수|청약/.test(name)) v = P.청약저축?.납입횟수 ?? 0;
-      else if (/무주택\s*기간/.test(name)) v = (P.무주택기간개월 ?? 0) / 12;
+      else if (/납입\s*횟수|청약/.test(name)) { floored = P.청약저축?.납입횟수 == null; v = P.청약저축?.납입횟수 ?? 0; }
+      else if (/무주택\s*기간/.test(name)) { floored = P.무주택기간개월 == null; v = (P.무주택기간개월 ?? 0) / 12; }
       if (v == null) { skipped.push(lbl(name)); items.push({ 항목: lbl(name), 점수: null, 만점: top, 자동: false }); continue; }
-      const sc = pickBand(bands, v); got += sc; used.push(`${lbl(name)}:${sc}`);
-      items.push({ 항목: lbl(name), 점수: sc, 만점: top, 자동: true });
+      const sc = pickBand(bands, v); got += sc; if (floored) floors++; else used.push(`${lbl(name)}:${sc}`);
+      items.push({ 항목: lbl(name), 점수: sc, 만점: top, 자동: true, 최소: floored });
     }
-    return { got, max, used, skipped, items };
+    return { got, max, used, skipped, items, floors };
   }
 
   // ── 분양: 가점 84점·청약순위·지역우선·특공 ──────────────────
@@ -556,7 +557,7 @@ export function createMatcher(P, todayStr) {
       통과: Object.entries(gates).filter(([, g]) => g.s === 'pass').map(([k]) => k),
       거주지순위: rank ? (rank.rank ? `거주지 우선 ${rank.rank}순위` : `거주지 우선순위 미해당 (최하 ${rank.maxRank}순위 추정)`) : '거주지 우선순위 없음 (추첨 등)',
       선정방식: req.선정방식,
-      예상배점: score ? `${score.got}/${score.max}점 (추정)${score.skipped.length ? ` · 미반영 항목: ${score.skipped.join('·')}` : ''}` : null,
+      예상배점: score ? `${score.floors ? '최소 ' : ''}${score.got}/${score.max}점 (추정)${score.floors ? ' · 미입력 항목 입력 시 상향' : ''}${score.skipped.length ? ` · 미반영 항목: ${score.skipped.join('·')}` : ''}` : null,
       배점내역: score ? score.items : null,
       가점: null,
       면적: area ? (area.ok == null ? '면적정보없음' : area.ok ? `맞음(${area.range[0]}~${area.range[1]}㎡)` : `안맞음(공고 ${area.range[0]}~${area.range[1]}㎡)`) : null,
