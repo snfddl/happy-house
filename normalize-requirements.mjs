@@ -115,6 +115,9 @@ function normalizeReq(r) {
   const envBefore = `${r.source}|${r.상품군}`;
   if (r.no && !r.panId) { r.panId = r.no; delete r.no; }
   r.source = r.source || SOURCE; r.상품군 = r.상품군 || '임대';
+  // 건물유형 기본값 — 단지형 공공임대=아파트(공급형이 단지·블록 단위). 매입/전세임대는 호별 산재(다가구 등)·종류 불명이라 미설정(fail-safe). 이미 있으면 보존(applyhome 등). 멱등.
+  let bldgSet = false;
+  if (!r.건물유형 && r.상품군 === '임대' && /행복주택|국민임대|영구임대|통합공공임대|공공임대|50년공공임대|분양전환|신혼희망/.test(r.유형 || '')) { r.건물유형 = '아파트'; bldgSet = true; }
   // 일부 추출이 접수/마감을 top-level(접수시작·마감일) 대신 `일정` 객체에 자유문장으로만 둠 → 매처(req.마감일=D-day)가 읽도록 hoist(멱등)
   let dateHoisted = false;
   if (r.마감일 == null && r.일정 && typeof r.일정 === 'object') {
@@ -122,7 +125,7 @@ function normalizeReq(r) {
     const ds = [...String(txt).matchAll(/(\d{4})[.\-](\d{2})[.\-](\d{2})/g)].map(m => `${m[1]}-${m[2]}-${m[3]}`);
     if (ds.length) { r.접수시작 = r.접수시작 ?? ds[0]; r.마감일 = ds[ds.length - 1]; dateHoisted = true; }
   }
-  const envChanged = dateHoisted || `${r.source}|${r.상품군}` !== envBefore;
+  const envChanged = dateHoisted || bldgSet || `${r.source}|${r.상품군}` !== envBefore;
   const zq = r.자격요건;
   if (!zq || typeof zq !== 'object') return { changed: envChanged };
   const before = JSON.stringify(zq);
