@@ -18,7 +18,8 @@ for (const [no, a] of Object.entries(results)) {
   if (!existsSync(rp)) { console.warn(`  ⚠️ ${no} requirements 없음 — 건너뜀`); miss++; continue; }
   if (!a || !a.요약) { console.warn(`  ⚠️ ${no} 요약 비어있음 — 건너뜀`); miss++; continue; }
   const r = JSON.parse(readFileSync(rp, 'utf8'));
-  r.참고분석 = { 요약: a.요약, 확신도: a.확신도 || '하', 출처: a.출처 || [], 생성일: DATE };
+  r.참고분석 = { 요약: a.요약, 확신도: a.확신도 || '하', 출처: a.출처 || [], 생성일: DATE,
+    검증: a.검증 || null, 검증노트: a.검증노트 || null };   // Opus 적대검증 결과(통과/수정 + 1줄 노트)
   writeFileSync(rp, JSON.stringify(r, null, 2));
   ok++;
 }
