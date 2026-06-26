@@ -362,6 +362,12 @@ export function createMatcher(P, todayStr) {
     const deps = fees.map(r => r.임대보증금).filter(v => v > 0);
     const 월세 = rents.length ? [Math.min(...rents), Math.max(...rents)] : null;
     const 보증금 = deps.length ? [Math.min(...deps), Math.max(...deps)] : null;
+    // 면적 앵커(보조줄): 임대료 있는 공급형의 전용면적 범위·평형수 — 보증금/월세 range 양끝 해석 보조.
+    //   단지 면적범위(전환옵션과 무관)라 항상 정확. range 양끝 17/24가 전환옵션 교란이라 양끝별 면적라벨은 오정보 위험 → 단지범위로.
+    const areaForms = (req.공급형 || []).filter(f => (f.임대료 || []).some(t => t.임대보증금 > 0 || t.월임대료 > 0));
+    const areas = areaForms.map(f => f.전용면적).filter(v => v > 0);
+    const 전용 = areas.length ? [Math.min(...areas), Math.max(...areas)] : null;
+    const 평형수 = areaForms.length || null;
     let 부담률 = null, 부담등급 = null;
     if (월세 && P.월평균소득 > 0) {
       부담률 = [Math.round(월세[0] / P.월평균소득 * 100), Math.round(월세[1] / P.월평균소득 * 100)];
@@ -370,7 +376,7 @@ export function createMatcher(P, todayStr) {
     const 최장 = (JSON.stringify(req).match(/최장\s*(\d+)\s*년/) || [])[1];   // '최장 N년' 명시만(임대기간 계약단위 오집 방지)
     const 분양전환 = req.분양전환 === '분양전환형';
     if (!월세 && !보증금 && !최장 && !분양전환) return null;
-    return { 월세, 보증금, 부담률, 부담등급, 최장거주: 최장 ? +최장 : null, 분양전환 };
+    return { 월세, 보증금, 전용, 평형수, 부담률, 부담등급, 최장거주: 최장 ? +최장 : null, 분양전환 };
   }
 
   // ── 분양: 가점 84점·청약순위·지역우선·특공 ──────────────────

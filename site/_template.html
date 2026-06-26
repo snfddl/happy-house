@@ -654,6 +654,7 @@
     const rentH=rv?'<div class="sec"><h4>임대 조건 한눈에 <small>공고 기준·결정론</small></h4><dl class="kv">'
       +(rv.월세?'<dt>월임대료</dt><dd>'+wr(rv.월세[0])+(rv.월세[1]!==rv.월세[0]?' ~ '+wr(rv.월세[1]):'')+'</dd>':'')
       +(rv.보증금?'<dt>보증금</dt><dd>'+wr(rv.보증금[0])+(rv.보증금[1]!==rv.보증금[0]?' ~ '+wr(rv.보증금[1]):'')+'</dd>':'')
+      +(rv.전용?'<dt>전용면적</dt><dd style="font-size:12px;color:var(--faint)">'+Math.round(rv.전용[0])+(rv.전용[1]!==rv.전용[0]?'~'+Math.round(rv.전용[1]):'')+'㎡'+(rv.평형수>1?' · '+rv.평형수+'개 평형':'')+'</dd>':'')
       +(rv.부담률?'<dt>소득 대비 부담</dt><dd>월소득의 '+rv.부담률[0]+(rv.부담률[1]!==rv.부담률[0]?'~'+rv.부담률[1]:'')+'% <span style="font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;'+bcol[rv.부담등급]+'">'+rv.부담등급+'</span></dd>':(rv.월세?'<dt>소득 대비 부담</dt><dd class="muted">월소득 입력 시 표시</dd>':''))
       +((rv.최장거주||rv.분양전환)?'<dt>거주 안정</dt><dd>'+[rv.최장거주?'최장 '+rv.최장거주+'년 거주 가능':'',rv.분양전환?'분양전환형 — 추후 우선분양권':''].filter(Boolean).join(' · ')+'</dd>':'')
       +'</dl></div>':'';

@@ -8,7 +8,11 @@ import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 const ROOT = new URL('./data/', import.meta.url);
 const SOURCES = ['lh', 'sh', 'gh', 'myhome'];
 const 단지형 = new Set(['행복주택', '행복주택(신혼희망)', '국민임대', '영구임대', '통합공공임대', '공공임대', '50년공공임대']);
-const 모집중 = new Set(['접수중', '접수예정']);
+// 기본(CI): 접수중·접수예정만. --공고중-수도권 백필 플래그: '공고중'(상시 예비자모집) 단지형 中 수도권·광역시만 추가.
+//   지방 소도시 행복주택 65건은 주변 시세 웹데이터가 빈약해 분석 가치 낮아 보류(메모리 lease-analysis-expand-todo).
+const 백필공고중 = process.argv.includes('--공고중-수도권');
+const 모집중 = new Set(백필공고중 ? ['접수중', '접수예정', '공고중'] : ['접수중', '접수예정']);
+const 수도권광역시 = /^(경기|서울|인천|부산|대구|광주|대전|울산|세종|화성)/;
 const man = w => Math.round(w / 1e4).toLocaleString() + '만';
 
 const PROMPT = (r, 단지명, addr, 보증, 월세, 전환) => `너는 임대주택 보조 분석가다. 아래 공공임대 단지를 웹검색해 사실 위주로 분석하라.
@@ -32,8 +36,10 @@ for (const src of SOURCES) {
     if (!existsSync(rp)) continue;
     const r = JSON.parse(readFileSync(rp, 'utf8'));
     if (r.상품군 !== '임대' || !단지형.has(r.유형)) continue;
-    if (!모집중.has(r.상태)) continue;            // 접수중·접수예정만(공고중 상시모집은 1차 제외)
+    if (!모집중.has(r.상태)) continue;            // 기본: 접수중·접수예정 / 백필: +공고중
     if (r.참고분석) continue;                       // 이미 생성됨(멱등)
+    const addr0 = r.단지?.[0]?.주소 || r.지역 || '';
+    if (백필공고중 && r.상태 === '공고중' && !수도권광역시.test(addr0)) continue;  // 공고중은 수도권·광역시만(지방 시세데이터 빈약·보류)
     const fees = (r.공급형 || []).flatMap(f => f.임대료 || []);
     const deps = fees.map(f => f.임대보증금).filter(v => v > 0);
     const rents = fees.map(f => f.월임대료).filter(v => v > 0);
@@ -48,5 +54,5 @@ for (const src of SOURCES) {
   }
 }
 writeFileSync(new URL('lease-analysis-queue.json', ROOT), JSON.stringify(queue, null, 2));
-console.log(`임대 분석 큐 ${queue.length}건 → data/lease-analysis-queue.json (접수중·접수예정 단지형·참고분석 없음).`);
+console.log(`임대 분석 큐 ${queue.length}건 → data/lease-analysis-queue.json (${백필공고중 ? '접수중·접수예정 + 공고중 수도권·광역시' : '접수중·접수예정'} 단지형·참고분석 없음).`);
 if (queue.length) console.log('  생성: /update가 Sonnet 에이전트로 각 prompt 실행 → Opus 적대검증 → inject-analysis.mjs로 주입.');

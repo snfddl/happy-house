@@ -29,4 +29,4 @@ dl_*
 *.log
 .DS_Store
 data/lease-analysis-queue.json
-data/lease-analysis-results.json
+data/lease-analysis-results*.json
