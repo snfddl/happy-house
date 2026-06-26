@@ -15,6 +15,14 @@ const num = v => (v == null || v === '' ? 0 : Number(String(v).replace(/,/g, '')
 const pf = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; }; // "059.9928A"→59.9928 / "37.8000"→37.8
 const amt = m => num(m.LTTOT_TOP_AMOUNT ?? m.SUPLY_AMOUNT);   // 분양가/공급금액(만원). 임대는 보증금
 const 형명 = m => m.HOUSE_TY || m.TP || null;
+// 건물유형(상품 종류) — API 직제공분. 무순위/임의/재공급은 공급방식이라 null(inject-applyhome-notice가 공고문서 보강)
+const bldgFromApi = d => {
+  const x = d.HOUSE_DTL_SECD_NM;
+  if (x === '오피스텔') return '오피스텔';
+  if (x === '도시형생활주택') return '도시형생활주택';
+  if (x === '민영' || x === '국민' || d.HOUSE_SECD_NM === 'APT') return '아파트';
+  return null;
+};
 const 전용 = m => pf(m.HOUSE_TY) ?? pf(m.EXCLUSE_AR);          // APT는 HOUSE_TY 접두숫자, 오피스텔/임대는 EXCLUSE_AR
 
 // 지역우선 tier(해당/기타경기/기타) × 청약순위 — APT만 GNRL_RNK 일정 제공
@@ -48,7 +56,7 @@ function deriveApt(no, d, models, meta) {
   const 갭 = ['전매제한', '실거주의무', '특공자격컷'];
   if (민영) 갭.unshift('가점추첨비율');
   return {
-    panId: makePanId('applyhome', no), source: 'applyhome', 상품군: '분양', 공고명: d.HOUSE_NM, 상품구조: '분양', 유형,
+    panId: makePanId('applyhome', no), source: 'applyhome', 상품군: '분양', 공고명: d.HOUSE_NM, 상품구조: '분양', 유형, 건물유형: '아파트',
     지역: meta.region ? `${meta.region} ${(d.HSSPLY_ADRES || '').split(' ')[1] || ''}`.trim() : meta.region,
     공고일: meta.모집공고일, 접수시작: meta.청약접수?.[0] || null, 마감일: meta.청약접수?.[1] || null, 상태: meta.상태,
     특별공급접수: meta.특별공급접수 || [null, null], 당첨자발표: meta.당첨발표일, 입주예정: meta.입주예정월,
@@ -75,7 +83,7 @@ function deriveChoo(no, d, models, meta) {
   const 무순위 = t === '무순위/잔여';
   const 무주택 = 무순위 ? '무주택세대구성원(해당지역 거주자 우선일 수 있음 — 공고문 확인)' : '제한없음(만 19세 이상 추첨, 무주택·청약통장 무관)';
   return {
-    panId: makePanId('applyhome', no), source: 'applyhome', 상품군: '분양', 공고명: d.HOUSE_NM, 상품구조: '분양', 유형: t,
+    panId: makePanId('applyhome', no), source: 'applyhome', 상품군: '분양', 공고명: d.HOUSE_NM, 상품구조: '분양', 유형: t, 건물유형: bldgFromApi(d),
     지역: meta.region ? `${meta.region} ${(d.HSSPLY_ADRES || '').split(' ')[1] || ''}`.trim() : meta.region,
     공고일: meta.모집공고일, 접수시작: meta.청약접수?.[0] || null, 마감일: meta.청약접수?.[1] || null, 상태: meta.상태,
     당첨자발표: meta.당첨발표일, 입주예정: meta.입주예정월,

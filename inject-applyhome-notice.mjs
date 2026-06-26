@@ -64,9 +64,36 @@ function extractTable(txt) {
     for (const ln of win) for (const seg of cells(ln)) buckets[colOf(center(seg))].push(seg.text);
     const colText = buckets.map(b => b.join(' '));
     const pick = name => { const k = hdr.findIndex(h => h.text.replace(/\s/g, '').includes(name)); return k < 0 ? null : colText[k]; };
-    return { 전매: parseCell(pick('전매제한')), 거주: parseCell(pick('거주의무')), 재당첨: parseCell(pick('재당첨제한')) };
+    return { 전매: parseCell(pick('전매제한')), 거주: parseCell(pick('거주의무')), 재당첨: parseCell(pick('재당첨제한')), 주택유형: pick('주택유형') };
   }
   return null;
+}
+
+// 건물유형 1차: API detail.json 직제공분(+공고명 보조). PDF 없이 결정(CI·복원 경로). 무순위/임의는 대개 null→PDF로.
+function bldgFromApi(d) {
+  const x = d.HOUSE_DTL_SECD_NM;
+  if (x === '오피스텔') return '오피스텔';
+  if (x === '도시형생활주택') return '도시형생활주택';
+  if (x === '민영' || x === '국민' || d.HOUSE_SECD_NM === 'APT') return '아파트';
+  const nm = d.HOUSE_NM || '';
+  if (/오피스텔/.test(nm)) return '오피스텔';
+  if (/생활숙박|생숙/.test(nm)) return '생활숙박시설';
+  if (/공공지원민간임대/.test(d.HOUSE_SECD_NM || '')) return '아파트'; // 청약홈 임대=공공지원민간임대 APT(현 8건 전부 아파트)
+  if (/아파트|AP\s*\d|[A-Z]\d+\s*BL|블록/i.test(nm)) return '아파트';
+  return null; // 무순위/임의(공급방식) — 공고문 표/키워드로
+}
+
+// 건물유형 2차(무순위/임의 등) — 공고문 표 주택유형 우선, 없으면 PDF 우세 키워드(아파트가 압도적이라 안전)
+function bldgFromNotice(houseType, txt) {
+  const ht = houseType || '';
+  if (/오피스텔/.test(ht)) return '오피스텔';
+  if (/도시형/.test(ht)) return '도시형생활주택';
+  if (/생활숙박|생숙/.test(ht)) return '생활숙박시설';
+  if (/민영|국민|아파트|주택/.test(ht)) return '아파트';
+  const c = {};
+  for (const w of (txt.match(/오피스텔|생활숙박|도시형생활주택|아파트/g) || [])) c[w] = (c[w] || 0) + 1;
+  const top = Object.entries(c).sort((a, b) => b[1] - a[1])[0];
+  return top ? (top[0] === '생활숙박' ? '생활숙박시설' : top[0]) : null;  // 키워드0 → 미상(보존)
 }
 
 // ── 실행 ───────────────────────────────────────────────────
@@ -74,32 +101,40 @@ let dirs = [];
 try { dirs = readdirSync(DERIVED, { withFileTypes: true }).filter(e => e.isDirectory()).map(e => e.name); }
 catch { console.error('❌ data/derived/applyhome 없음 — 먼저 node applyhome-derive.mjs'); process.exit(1); }
 
-let filled = 0, noPdf = 0, noTable = 0, notSale = 0;
+let filled = 0, bldg = 0, noPdf = 0, noTable = 0;
 for (const no of dirs) {
   const reqp = new URL(`${no}/requirements.json`, DERIVED);
+  const detailp = new URL(`${no}/detail.json`, RAW);
   if (!existsSync(reqp)) continue;
   const req = JSON.parse(readFileSync(reqp, 'utf8'));
-  if (req.상품군 !== '분양') { notSale++; continue; }   // 임대는 전매/실거주 개념 없음
+  const detail = existsSync(detailp) ? JSON.parse(readFileSync(detailp, 'utf8')) : null;
+  let changed = false;
 
+  // 건물유형 1차: API(detail.json). PDF 없이 결정 — 임대(공공지원민간임대=아파트) 포함 거의 전건. 이미 있으면 멱등 보존.
+  if (!req.건물유형 && detail) { const b = bldgFromApi(detail); if (b) { req.건물유형 = b; bldg++; changed = true; } }
+
+  // 전매/실거주/재당첨 + 건물유형 2차(무순위/임의)는 공고문 PDF가 있을 때만(분양 한정).
   const pdf = new URL(`${no}/notice.pdf`, RAW);
-  if (!existsSync(pdf)) { noPdf++; continue; }           // raw 없음(CI/미다운로드) — null 유지(fail-safe)
+  if (req.상품군 === '분양' && existsSync(pdf)) {
+    let txt = null;
+    try { txt = execFileSync('pdftotext', ['-layout', fileURLToPath(pdf), '-'], { encoding: 'utf8', maxBuffer: 1e8, stdio: ['pipe', 'pipe', 'ignore'] }); } catch { txt = null; }
+    if (txt) {
+      const t = extractTable(txt);
+      if (t && (t.전매 || t.거주)) {
+        req.전매제한 = t.전매 ? { ...t.전매, 출처: '공고문표' } : req.전매제한;
+        req.실거주의무 = t.거주 ? { ...t.거주, 출처: '공고문표' } : req.실거주의무;
+        if (t.재당첨) req.재당첨제한 = { ...t.재당첨, 출처: '공고문표' };
+        // _갭에서 채워진 항목 제거(헤지 해제). 멱등.
+        const drop = new Set(['전매제한', '실거주의무', ...(t.재당첨 ? ['재당첨제한'] : [])]);
+        if (Array.isArray(req._갭)) { req._갭 = req._갭.filter(g => !drop.has(g)); if (!req._갭.length) delete req._갭; }
+        filled++; changed = true;
+      } else noTable++; // 표 없음(오피스텔/보류지 등) — 전매/거주 null 유지
+      // 건물유형 2차: API서 못 정한 무순위/임의 — 표 주택유형/키워드
+      if (!req.건물유형) { const b = bldgFromNotice(t?.주택유형, txt); if (b) { req.건물유형 = b; bldg++; changed = true; } }
+    } else noPdf++;
+  } else if (req.상품군 === '분양') noPdf++; // raw PDF 없음(CI/미다운로드) — 전매/거주 null 유지(건물유형은 API서 처리됨)
 
-  let txt;
-  try { txt = execFileSync('pdftotext', ['-layout', fileURLToPath(pdf), '-'], { encoding: 'utf8', maxBuffer: 1e8, stdio: ['pipe', 'pipe', 'ignore'] }); }
-  catch { noPdf++; continue; }
-  const t = extractTable(txt);
-  if (!t || (!t.전매 && !t.거주)) { noTable++; continue; } // 표 없음(오피스텔/임대/보류지 등) — null 유지
-
-  req.전매제한 = t.전매 ? { ...t.전매, 출처: '공고문표' } : req.전매제한;
-  req.실거주의무 = t.거주 ? { ...t.거주, 출처: '공고문표' } : req.실거주의무;
-  if (t.재당첨) req.재당첨제한 = { ...t.재당첨, 출처: '공고문표' };
-
-  // _갭/_검증노트에서 채워진 항목 제거(헤지 해제). 멱등.
-  const drop = new Set(['전매제한', '실거주의무', ...(t.재당첨 ? ['재당첨제한'] : [])]);
-  if (Array.isArray(req._갭)) { req._갭 = req._갭.filter(g => !drop.has(g)); if (!req._갭.length) delete req._갭; }
-
-  filled++;
-  if (!DRY) writeFileSync(reqp, JSON.stringify(req, null, 2));
+  if (changed && !DRY) writeFileSync(reqp, JSON.stringify(req, null, 2));
 }
-console.log(`청약홈 공고문 표 주입${DRY ? '(dry)' : ''} — 채움 ${filled} · PDF없음 ${noPdf} · 표없음 ${noTable}(오피스텔/임대/보류지) · 임대제외 ${notSale}`);
-console.log('→ data/derived/applyhome/<no>/requirements.json : 전매제한·실거주의무(+재당첨제한) {기간·개월·적용·원문·출처}');
+console.log(`청약홈 공고문 주입${DRY ? '(dry)' : ''} — 전매/거주 채움 ${filled} · 건물유형 보강 ${bldg} · PDF없음 ${noPdf} · 표없음 ${noTable}(오피스텔/보류지)`);
+console.log('→ requirements.json : 전매제한·실거주의무(+재당첨제한){기간·개월·적용·원문·출처} · 건물유형(아파트/오피스텔/도시형생활주택/생활숙박시설)');

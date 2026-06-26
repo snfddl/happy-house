@@ -108,6 +108,7 @@
   .tag.sector.priv{color:#5b6472;background:#f1f3f6}
   .tag.resale{color:#9a3412;background:#ffedd5}
   .tag.reg{color:#b91c1c;background:#fee2e2}
+  .tag.bldg{color:#3730a3;background:#eef2ff}
   .dday{margin-left:auto;font-size:11.5px;font-weight:720;font-family:var(--mono);color:var(--ink-2);
     background:var(--surface-2);border:1px solid var(--line-2);border-radius:7px;padding:3px 8px}
   .dday.soon{color:var(--no);background:var(--no-bg);border-color:var(--no-line)}
@@ -521,9 +522,11 @@
     const sec=sectorOf(x), secT='<span class="tag sector '+(sec==='공공'?'pub':'priv')+'">'+sec+'</span>';
     const 재공급=['무순위/잔여','임의공급'].includes(x.유형);   // 통장·순위 무관 추첨/선착순으로 '다시 분양'되는 물량 — 눈에 띄게
     const tTag='<span class="tag '+(x.상품구조==='분양'?'sale':'rent')+(재공급?' resale':'')+'">'+(재공급?'🔁 ':'')+esc(x.유형)+'</span>';
+    // 건물유형(아파트/오피스텔/도시형생활주택) — 청약홈 분양에만. 유형(공급방식)과 별개 축이라 따로 노출.
+    const bT=x.건물유형?'<span class="tag bldg" title="건물 종류(공급방식과 별개)">'+esc(x.건물유형)+'</span>':'';
     const reg=x.규제?[x.규제.투기과열지구&&'투기과열',x.규제.조정대상지역&&'조정대상',x.규제.분양가상한제&&'분양가상한'].filter(Boolean):[];
     const regT=reg.length?'<span class="tag reg" title="규제지역 — 전매제한·대출·실거주의무 등 강화">⚠ '+reg.join('·')+'</span>':'';
-    return tTag+secT+conv+regT;
+    return bT+tTag+secT+conv+regT;
   }
   // 핵심 자격요건 칩: 실격(✕)>확인필요(?)>통과(✓). "키:상세" 분리해 키 강조 + 상세 표기.
   function gateChips(x){
