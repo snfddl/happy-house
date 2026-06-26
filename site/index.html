@@ -1004,9 +1004,9 @@ svg.leaflet-image-layer.leaflet-interactive path {
   .boundschk{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2);cursor:pointer;user-select:none}
   .boundschk input{accent-color:var(--accent-ink,#2563eb);width:15px;height:15px}
   .mainsplit{display:flex;gap:16px;align-items:flex-start}
-  .mapwrap{flex:0 0 42%;position:sticky;top:72px;height:calc(100vh - 96px);min-height:420px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#e9eef2}
+  .list-col{flex:1 1 0;min-width:0}
+  .mapwrap{flex:0 0 40%;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#e9eef2;position:relative}
   #map{width:100%;height:100%}
-  #list{flex:1 1 0;min-width:0}
   body.nomap .mapwrap{display:none}
   .map-note{position:absolute;left:10px;bottom:10px;z-index:500;background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:11.5px;color:var(--ink-2);max-width:75%;box-shadow:0 1px 4px rgba(0,0,0,.08)}
   .pin{width:16px;height:16px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4);box-sizing:border-box}
@@ -1016,12 +1016,30 @@ svg.leaflet-image-layer.leaflet-interactive path {
   .leaflet-popup-content b{font-size:13px}
   .leaflet-popup-content .pp-type{color:var(--faint,#888);font-size:11px}
   .card.mapsel{outline:2px solid var(--accent-ink,#2563eb);outline-offset:1px}
+  /* 데스크탑(≥1024): 고정 셸 — 헤더/컨트롤 상단 고정, 지도는 뷰포트 채움(스크롤X·창크기 맞춤), 목록만 독립 스크롤. 카드는 넓은 컬럼이라 내용 안 잘림. */
+  @media(min-width:1024px){
+    html,body{height:100%}
+    body{display:flex;flex-direction:column;overflow:hidden}
+    .wrap{max-width:1380px}
+    header.top{flex:0 0 auto}
+    main.wrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+    .hero{padding:14px 0 2px}
+    .controls{position:static}
+    .mainsplit{flex:1 1 auto;min-height:0;align-items:stretch;margin-bottom:0}
+    .mapwrap{height:100%}
+    .list-col{height:100%;overflow-y:auto;overscroll-behavior:contain;padding-right:6px}
+    #list{grid-template-columns:repeat(auto-fill,minmax(440px,1fr));padding-bottom:24px}
+    body.nomap #list{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+    .vbtn{display:inline-flex}
+  }
   @media(max-width:1023px){
     .mainsplit{display:block}
     .vbtn{display:inline-flex}
-    .mapwrap{position:static;height:62vh;min-height:0;margin-bottom:12px;display:none}
+    .mapwrap{height:72vh;min-height:0;margin-bottom:12px;display:none}
     body.mapview .mapwrap{display:block}
-    body.mapview #list{display:none}
+    body.mapview .list-col{display:none}
+    .boundschk{display:none}                 /* 지도 숨김 상태선 무의미 → 지도뷰에서만 */
+    body.mapview .boundschk{display:flex}
     .map-note{max-width:60%}
   }
 </style>
@@ -1090,9 +1108,13 @@ svg.leaflet-image-layer.leaflet-interactive path {
   </div>
   <div class="mainsplit" id="mainsplit">
     <div class="mapwrap" id="mapwrap"><div id="map"></div><div class="map-note" id="mapNote"></div></div>
-    <div style="flex:1 1 0;min-width:0">
+    <div class="list-col">
       <section class="grid" id="list"></section>
       <div class="empty" id="empty" style="display:none"><div class="big">🔍</div><div>조건에 맞는 공고가 없습니다.</div></div>
+      <footer><div class="wrap foot-in">
+        <div class="srcs" id="footSrcs"></div>
+        <div class="disc" id="footDisc"></div>
+      </div></footer>
     </div>
   </div>
 </main>
@@ -1124,11 +1146,6 @@ svg.leaflet-image-layer.leaflet-interactive path {
     <button class="btn-primary" onclick="closeDrawer()">완료</button>
   </div>
 </aside>
-
-<footer><div class="wrap foot-in">
-  <div class="srcs" id="footSrcs"></div>
-  <div class="disc" id="footDisc"></div>
-</div></footer>
 
 <script>/* @preserve
  * Leaflet 1.9.4, a JS library for interactive maps. https://leafletjs.com
@@ -2133,10 +2150,18 @@ function createMatcher(P, todayStr) {
     const pts=[]; mLayer.eachLayer(m=>pts.push(m.getLatLng()));
     if(pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.18),{maxZoom:14});
   }
-  function toggleMapView(on){
+  function toggleMapView(on){   // 모바일: 지도/목록 전환
     document.body.classList.toggle('mapview',on);
     $('#mapToggle').classList.toggle('on',on);
+    $('#mapToggle').textContent=on?'📋 목록':'🗺 지도';
     if(on&&map) setTimeout(()=>map.invalidateSize(),60);
+  }
+  function toggleMapDesktop(){   // 데스크탑: 지도 패널 숨김/표시(숨기면 목록 멀티컬럼)
+    const hide=!document.body.classList.contains('nomap');
+    document.body.classList.toggle('nomap',hide);
+    $('#mapToggle').classList.toggle('on',!hide);
+    $('#mapToggle').textContent=hide?'🗺 지도 보기':'🗺 지도 숨기기';
+    if(!hide&&map) setTimeout(()=>map.invalidateSize(),60);
   }
 
   function buildStats(){
@@ -2475,7 +2500,8 @@ function createMatcher(P, todayStr) {
   $('#sortSel').addEventListener('change',e=>{ state.sort=e.target.value; apply(); });
 
   // 지도 토글(모바일) · '이 지도 영역만'(양방향 영역필터)
-  $('#mapToggle').addEventListener('click',()=>toggleMapView(!document.body.classList.contains('mapview')));
+  $('#mapToggle').addEventListener('click',()=>{ if(window.innerWidth>=1024) toggleMapDesktop(); else toggleMapView(!document.body.classList.contains('mapview')); });
+  if(window.innerWidth>=1024) $('#mapToggle').textContent='🗺 지도 숨기기';   // 데스크탑 초기: 지도 표시중
   $('#boundsChk').addEventListener('change',e=>{
     state.mapBoundsOn=e.target.checked;
     if(e.target.checked){ if(window.innerWidth<1024) toggleMapView(true); initMap(); state.mapBounds=map?map.getBounds():null; }
