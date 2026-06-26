@@ -354,6 +354,24 @@ export function createMatcher(P, todayStr) {
     }
     return { got, max, used, skipped, items, floors };
   }
+  // 임대 보조뷰(결정론) — 임대료 부담률(소득 입력 시) + 거주 안정성(최장거주·분양전환). 신뢰 가능한 값만, 없으면 생략.
+  function rentView(req) {
+    if (req.상품군 !== '임대') return null;
+    const fees = (req.공급형 || []).flatMap(f => f.임대료 || []);
+    const rents = fees.map(r => r.월임대료).filter(v => v > 0);
+    const deps = fees.map(r => r.임대보증금).filter(v => v > 0);
+    const 월세 = rents.length ? [Math.min(...rents), Math.max(...rents)] : null;
+    const 보증금 = deps.length ? [Math.min(...deps), Math.max(...deps)] : null;
+    let 부담률 = null, 부담등급 = null;
+    if (월세 && P.월평균소득 > 0) {
+      부담률 = [Math.round(월세[0] / P.월평균소득 * 100), Math.round(월세[1] / P.월평균소득 * 100)];
+      const lo = 부담률[0]; 부담등급 = lo < 20 ? '여유' : lo < 30 ? '보통' : '부담';
+    }
+    const 최장 = (JSON.stringify(req).match(/최장\s*(\d+)\s*년/) || [])[1];   // '최장 N년' 명시만(임대기간 계약단위 오집 방지)
+    const 분양전환 = req.분양전환 === '분양전환형';
+    if (!월세 && !보증금 && !최장 && !분양전환) return null;
+    return { 월세, 보증금, 부담률, 부담등급, 최장거주: 최장 ? +최장 : null, 분양전환 };
+  }
 
   // ── 분양: 가점 84점·청약순위·지역우선·특공 ──────────────────
   const 신혼대상 = () => {
@@ -559,6 +577,7 @@ export function createMatcher(P, todayStr) {
       선정방식: req.선정방식,
       예상배점: score ? `${score.floors ? '최소 ' : ''}${score.got}/${score.max}점 (추정)${score.floors ? ' · 미입력 항목 입력 시 상향' : ''}${score.skipped.length ? ` · 미반영 항목: ${score.skipped.join('·')}` : ''}` : null,
       배점내역: score ? score.items : null,
+      임대뷰: rentView(req),
       가점: null,
       면적: area ? (area.ok == null ? '면적정보없음' : area.ok ? `맞음(${area.range[0]}~${area.range[1]}㎡)` : `안맞음(공고 ${area.range[0]}~${area.range[1]}㎡)`) : null,
       지역희망: region ? (region.ok ? `맞음(${region.hit.join(',')})` : '희망지역 아님') : null,

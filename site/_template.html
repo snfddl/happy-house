@@ -647,6 +647,16 @@
       +bd.map(it=>'<tr><td style="text-align:left">'+esc(it.항목)+'</td><td>'+(it.자동?(it.최소?'<span class="muted" title="미입력 — 배점표 최저구간 기준 최소 보장점수. 거주기간 등 입력 시 상향">최소 <b>'+it.점수+'</b></span>':'<b>'+it.점수+'</b>'):'<span class="muted">미입력</span>')+'</td><td>'+it.만점+'</td></tr>').join('')
       +'<tr><td style="text-align:left"><b>'+(bd.some(it=>it.최소)?'최소 합계':'합계')+'</b></td><td><b>'+bd.reduce((s,it)=>s+(it.자동?it.점수:0),0)+'</b></td><td><b>'+bd.reduce((s,it)=>s+it.만점,0)+'</b></td></tr>'
       +'</tbody></table></div><div class="tbl-note">자동계산은 거주기간·자녀수·청약납입·무주택기간 항목만. <b>미입력 항목은 최저구간 기준 ‘최소 보장점’으로 표시</b>(값 입력 시 상향). 그 외(수급·장애·부양 등)는 해당 시 가산되며 원문 기준 확인.</div></div>':'';
+    // 임대 보조뷰(결정론): 임대료·소득대비 부담률·거주 안정성. 분양 LLM참고분석과 별개로 임대 전건 즉시 표시.
+    const rv=x.임대뷰;
+    const wr=n=>{const man=Math.round(n/1e4),e=Math.floor(man/1e4),mm=man%1e4;return (e?e+'억':'')+(mm?(e?' ':'')+mm.toLocaleString()+'만':(e?'':'0'))+'원';};
+    const bcol={여유:'color:#15803d;background:#dcfce7',보통:'color:#b45309;background:#fef3c7',부담:'color:#b91c1c;background:#fee2e2'};
+    const rentH=rv?'<div class="sec"><h4>임대 조건 한눈에 <small>공고 기준·결정론</small></h4><dl class="kv">'
+      +(rv.월세?'<dt>월임대료</dt><dd>'+wr(rv.월세[0])+(rv.월세[1]!==rv.월세[0]?' ~ '+wr(rv.월세[1]):'')+'</dd>':'')
+      +(rv.보증금?'<dt>보증금</dt><dd>'+wr(rv.보증금[0])+(rv.보증금[1]!==rv.보증금[0]?' ~ '+wr(rv.보증금[1]):'')+'</dd>':'')
+      +(rv.부담률?'<dt>소득 대비 부담</dt><dd>월소득의 '+rv.부담률[0]+(rv.부담률[1]!==rv.부담률[0]?'~'+rv.부담률[1]:'')+'% <span style="font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;'+bcol[rv.부담등급]+'">'+rv.부담등급+'</span></dd>':(rv.월세?'<dt>소득 대비 부담</dt><dd class="muted">월소득 입력 시 표시</dd>':''))
+      +((rv.최장거주||rv.분양전환)?'<dt>거주 안정</dt><dd>'+[rv.최장거주?'최장 '+rv.최장거주+'년 거주 가능':'',rv.분양전환?'분양전환형 — 추후 우선분양권':''].filter(Boolean).join(' · ')+'</dd>':'')
+      +'</dl></div>':'';
     const linkA=[];
     if(x.상세링크) linkA.push('<a href="'+esc(x.상세링크)+'" target="_blank" rel="noopener">'+srcLabel(x.source)+(x.source==='applyhome'?' 공고':' 공고·청약 페이지')+' ↗</a>');
     if(x.공고PDF) linkA.push('<a href="'+esc(x.공고PDF)+'" target="_blank" rel="noopener" class="outline">공고문 PDF ↓</a>');
@@ -675,7 +685,7 @@
       +'<h2>'+esc(x.공고명)+'</h2><div class="mloc">📍 '+esc(x.지역||'-')+' · '+srcLabel(x.source)+'</div></div>'
       +'<div class="m-body">'+verdictH
       +'<div class="sec"><h4>'+pb.k+'</h4><div class="price" style="display:inline-block;min-width:200px"><div class="v" style="font-size:20px">'+esc(pb.v)+(pb.unit?' <small>'+esc(pb.unit)+'</small>':'')+'</div></div></div>'
-      +anH+metaH+scoreH+schedH+(unitsT?'<div class="sec"><h4>주택형별</h4>'+unitsT+'</div>':'')+spctH+links+ext
+      +anH+rentH+metaH+scoreH+schedH+(unitsT?'<div class="sec"><h4>주택형별</h4>'+unitsT+'</div>':'')+spctH+links+ext
       +'<div class="note">⚠ 자동 매칭 결과입니다. 최종 신청자격·일정·금액은 반드시 원문 공고로 확인하세요. "확인필요/참고/추정"은 시스템이 단정하지 않은 항목입니다.</div></div>';
     $('#ov').classList.add('show'); document.body.style.overflow='hidden';
   }
