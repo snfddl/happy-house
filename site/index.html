@@ -997,7 +997,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
     .profile-chip span.full{display:none}.controls{top:60px}}
 
   /* ── 지도 연동 ── */
-  .toolbar{flex-wrap:wrap}
+  .chips-bar{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;margin-top:9px}
+  .chips-bar .chips{margin-top:0}
   .view-toggle{display:flex;align-items:center;gap:12px;margin-left:auto}
   .vbtn{display:none;align-items:center;gap:5px;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
   .vbtn.on{background:var(--accent-ink,#2563eb);color:#fff;border-color:transparent}
@@ -1033,13 +1034,10 @@ svg.leaflet-image-layer.leaflet-interactive path {
     .stat .l{margin-top:0;font-size:11.5px}
     .notice-missing{padding:7px 12px;margin:8px 0 0;font-size:12px}
     .controls{position:static;margin:8px 0 0;padding:8px 0}
-    .chips{margin-top:7px}
-    .toolbar{margin:8px 0 6px}
     .mainsplit{flex:1 1 auto;min-height:0;align-items:stretch;margin-bottom:0}
     .mapwrap{height:100%}
     .list-col{height:100%;overflow-y:auto;overscroll-behavior:contain;padding-right:6px}
-    #list{grid-template-columns:repeat(auto-fill,minmax(440px,1fr));padding-bottom:24px}
-    body.nomap #list{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+    #list{grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:12px;padding-bottom:24px}
     .vbtn{display:inline-flex}
   }
   @media(max-width:1023px){
@@ -1106,16 +1104,16 @@ svg.leaflet-image-layer.leaflet-interactive path {
         <option value="new">공고 최신순</option>
       </select>
     </div>
-    <div class="chips" id="chips"></div>
+    <div class="chips-bar">
+      <div class="chips" id="chips"></div>
+      <div class="view-toggle">
+        <span class="count" id="count">—</span>
+        <label class="boundschk" title="지도를 움직이면 화면에 보이는 공고만 목록에 표시"><input type="checkbox" id="boundsChk"> 이 지도 영역만</label>
+        <button class="vbtn" id="mapToggle" type="button">🗺 지도</button>
+      </div>
+    </div>
   </section>
 
-  <div class="toolbar">
-    <div class="count" id="count">—</div>
-    <div class="view-toggle">
-      <label class="boundschk" title="지도를 움직이면 화면에 보이는 공고만 목록에 표시"><input type="checkbox" id="boundsChk"> 이 지도 영역만</label>
-      <button class="vbtn" id="mapToggle" type="button">🗺 지도</button>
-    </div>
-  </div>
   <div class="mainsplit" id="mainsplit">
     <div class="mapwrap" id="mapwrap"><div id="map"></div><div class="map-note" id="mapNote"></div></div>
     <div class="list-col">
