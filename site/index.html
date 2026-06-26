@@ -260,7 +260,6 @@
   .m-links a.outline:hover{background:var(--accent);color:#fff}
   .anal-sec h4 .conf{margin-left:8px;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;vertical-align:middle}
   .conf.c-상{color:#15803d;background:#dcfce7} .conf.c-중{color:#b45309;background:#fef3c7} .conf.c-하{color:#b91c1c;background:#fee2e2}
-  .conf.vf{color:#1d4ed8;background:#eef3ff;cursor:help}
   .anal{font-size:13.5px;line-height:1.6;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;white-space:normal}
   .anal-src{font-size:11.5px;color:var(--faint);margin-top:7px;word-break:break-all}
   .anal-disc{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.45}
@@ -1206,7 +1205,7 @@ function createMatcher(P, todayStr) {
     const ext=extA.length?'<div class="sec"><h4>외부 검색 <small>시세·입지·후기 직접 확인</small></h4><div class="m-links">'+extA.join('')+'</div></div>':'';
     // AI 참고 분석(무순위/잔여 분양 한정) — 외부 웹 검색요약. 참고용·원문확인 디스클레이머 + 확신도·출처·생성일 노출.
     const an=x.참고분석;
-    const anH=(an&&an.요약)?'<div class="sec anal-sec"><h4>AI 참고 분석 <small>검색 요약·참고용</small><span class="conf c-'+(an.확신도||'중')+'">확신도 '+(an.확신도||'-')+'</span>'+(an.검증?'<span class="conf vf" title="'+esc(an.검증노트||'')+'">✓ 교차검증</span>':'')+'</h4>'
+    const anH=(an&&an.요약)?'<div class="sec anal-sec"><h4>AI 참고 분석 <small>검색 요약·참고용</small><span class="conf c-'+(an.확신도||'중')+'">확신도 '+(an.확신도||'-')+'</span></h4>'
       +'<div class="anal">'+esc(an.요약).replace(/\n/g,'<br>')+'</div>'
       +((an.출처&&an.출처.length)?'<div class="anal-src">출처: '+an.출처.map(esc).join(' · ')+'</div>':'')
       +'<div class="anal-disc">⚠ '+(an.생성일?esc(an.생성일)+' 기준 ':'')+'AI가 외부 웹을 검색해 정리한 참고 정보입니다. 분양가·세대수·일정 등은 시점·출처에 따라 다를 수 있으니 반드시 원문 공고로 확인하세요.</div>'
