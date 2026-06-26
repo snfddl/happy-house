@@ -263,16 +263,33 @@
       }
     }
   ],
-  "전매제한": null,
-  "실거주의무": null,
+  "전매제한": {
+    "기간": "없음",
+    "개월": 0,
+    "적용": false,
+    "원문": "없음",
+    "출처": "공고문표"
+  },
+  "실거주의무": {
+    "기간": "없음",
+    "개월": 0,
+    "적용": false,
+    "원문": "없음",
+    "출처": "공고문표"
+  },
   "원문링크": {
     "상세페이지": "https://www.applyhome.co.kr/ai/aia/selectAPTLttotPblancDetail.do?houseManageNo=2026000288&pblancNo=2026000288",
     "공고문PDF": "https://static.applyhome.co.kr/ai/aia/getAtchmnfl.do?houseManageNo=2026000288&pblancNo=2026000288&atchmnflSeqNo=1870055&atchmnflSn=6"
   },
   "_갭": [
     "가점추첨비율",
-    "전매제한",
-    "실거주의무",
     "특공자격컷"
-  ]
+  ],
+  "재당첨제한": {
+    "기간": "없음",
+    "개월": 0,
+    "적용": false,
+    "원문": "없음",
+    "출처": "공고문표"
+  }
 }

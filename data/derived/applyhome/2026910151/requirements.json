@@ -46,15 +46,32 @@
     "소득자산": "공고문 확인"
   },
   "순위규칙": [],
-  "전매제한": null,
-  "실거주의무": null,
+  "전매제한": {
+    "기간": "3년",
+    "개월": 36,
+    "적용": true,
+    "원문": "최초 당첨자발표일(2024.03.13.)으로부터 3년",
+    "출처": "공고문표"
+  },
+  "실거주의무": {
+    "기간": "2년",
+    "개월": 24,
+    "적용": true,
+    "원문": "2년",
+    "출처": "공고문표"
+  },
   "원문링크": {
     "상세페이지": "https://www.applyhome.co.kr/ai/aia/selectAPTRemndrLttotPblancDetailView.do?houseManageNo=2026910151&pblancNo=2026910151",
     "공고문PDF": "https://static.applyhome.co.kr/ai/aia/getAtchmnfl.do?houseManageNo=2026910151&pblancNo=2026910151&atchmnflSeqNo=1844080&atchmnflSn=3"
   },
   "_갭": [
-    "청약자격세부",
-    "재당첨제한",
-    "전매제한"
-  ]
+    "청약자격세부"
+  ],
+  "재당첨제한": {
+    "기간": "없음",
+    "개월": 0,
+    "적용": false,
+    "원문": "없음",
+    "출처": "공고문표"
+  }
 }

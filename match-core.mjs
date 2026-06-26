@@ -457,12 +457,14 @@ export function createMatcher(P, todayStr) {
     } else {
       fails = []; checks = []; 참고 = [];
       const 추첨 = req.선정방식 === '추첨';
+      const 재당첨확정 = req.재당첨제한 && typeof req.재당첨제한 === 'object' && req.재당첨제한.기간;
+      const 재당첨힌트 = 재당첨확정 ? '' : '·재당첨제한';
       const 무주택무관 = /제한없음|누구나|무관/.test(req.자격요건?.무주택 || '');
       if (추첨 && 무주택무관) {
         // 오피스텔/도시형/생숙·임의공급: 만 19세 이상 추첨, 무주택·청약통장 무관
         gp = null;
         배점 = '추첨제 — 만 19세 이상 추첨(무주택·청약통장 무관)';
-        참고.push('오피스텔/생숙/임의공급류 — 추첨제. 세부 청약자격·재당첨제한은 공고문 확인');
+        참고.push(`오피스텔/생숙/임의공급류 — 추첨제. 세부 청약자격${재당첨힌트}은 공고문 확인`);
       } else {
         const gH = gateHousing();
         if (gH.s === 'fail') fails.push(`무주택:${gH.m}`); else if (gH.s === 'check') checks.push(`무주택:${gH.m}`);
@@ -470,7 +472,7 @@ export function createMatcher(P, todayStr) {
           // 무순위/잔여: 무주택(해당지역) 요건, 청약통장 무관
           gp = null;
           배점 = '추첨제 — 무주택 요건 충족 시 추첨(청약통장 무관)';
-          참고.push('무순위/잔여세대 — 추첨제. 거주지 제한·재당첨제한 등은 공고문 확인');
+          참고.push(`무순위/잔여세대 — 추첨제. 거주지 제한${재당첨힌트} 등은 공고문 확인`);
         } else {
           const gS = P.청약저축?.가입 === true ? { s: 'pass', m: '청약통장 가입' }
             : P.청약저축?.가입 === false ? { s: 'fail', m: '청약통장 미가입' } : { s: 'check', m: '청약통장 미입력' };
@@ -484,10 +486,14 @@ export function createMatcher(P, todayStr) {
       }
     }
 
+    // 공고문 표서 결정론 추출된 전매/실거주/재당첨은 사실로 노출(헤지 대체). inject-applyhome-notice가 채움.
+    const 확정 = v => v && typeof v === 'object' && v.기간;
+    const fact = (label, v) => { if (확정(v)) 참고.push(`${label}: ${v.적용 === false ? '없음' : v.기간} (공고문)`); };
+    fact('전매제한', req.전매제한); fact('실거주의무', req.실거주의무); fact('재당첨제한', req.재당첨제한);
     for (const g of (req._갭 || [])) {
       if (g === '가점추첨비율') 참고.push('가점/추첨 비율 원문확인(면적·규제별)');
-      else if (g === '전매제한') 참고.push('전매제한 원문확인');
-      else if (g === '실거주의무') 참고.push('실거주의무 원문확인');
+      else if (g === '전매제한' && !확정(req.전매제한)) 참고.push('전매제한 원문확인');
+      else if (g === '실거주의무' && !확정(req.실거주의무)) 참고.push('실거주의무 원문확인');
     }
     if (req.규제?.투기과열지구 || req.규제?.조정대상지역 || req.규제?.분양가상한제)
       참고.push(`규제: ${[req.규제.투기과열지구 && '투기과열', req.규제.조정대상지역 && '조정대상', req.규제.분양가상한제 && '분양가상한제'].filter(Boolean).join('·')}`);

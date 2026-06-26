@@ -51,6 +51,7 @@ node normalize-requirements.mjs --source=lh      # 갱신된 소스마다(--sour
 python3 parse-housing-xlsx.py --all              # 매입/전세임대 주택목록 xlsx 주입(LH 등)
 node inject-links.mjs                            # 원문링크 주입
 node inject-applyhome-pdf.mjs                    # 청약홈 공고문 PDF 직링크 주입 + 로컬 raw 다운로드(상세페이지 getAtchmnfl 파싱). 무인이면 --links-only
+node inject-applyhome-notice.mjs                 # 청약홈 공고문 표→전매·실거주·재당첨 결정론 추출(앞 단계서 받은 raw notice.pdf 필요). LLM0·멱등
 node inject-deadline-time.mjs                    # 공고문 본문→마감시각 추출(당일 컷오프용). 결정론·LLM0·멱등
 node prune-expired.mjs                           # 마감 후 60일(기본) 지난 derived 정리. 멱등
 node build-site.mjs                              # 드리프트 가드 + 5소스 통합 → site/index.html

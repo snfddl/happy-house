@@ -57,15 +57,32 @@
     "소득자산": "공고문 확인"
   },
   "순위규칙": [],
-  "전매제한": null,
-  "실거주의무": null,
+  "전매제한": {
+    "기간": "6개월",
+    "개월": 6,
+    "적용": true,
+    "원문": "최초 입주자 모집공고의 당첨자 발표일(26.04.24.)로부터 6개월",
+    "출처": "공고문표"
+  },
+  "실거주의무": {
+    "기간": "없음",
+    "개월": 0,
+    "적용": false,
+    "원문": "없음",
+    "출처": "공고문표"
+  },
   "원문링크": {
     "상세페이지": "https://www.applyhome.co.kr/ai/aia/selectAPTRemndrLttotPblancDetailView.do?houseManageNo=2026910120&pblancNo=2026910120",
     "공고문PDF": "https://static.applyhome.co.kr/ai/aia/getAtchmnfl.do?houseManageNo=2026910120&pblancNo=2026910120&atchmnflSeqNo=1817089&atchmnflSn=1"
   },
   "_갭": [
-    "청약자격세부",
-    "재당첨제한",
-    "전매제한"
-  ]
+    "청약자격세부"
+  ],
+  "재당첨제한": {
+    "기간": "없음",
+    "개월": 0,
+    "적용": false,
+    "원문": "없음",
+    "출처": "공고문표"
+  }
 }

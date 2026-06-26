@@ -61,6 +61,9 @@ if (!NO_BUILD) {
   hr('◆ inject-applyhome-pdf (청약홈 공고문 PDF 링크)');
   try { execFileSync('node', [p('inject-applyhome-pdf.mjs'), '--links-only'], { stdio: 'inherit', cwd: p('.') }); }
   catch (e) { log(`  ⚠️ inject-applyhome-pdf 실패: ${e.message.split('\n')[0]}`); }
+  hr('◆ inject-applyhome-notice (공고문 표 → 전매·실거주·재당첨)');  // raw PDF 없으면(CI) fail-safe skip
+  try { execFileSync('node', [p('inject-applyhome-notice.mjs')], { stdio: 'inherit', cwd: p('.') }); }
+  catch (e) { log(`  ⚠️ inject-applyhome-notice 실패: ${e.message.split('\n')[0]}`); }
   hr('◆ inject-deadline-time (공고문 마감시각 주입)');
   try { execFileSync('node', [p('inject-deadline-time.mjs')], { stdio: 'inherit', cwd: p('.') }); }
   catch (e) { log(`  ⚠️ inject-deadline-time 실패: ${e.message.split('\n')[0]}`); }
