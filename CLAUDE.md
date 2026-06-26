@@ -57,3 +57,19 @@ LH 등 임대주택 공고 수집·요건 추출·알림 개인용 서비스.
 - **요건추출(LLM)은 CI에서 하지 않는다.** 신규 공고는 CI가 GitHub 이슈로 알리고, **로컬 `node process-all.mjs`**(LH만이면 `pipeline.mjs`)로 추출·정규화 후 커밋·push(외부 API 0 규칙 유지).
 - `data/raw/`(불변·대용량)와 개인 `profile.json`은 **gitignore**(공개 repo 유출 방지). CI 빌드는 `--seed` 없이 빈 프로필.
 - `build-site.mjs`는 빌드 때 `index.json`의 최신 상태/마감일을 오버레이(신선도). `lh-collect --refresh`는 다운로드 없이 상태만 갱신·신규는 `new-pending.json`에 기록.
+
+## 6. 문서 동기화 (정의-of-done)
+
+**구조·파이프라인·스키마를 바꾸면 같은 작업 안에서 해당 문서를 갱신한다.** 문서 미반영은 작업 미완료로 본다(코드만 커밋 금지). 변경→문서 매핑:
+
+| 변경한 것 | 갱신할 문서 |
+|---|---|
+| 스크립트/단계 추가·삭제·역할변경 | `ARCHITECTURE.md` 모듈지도 (LH `pipeline.mjs` 단계면 `PIPELINE.md`도) |
+| `requirements.json` 필드 추가·타입변경 | `SCHEMA.md` (임대 §5 / 분양 §6) |
+| `/update` 단계 변경 | `.claude/skills/update/SKILL.md` |
+| `process-all.mjs` 단계 변경 | `process-all.mjs` 주석 + `ARCHITECTURE.md` |
+| 기능 완료/착수 | `ROADMAP.md` |
+| 항구적 설계결정·함정·재탐색방지 사실 | 메모리(`architecture-audit`) + 필요시 `DECISIONS.md` |
+
+- 원칙: **단일 출처**. 같은 사실을 여러 문서에 복붙하지 말고, 상세는 한 곳(보통 ARCHITECTURE/SCHEMA)에 두고 나머지는 링크/포인터. 메모리는 "재탐색 방지 핵심 사실"만.
+- 커밋 전 셀프체크: 이번 diff에 `*.mjs`/스키마 변경이 있는데 대응 `*.md`가 안 바뀌었으면 누락 의심. (백스톱으로 git 훅 경고를 둘 수 있음 — `.claude/settings.json`.)
