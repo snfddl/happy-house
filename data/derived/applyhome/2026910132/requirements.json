@@ -82,7 +82,8 @@
   "전매제한": null,
   "실거주의무": null,
   "원문링크": {
-    "상세페이지": "https://www.applyhome.co.kr/ai/aia/selectAPTRemndrLttotPblancDetailView.do?houseManageNo=2026910132&pblancNo=2026910132"
+    "상세페이지": "https://www.applyhome.co.kr/ai/aia/selectAPTRemndrLttotPblancDetailView.do?houseManageNo=2026910132&pblancNo=2026910132",
+    "공고문PDF": "https://static.applyhome.co.kr/ai/aia/getAtchmnfl.do?houseManageNo=2026910132&pblancNo=2026910132&atchmnflSeqNo=1827020&atchmnflSn=4"
   },
   "_갭": [
     "청약자격세부",

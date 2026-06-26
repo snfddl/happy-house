@@ -306,7 +306,8 @@
   "전매제한": null,
   "실거주의무": null,
   "원문링크": {
-    "상세페이지": "https://www.applyhome.co.kr/ai/aia/selectAPTLttotPblancDetail.do?houseManageNo=2026000248&pblancNo=2026000248"
+    "상세페이지": "https://www.applyhome.co.kr/ai/aia/selectAPTLttotPblancDetail.do?houseManageNo=2026000248&pblancNo=2026000248",
+    "공고문PDF": "https://static.applyhome.co.kr/ai/aia/getAtchmnfl.do?houseManageNo=2026000248&pblancNo=2026000248&atchmnflSeqNo=1854074&atchmnflSn=6"
   },
   "_갭": [
     "가점추첨비율",

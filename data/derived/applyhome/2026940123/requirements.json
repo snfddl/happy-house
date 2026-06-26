@@ -60,7 +60,8 @@
   "전매제한": null,
   "실거주의무": null,
   "원문링크": {
-    "상세페이지": "https://www.applyhome.co.kr/ai/aia/selectAPTRemndrLttotPblancDetailView.do?houseManageNo=2026940123&pblancNo=2026940123"
+    "상세페이지": "https://www.applyhome.co.kr/ai/aia/selectAPTRemndrLttotPblancDetailView.do?houseManageNo=2026940123&pblancNo=2026940123",
+    "공고문PDF": "https://static.applyhome.co.kr/ai/aia/getAtchmnfl.do?houseManageNo=2026940123&pblancNo=2026940123&atchmnflSeqNo=1859049&atchmnflSn=5"
   },
   "_갭": [
     "청약자격세부",

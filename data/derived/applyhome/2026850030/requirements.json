@@ -71,7 +71,8 @@
   "배점표": [],
   "우선배정": [],
   "원문링크": {
-    "상세페이지": "https://www.applyhome.co.kr/ai/aia/selectPRMOLttotPblancDetailView.do?houseManageNo=2026850030&pblancNo=2026850030&houseSecd=03"
+    "상세페이지": "https://www.applyhome.co.kr/ai/aia/selectPRMOLttotPblancDetailView.do?houseManageNo=2026850030&pblancNo=2026850030&houseSecd=03",
+    "공고문PDF": "https://static.applyhome.co.kr/ai/aia/getAtchmnfl.do?houseManageNo=2026850030&pblancNo=2026850030&atchmnflSeqNo=1842038&atchmnflSn=1"
   },
   "_검증노트": [
     "소득기준 API미제공(공고문 확인)",
