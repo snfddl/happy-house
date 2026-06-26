@@ -26,6 +26,7 @@ const argv = process.argv.slice(2);
 const SINCE = getArg('since', '2026-05-01');          // 모집공고일 이 날짜 이후만 (클라 측 컷)
 const PER_PAGE = Number(getArg('perPage', '1000'));
 const ONLY = getArg('only', '').split(',').map(s => s.trim()).filter(Boolean); // family 라벨 제한(빈값=전체)
+const REFETCH = argv.includes('--refetch');            // done 공고도 누락 raw 재취득(파생 버그 소급수정용). 기존 raw는 !existsSync 가드로 불변
 
 // ── 키 로드(.env, 인코딩/디코딩 무관) ──────────────────────
 const SERVICE_KEY = loadServiceKey();
@@ -113,7 +114,7 @@ for (const [label, detailOp, mdlOp, famKind] of FAMILIES) {
 
     const dir = new URL(`${no}/`, RAW);
     const idxKey = makePanId('applyhome', no);   // === derive panId(불변식). 콜론 접두는 collect-util 규약.
-    if (index[idxKey]?.done) {                       // 이미 받음 → 갱신만(상태·meta)
+    if (index[idxKey]?.done && !REFETCH) {           // 이미 받음 → 갱신만(상태·meta). --refetch면 통과해 누락 raw 재기록
       try {
         const mp = new URL('meta.json', dir);
         const prev = JSON.parse(readFileSync(mp, 'utf8'));
