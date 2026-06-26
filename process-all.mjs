@@ -58,6 +58,9 @@ for (const src of SOURCES) {
 
 // 빌드(전 소스 derived → site/index.html). 일부 소스 실패해도 성공분으로 빌드.
 if (!NO_BUILD) {
+  hr('◆ inject-applyhome-pdf (청약홈 공고문 PDF 링크)');
+  try { execFileSync('node', [p('inject-applyhome-pdf.mjs'), '--links-only'], { stdio: 'inherit', cwd: p('.') }); }
+  catch (e) { log(`  ⚠️ inject-applyhome-pdf 실패: ${e.message.split('\n')[0]}`); }
   hr('◆ inject-deadline-time (공고문 마감시각 주입)');
   try { execFileSync('node', [p('inject-deadline-time.mjs')], { stdio: 'inherit', cwd: p('.') }); }
   catch (e) { log(`  ⚠️ inject-deadline-time 실패: ${e.message.split('\n')[0]}`); }

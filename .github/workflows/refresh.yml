@@ -47,6 +47,7 @@ jobs:
           node gh-collect.mjs --refresh || true        # GH — 라이브 스크래핑+인라인 인증서(키 불필요)
           node myhome-collect.mjs --refresh || true    # 마이홈 상태갱신(키 필요·없으면 graceful), 신규는 new-pending
           node applyhome-collect.mjs && node applyhome-derive.mjs || true   # 청약홈: 결정론 완전(키 필요). 신규 분양까지 자동 반영
+          node inject-applyhome-pdf.mjs --links-only || true   # 공고문 PDF 직링크 주입(상세페이지 파싱). CI는 링크만(다운로드X)
 
       - name: 공고문 마감시각 주입 (당일 컷오프용)
         run: node inject-deadline-time.mjs || true   # notice_sliced.txt에서 실제 마감시각 추출→requirements. 결정론·LLM0·멱등

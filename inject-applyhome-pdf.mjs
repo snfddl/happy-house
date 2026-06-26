@@ -11,6 +11,7 @@ const DER = new URL('derived/applyhome/', ROOT);
 const RAW = new URL('raw/applyhome/', ROOT);
 const argv = process.argv.slice(2);
 const ALL = argv.includes('--all');
+const LINKS_ONLY = argv.includes('--links-only');   // 링크만 주입(PDF 다운로드 생략) — CI/무인용. 로컬은 다운로드까지.
 const LIMIT = Number((argv.find(s => s.startsWith('--limit=')) || '').split('=')[1] || 0);
 const UA = { 'User-Agent': 'Mozilla/5.0' };
 
@@ -45,7 +46,7 @@ for (const no of dirs) {
     await new Promise(r => setTimeout(r, 120));
   } else already++;
   // PDF 로컬 보관(불변) — 다른 소스와 동일. data/raw/applyhome/<no>/notice.pdf
-  if (pdf) {
+  if (pdf && !LINKS_ONLY) {
     const out = new URL(`${no}/notice.pdf`, RAW);
     if (existsSync(out)) { dlskip++; continue; }
     try {
