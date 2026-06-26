@@ -1023,8 +1023,18 @@ svg.leaflet-image-layer.leaflet-interactive path {
     .wrap{max-width:1380px}
     header.top{flex:0 0 auto}
     main.wrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
-    .hero{padding:14px 0 2px}
-    .controls{position:static}
+    /* 상단 납작하게 — 고정영역이 세로를 적게 먹어 지도/목록이 커지도록 */
+    .hero{padding:8px 0 0}
+    .hero h2{font-size:16px;margin:0}
+    .hero .sub{display:none}
+    .stats{gap:8px;margin-top:6px}
+    .stat{padding:6px 12px 6px 15px;display:flex;align-items:baseline;gap:7px;box-shadow:none}
+    .stat .n{font-size:18px}
+    .stat .l{margin-top:0;font-size:11.5px}
+    .notice-missing{padding:7px 12px;margin:8px 0 0;font-size:12px}
+    .controls{position:static;margin:8px 0 0;padding:8px 0}
+    .chips{margin-top:7px}
+    .toolbar{margin:8px 0 6px}
     .mainsplit{flex:1 1 auto;min-height:0;align-items:stretch;margin-bottom:0}
     .mapwrap{height:100%}
     .list-col{height:100%;overflow-y:auto;overscroll-behavior:contain;padding-right:6px}
