@@ -114,6 +114,7 @@ for (const [label, detailOp, mdlOp, famKind] of FAMILIES) {
 
     const dir = new URL(`${no}/`, RAW);
     const idxKey = makePanId('applyhome', no);   // === derive panId(불변식). 콜론 접두는 collect-util 규약.
+    if (index[idxKey]?.pruned) continue;             // prune-expired tombstone — 마감 경과로 정리된 건 부활 안 함
     if (index[idxKey]?.done && !REFETCH) {           // 이미 받음 → 갱신만(상태·meta). --refetch면 통과해 누락 raw 재기록
       try {
         const mp = new URL('meta.json', dir);

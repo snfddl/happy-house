@@ -48,6 +48,9 @@ jobs:
           node myhome-collect.mjs --refresh || true    # 마이홈 상태갱신(키 필요·없으면 graceful), 신규는 new-pending
           node applyhome-collect.mjs && node applyhome-derive.mjs || true   # 청약홈: 결정론 완전(키 필요). 신규 분양까지 자동 반영
 
+      - name: 마감 경과 derived 정리 (인라인 비대 방지)
+        run: node prune-expired.mjs || true   # 마감 후 60일(기본) 지난 derived 삭제 + index tombstone. 결정론·멱등
+
       - name: 사이트 빌드 (빈 프로필·공유용)
         run: node build-site.mjs
 
