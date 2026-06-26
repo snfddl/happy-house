@@ -387,13 +387,13 @@ export function createMatcher(P, todayStr) {
     return { 무주택점, 부양점, 통장점, 부양수, total, known, notes };
   }
   function 청약순위(req) {
-    if (P.청약저축?.가입 !== true) return { m: P.청약저축?.가입 === false ? '통장미가입' : '통장 미입력' };
+    if (P.청약저축?.가입 !== true) return { m: P.청약저축?.가입 === false ? '청약통장 미가입' : '청약통장 정보 미입력' };
     const reg = req.규제?.투기과열지구 || req.규제?.조정대상지역;
     const capital = ['서울', '경기', '인천'].includes(시도canon(P.거주지?.시도));
     const th = reg ? 24 : capital ? 12 : 6;
     const g = P.청약저축?.가입개월;
-    if (g == null) return { m: '가입기간 미입력' };
-    return g >= th ? { rank: 1, m: `1순위(가입 ${g}≥${th}개월)` } : { rank: 2, m: `2순위(가입 ${g}<${th}개월)` };
+    if (g == null) return { m: '청약통장 가입기간 미입력' };
+    return g >= th ? { rank: 1, m: `청약 1순위 (가입 ${g}개월 ≥ 기준 ${th}개월)` } : { rank: 2, m: `청약 2순위 (가입 ${g}개월 < 기준 ${th}개월)` };
   }
   function 지역우선(req) {
     const tiers = (req.순위규칙 || []).map(r => (r.조건 || [])[0]).filter(Boolean);
@@ -478,8 +478,8 @@ export function createMatcher(P, todayStr) {
           if (!민영) checks.push('소득·자산:공공분양 일반공급 컷 원문확인');
           gp = 민영 ? 가점Calc() : null;
           배점 = 민영
-            ? `가점 ${gp.total}/84${gp.known ? '' : '(일부미입력)'} [무주택기간 ${gp.무주택점 ?? '?'}·부양 ${gp.부양점}(${gp.부양수}명)·통장 ${gp.통장점 ?? '?'}]`
-            : `순차제(저축 ${won(P.청약저축?.저축총액)}·납입 ${P.청약저축?.납입횟수 ?? '?'}회)`;
+            ? `가점 ${gp.total}/84점${gp.known ? '' : ' (일부 미입력)'} [무주택기간 ${gp.무주택점 ?? '미입력'} · 부양가족 ${gp.부양점}(${gp.부양수}명) · 청약통장 ${gp.통장점 ?? '미입력'}]`
+            : `순차제 (저축총액 ${won(P.청약저축?.저축총액)} · 납입 ${P.청약저축?.납입횟수 ?? '미입력'}회)`;
         }
       }
     }
@@ -494,6 +494,9 @@ export function createMatcher(P, todayStr) {
 
     let 판정 = fails.length ? '지원불가' : checks.length ? '확인필요' : '지원가능';
     const 순위 = 청약순위(req), 지역t = 지역우선(req), 특공 = 신혼 ? [] : 특공Match(req);
+    const tierLabel = { '해당지역': '공고 지역 거주', '기타경기/광역': '같은 시·도 거주', '기타지역': '타 시·도 거주' }[지역t.tier] || 지역t.tier;
+    const 지역문구 = 지역t.exists ? `거주지 우선순위 해당 (${tierLabel})` : `거주지 우선순위 없음 (${tierLabel})`;
+    const 청약지역줄 = req.선정방식 === '추첨' ? '추첨제 — 청약순위·거주지 우선 미적용' : `${순위.m} · ${지역문구}`;
     const amts = (req.공급형 || []).map(f => f.분양가만원).filter(Boolean);
     const 분양가 = amts.length ? `${Math.min(...amts).toLocaleString()}~${Math.max(...amts).toLocaleString()}만` : null;
     const area = areaMatch(req), region = regionMatch(req);
@@ -503,11 +506,11 @@ export function createMatcher(P, todayStr) {
     return {
       panId: req.panId ?? req.no, 유형: req.유형, 공고명: req.공고명, 지역: req.지역,
       상태: req.상태, 마감일: req.마감일, 마감일미상: req.마감일미상 || false, dday, 판정,
-      공급형태: '분양', 공급형태설명: `분양 · 분양가 ${분양가 || '?'} · 특공해당 ${특공.length ? 특공.join(',') : '없음/확인'}`,
+      공급형태: '분양', 공급형태설명: `분양 · 분양가 ${분양가 || '공고 확인'} · ${특공.length ? `특별공급 가능: ${특공.join('·')}` : '특별공급 해당 없음 (원문 확인)'}`,
       분양전환: false,
       실격사유: fails, 확인필요: checks, 참고,
       통과: [],
-      거주지순위: `${순위.m} · 지역우선:${지역t.tier}${지역t.exists ? '' : '(tier없음)'}`,
+      거주지순위: 청약지역줄,
       선정방식: req.선정방식,
       예상배점: 배점, 가점: gp ? gp.total : null,
       면적: area ? (area.ok == null ? '면적정보없음' : area.ok ? `맞음(${area.range[0]}~${area.range[1]}㎡)` : `안맞음(공고 ${area.range[0]}~${area.range[1]}㎡)`) : null,
@@ -546,9 +549,9 @@ export function createMatcher(P, todayStr) {
       확인필요: checks.map(([k, g]) => `${k}:${g.m}`),
       참고: [],
       통과: Object.entries(gates).filter(([, g]) => g.s === 'pass').map(([k]) => k),
-      거주지순위: rank ? (rank.rank ? `${rank.rank}순위` : `해당지역 미명시(최후 ${rank.maxRank}순위 추정)`) : '순위없음/추첨',
+      거주지순위: rank ? (rank.rank ? `거주지 우선 ${rank.rank}순위` : `거주지 우선순위 미해당 (최하 ${rank.maxRank}순위 추정)`) : '거주지 우선순위 없음 (추첨 등)',
       선정방식: req.선정방식,
-      예상배점: score ? `${score.got}/${score.max}점(추정)${score.skipped.length ? ` ·미반영:${score.skipped.join(',')}` : ''}` : null,
+      예상배점: score ? `${score.got}/${score.max}점 (추정)${score.skipped.length ? ` · 미반영 항목: ${score.skipped.join('·')}` : ''}` : null,
       배점내역: score ? score.items : null,
       가점: null,
       면적: area ? (area.ok == null ? '면적정보없음' : area.ok ? `맞음(${area.range[0]}~${area.range[1]}㎡)` : `안맞음(공고 ${area.range[0]}~${area.range[1]}㎡)`) : null,

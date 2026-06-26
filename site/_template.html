@@ -357,6 +357,11 @@
         <option value="실물">임대(실물공급)</option>
         <option value="지원형">임대(전세지원형)</option>
       </select>
+      <select class="sel" id="sectorSel">
+        <option value="">공공·민간 전체</option>
+        <option value="공공">공공</option>
+        <option value="민간">민간</option>
+      </select>
       <select class="sel" id="typeSel"><option value="">전체 유형</option></select>
       <select class="sel" id="regionSel"><option value="">전체 지역</option></select>
       <select class="sel" id="sortSel">
@@ -620,15 +625,20 @@
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModal(); closeDrawer(); closeWizard(); } });
 
   // ── 필터/정렬 ──
-  const state={판정:'',supply:'',type:'',region:'',q:'',sort:'smart',regionOnly:false,분양류:false,activeOnly:true};
+  const state={판정:'',supply:'',sector:'',type:'',region:'',q:'',sort:'smart',regionOnly:false,분양류:false,activeOnly:true};
   const ACTIVE=new Set(['접수중','공고중','정정공고중','접수예정']);
   const isActive=x=>ACTIVE.has(x.상태)&&(x.dday==null||x.dday>=0);
+  // 공급주체 분류(공공 vs 민간) — 유형이 결정론적 축(소스론 안 됨: 청약홈이 민영·공공 혼재).
+  //   공공유형 집합에 없으면 민간(민영분양·무순위/잔여·임의공급·오피스텔/도시형·공공지원민간임대[법적 민간임대주택]).
+  const 공공유형=new Set(['행복주택','행복주택(신혼희망)','매입임대','영구임대','국민임대','통합공공임대','공공임대','50년공공임대','전세임대','집주인임대','공공분양','임대']);
+  const sectorOf=x=>공공유형.has(x.유형)?'공공':'민간';
   // 단일 필터 판정 — except로 지정한 필터 하나는 건너뜀(faceted 카운트용: 그 필터 빼고 나머지로 거른 모수).
   const inRegion=x=>(x.시도목록||[]).includes(state.region)||(x.시도목록||[]).includes('전국');
   function pass(x,except){
     if(except!=='activeOnly'&&state.activeOnly&&!isActive(x))return false;
     if(except!=='판정'&&state.판정&&x.판정!==state.판정)return false;
     if(except!=='supply'&&state.supply&&x.공급형태!==state.supply)return false;
+    if(except!=='sector'&&state.sector&&sectorOf(x)!==state.sector)return false;
     if(except!=='type'&&state.type&&x.유형!==state.type)return false;
     if(except!=='region'&&state.region&&!inRegion(x))return false;
     if(except!=='regionOnly'&&state.regionOnly&&x.희망지역매칭!==true)return false;
@@ -669,6 +679,12 @@
     $$('.stat').forEach(s=>s.onclick=()=>{ state.판정=(state.판정===s.dataset.v)?'':s.dataset.v; buildStats(); apply(); });
   }
   function buildControls(){
+    // 공급주체(공공·민간) 옵션 — sector 외 활성필터로 거른 모수 기준 건수(faceted).
+    const sbase=LIST.filter(x=>pass(x,'sector')), scnt={공공:0,민간:0};
+    sbase.forEach(x=>scnt[sectorOf(x)]++);
+    const scur=$('#sectorSel').value;
+    $('#sectorSel').innerHTML='<option value="">공공·민간 전체</option>'
+      +[['공공',scnt.공공],['민간',scnt.민간]].map(([k,c])=>'<option value="'+k+'"'+(k===scur?' selected':'')+'>'+k+' ('+c+')</option>').join('');
     // 유형 옵션 — 지역 등 다른 활성필터로 거른 모수 기준 건수(faceted). 그 유형 자신만 제외하고 카운트.
     const tbase=LIST.filter(x=>pass(x,'type')), tcnt={};
     tbase.forEach(x=>{ if(x.유형) tcnt[x.유형]=(tcnt[x.유형]||0)+1; });
@@ -971,6 +987,7 @@
 
   $('#q').addEventListener('input',e=>{ state.q=e.target.value.trim(); apply(); });
   $('#supplySel').addEventListener('change',e=>{ state.supply=e.target.value; apply(); });
+  $('#sectorSel').addEventListener('change',e=>{ state.sector=e.target.value; apply(); });
   $('#typeSel').addEventListener('change',e=>{ state.type=e.target.value; apply(); });
   $('#regionSel').addEventListener('change',e=>{ state.region=e.target.value; apply(); });
   $('#sortSel').addEventListener('change',e=>{ state.sort=e.target.value; apply(); });
