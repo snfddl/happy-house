@@ -158,12 +158,13 @@ for (const no of dirs) {
   const outDir = new URL(`${no}/`, DERIVED);
   mkdirSync(outDir, { recursive: true });
   // ⚠️ 주입필드 보존 — derive는 raw서 통째 재생성하므로, 후속 inject 단계가 채운 '파생 불가' 필드(참고분석[LLM·비커밋]·
-  //    전매/실거주/재당첨[공고문 PDF]·건물유형[무순위/임의]·공고문PDF링크·마감시각)를 기존 파일서 이월. 로컬 단독 재실행 데이터유실 방지. 멱등.
+  //    전매/실거주/재당첨[공고문 PDF]·건물유형[무순위/임의]·공고문PDF링크·네이버부동산[resolve-naver]·마감시각)를 기존 파일서 이월. 로컬 단독 재실행 데이터유실 방지. 멱등.
   const outFile = new URL('requirements.json', outDir);
   if (existsSync(outFile)) {
     try {
       const prev = JSON.parse(readFileSync(outFile, 'utf8'));
       if (prev.참고분석) req.참고분석 = prev.참고분석;
+      if (prev.네이버부동산) req.네이버부동산 = prev.네이버부동산;   // resolve-naver 결정론 주입분 이월(재실행 유실 방지)
       if (prev.마감시각) req.마감시각 = prev.마감시각;
       for (const k of ['전매제한', '실거주의무', '재당첨제한']) if (prev[k] && typeof prev[k] === 'object') req[k] = prev[k];
       if (prev.건물유형 && !req.건물유형) req.건물유형 = prev.건물유형;
