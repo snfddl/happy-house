@@ -17,15 +17,15 @@ const geo = loadCache();   // 좌표 사이드카(주소/지역 키) — 지도 
 function coordsFor(r) {
   const out = [];
   const 단지 = Array.isArray(r.단지) ? r.단지 : [];
-  if (단지.length) {
-    for (const d of 단지) {
-      const addr = d.주소 || '';
-      const hit = addr && geo[normKey(addr)];
-      if (hit && hit.lat != null) { out.push({ 단지명: d.단지명 || r.공고명 || '', lat: hit.lat, lng: hit.lng, 확정도: hit.확정도 || '건물' }); continue; }
-      const reg = geo[normKey(regionOf(addr))];
-      if (reg && reg.lat != null) out.push({ 단지명: d.단지명 || r.공고명 || '', lat: reg.lat, lng: reg.lng, 확정도: '시군구' });
-    }
-  } else {
+  for (const d of 단지) {
+    const addr = d.주소 || '';
+    const hit = addr && geo[normKey(addr)];
+    if (hit && hit.lat != null) { out.push({ 단지명: d.단지명 || r.공고명 || '', lat: hit.lat, lng: hit.lng, 확정도: hit.확정도 || '건물' }); continue; }
+    const reg = geo[normKey(regionOf(addr))];
+    if (reg && reg.lat != null) out.push({ 단지명: d.단지명 || r.공고명 || '', lat: reg.lat, lng: reg.lng, 확정도: '시군구' });
+  }
+  // 단지 없음 OR 단지 주소가 전부 placeholder("공고문미기재")로 핀 0 → 공고 지역 문자열로 시군구 폴백.
+  if (!out.length) {
     const reg = geo[normKey(regionOf(r.지역 || ''))];
     if (reg && reg.lat != null) out.push({ 단지명: r.공고명 || '', lat: reg.lat, lng: reg.lng, 확정도: '시군구' });
   }

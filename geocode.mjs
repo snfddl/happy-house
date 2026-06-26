@@ -34,15 +34,13 @@ for (const s of SRC) {
     if (!existsSync(p)) continue;
     let r; try { r = JSON.parse(readFileSync(p, 'utf8')); } catch { continue; }
     const 단지 = Array.isArray(r.단지) ? r.단지 : [];
-    if (단지.length) {
-      for (const d of 단지) {
-        const a = d.주소 || '';
-        if (a) { addrs.set(normKey(a), a); const rg = regionOf(a); if (rg) regions.set(normKey(rg), rg); }
-      }
-    } else {
-      const rg = regionOf(r.지역 || '');
-      if (rg) regions.set(normKey(rg), rg);
+    for (const d of 단지) {
+      const a = d.주소 || '';
+      if (a) { addrs.set(normKey(a), a); const rg = regionOf(a); if (rg) regions.set(normKey(rg), rg); }
     }
+    // 공고 지역 문자열도 항상 수집 — 단지 주소가 placeholder("공고문미기재")일 때 build-site의 시군구 폴백용.
+    const rgZ = regionOf(r.지역 || '');
+    if (rgZ) regions.set(normKey(rgZ), rgZ);
   }
 }
 
