@@ -11,6 +11,7 @@
 ## 완료 (지도 연동 조회 · 2026-06-27)
 - ✅ **Leaflet 지도 + 카드 목록 양방향 연동**(키 0·벤더 인라인·자체완결 유지): 핀↔카드 클릭 하이라이트, 지역 select→해당 지역 줌(`fitToPins`), **'이 지도 영역만' 토글→가시영역(bounds)으로 목록 필터**(`state.mapBoundsOn`+`pass()` 술어+moveend), 판정 색 핀, 데스크탑 좌지도/우목록·모바일 토글. 좌표없음 공고는 핀 생략(목록 유지).
 - ✅ **좌표 파이프라인**: `geo.mjs`(사이드카 캐시·제공자 추상화) + `geocode.mjs`(Kakao Local·로컬 키·증분·멱등) + `resolve-naver` 분양 좌표 무료 시드. 좌표는 requirements 아닌 **주소키 사이드카**(`geo-cache.json`)에 → 재derive 면역. CI 키-0(캐시+시군구 centroid 폴백). build-site가 `좌표목록` 조인·임베드.
+- ✅ **대시보드 UI 다듬기**(2026-06-27): 데스크탑 고정 셸(헤더·필터 고정, 지도 뷰포트 채움·스크롤X, 목록만 독립 스크롤·`overflow-y`), 상단 컴팩트화, 목록 2컬럼(`minmax 360`), 카드 스펙 라인(금액 아래 전용면적·세대수), 건수·토글 칩라인 병합, 지도 한국 영역 고정(`maxBounds`+`minZoom 6`+noWrap), 선택 핀 30px 펄스 강조, Leaflet z-index를 모달 아래로(`.mapwrap` stacking context). 카드 클릭=핀 강조(지도이동 미사용·`focusOnMap` 보존). **다음 세션 보류**: 카드 hover→핀 강조, 상세모달 진입 동선 정리(메모리 `map-ux-todo`).
 - 교훈: 키리스 Nominatim은 한국 상세주소 지오코딩 불가(전국중심 폴백·무작위 POI) → Kakao Local 키 채택(무과금·서비스 ON 필요). 상세: `ARCHITECTURE.md` 모듈지도 · `SCHEMA.md` §7 · `DEPLOY.md`.
 
 ## 완료 (웹 조회 UI)
