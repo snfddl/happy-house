@@ -39,6 +39,8 @@ push 트리거 경로: `site/**`, `*.mjs`, `data/derived/**`, `.github/workflows
 
 **키(Secret)**: data.go.kr 키를 `gh secret set DATA_GO_KR_SERVICE_KEY`로 등록해야 LH(refresh)·마이홈(refresh)·청약홈(collect+derive)이 CI에서 동작. 미설정 시 키 필요 소스만 graceful 생략, SH/GH는 키 불필요라 항상 동작.
 
+**지도 좌표(geocode)도 동일한 "로컬 키 / CI 키-0" 모델.** 단지 주소→좌표는 Kakao Local 키(`.env`의 `KAKAO_REST_KEY`, gitignore)로 **로컬에서만** 채우고(`node geocode.mjs`, 증분·멱등) `geo-cache.json` 결과만 커밋. CI(`process-all`/`build-site`)는 키 없이 **캐시+시군구 centroid 폴백**으로 핀을 그린다(키-0). 분양 좌표는 `resolve-naver`가 무료 시드. 키 발급: developers.kakao.com REST 키 + 그 앱의 "카카오맵(Local)" 서비스 ON(무과금·도메인 등록 불필요).
+
 ## 일상 운영
 
 **신규 공고가 떴을 때** (CI가 이슈로 알림 / 또는 `node lh-collect.mjs --refresh`로 직접 확인):
@@ -72,7 +74,8 @@ gh workflow run "refresh & deploy"
 - `data/raw/`(724MB·불변·재수집 가능) — 빌드엔 derived만 필요
 - `profile.json` — 개인정보(공개 repo 유출 방지). CI는 빈 프로필로 빌드
 - 파이프라인 재생성 산출물: `new-pending.json`·`pipeline-report.json`·`extract-targets.json`·`wf-args.json`·`slice-manifest.json`
-- **커밋 대상**: `data/derived/`(사이트 데이터)·`data/index.json`(추적·상태)·`site/`·스크립트·문서
+- **커밋 대상**: `data/derived/`(사이트 데이터·`geo-cache.json` 포함)·`data/index.json`(추적·상태)·`data/vendor/`(Leaflet 인라인용)·`site/`·스크립트·문서
+- `.env`의 `KAKAO_REST_KEY`는 gitignore(`.env`) — 좌표 캐시 결과만 커밋(키 비공개·CI 키-0)
 
 ## 트러블슈팅
 

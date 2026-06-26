@@ -64,8 +64,9 @@ node inject-links.mjs                            # 원문링크 주입
 node inject-applyhome-pdf.mjs                    # 청약홈 공고문 PDF 직링크 주입 + 로컬 raw 다운로드(상세페이지 getAtchmnfl 파싱). 무인이면 --links-only
 node inject-applyhome-notice.mjs                 # 청약홈 공고문 표→전매·실거주·재당첨 결정론 추출(앞 단계서 받은 raw notice.pdf 필요). LLM0·멱등
 node inject-deadline-time.mjs                    # 공고문 본문→마감시각 추출(당일 컷오프용). 결정론·LLM0·멱등
+node geocode.mjs                                 # 단지 주소→좌표(지도 핀). Kakao 로컬 키(.env KAKAO_REST_KEY)·증분·멱등. 키 없으면 skip→캐시/centroid 폴백
 node prune-expired.mjs                           # 마감 후 60일(기본) 지난 derived 정리. 멱등
-node build-site.mjs                              # 드리프트 가드 + 5소스 통합 → site/index.html
+node build-site.mjs                              # 드리프트 가드 + 5소스 통합 → site/index.html (Leaflet·geo-cache 조인)
 ```
 - 모두 결정론·멱등이라 전체 재실행 안전(신규만 골라낼 필요 없음).
 - `build-site`가 정정공고 원본 중복도 제거(정정본만 표시).

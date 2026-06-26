@@ -2,6 +2,7 @@
 //   신규 처리 절차가 소스마다 3갈래(LH=pipeline 6단계, applyhome=collect+derive, myhome/sh/gh=collect+myhome-pipeline)로
 //   갈라져 있어 런북·CI가 LH만 따라가던 문제(AUDIT.md P1)를 해소. 각 소스의 기존 진입점을 순서대로 호출 + 마지막에 build-site.
 //   결정론 단계만 오케스트레이션; LLM 추출(claude -p)은 각 하위 파이프라인이 로컬 수행(외부 LLM API 0 규칙 유지).
+//   빌드 직전 inject(청약홈 PDF·표·마감시각) + geocode(단지 주소→지도 핀 좌표, Kakao 로컬 키 단계·키 없으면 skip).
 // 사용:
 //   node process-all.mjs                   전 소스(collect→derive/extract→검증→build)
 //   node process-all.mjs --source=sh,gh     특정 소스만(쉼표구분)
@@ -67,6 +68,9 @@ if (!NO_BUILD) {
   hr('◆ inject-deadline-time (공고문 마감시각 주입)');
   try { execFileSync('node', [p('inject-deadline-time.mjs')], { stdio: 'inherit', cwd: p('.') }); }
   catch (e) { log(`  ⚠️ inject-deadline-time 실패: ${e.message.split('\n')[0]}`); }
+  hr('◆ geocode (단지 주소 → 좌표·지도 핀, Kakao 로컬 키 단계)');  // 키 없으면(CI) skip — build-site가 좌표캐시/시군구 폴백으로 진행(키-0 유지)
+  try { execFileSync('node', [p('geocode.mjs')], { stdio: 'inherit', cwd: p('.') }); }
+  catch { log(`  (geocode 건너뜀 — KAKAO_REST_KEY 없음/오류. 기존 geo-cache.json로 빌드)`); }
   hr('◆ build-site');
   try { execFileSync('node', [p('build-site.mjs'), ...argv.filter(a => a === '--seed')], { stdio: 'inherit', cwd: p('.') }); }
   catch (e) { log(`  ⚠️ build-site 실패: ${e.message.split('\n')[0]}`); summary.push({ src: 'build', ok: false, note: e.message.split('\n')[0] }); }

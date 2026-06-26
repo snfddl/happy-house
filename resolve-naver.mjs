@@ -8,6 +8,7 @@
 // 외부 LLM API 0 — 영문명 음역(SKY→스카이) 등 미해결분은 /update 등 에이전트 폴백(별도). 이 스크립트는 결정론 부분만.
 import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { loadCache, saveCache, normKey } from './geo.mjs';
 
 const argv = process.argv.slice(2);
 const ALL = argv.includes('--all'), FORCE = argv.includes('--force');
@@ -56,13 +57,21 @@ if (process.argv[1] && process.argv[1].endsWith('resolve-naver.mjs')) {
       targets.push({ p, r, no });
     } }
   console.log(`분양 리졸브 대상 ${targets.length}건 (${ALL ? '전체' : '활성'}${FORCE ? '·강제' : ''})\n`);
-  let ok = 0, fail = 0;
+  const TODAY = new Date().toISOString().slice(0, 10);
+  const geo = loadCache();   // 좌표 사이드카 — 검증게이트가 이미 확인한 분양 단지 좌표를 무료 회수(추가 API 0)
+  let ok = 0, fail = 0, geoNew = 0;
   for (const t of targets) {
     const nm = t.r.단지?.[0]?.단지명 || t.r.공고명;
     const addr = t.r.단지?.[0]?.주소 || t.r.지역 || '';
     const hit = resolveBunyang(nm, addr);
-    if (hit) { t.r.네이버부동산 = hit.url; writeFileSync(t.p, JSON.stringify(t.r, null, 2)); ok++; console.log(`✅ ${t.no} "${nm}" → ${hit.url} (${hit.명})`); }
+    if (hit) {
+      t.r.네이버부동산 = hit.url; writeFileSync(t.p, JSON.stringify(t.r, null, 2)); ok++;
+      const key = normKey(addr);                       // build-site가 단지[].주소로 조회하는 키와 동일
+      if (key && hit.좌표 && !geo[key]) { geo[key] = { lat: hit.좌표[0], lng: hit.좌표[1], src: 'naver', 확정도: '건물', ts: TODAY }; geoNew++; }
+      console.log(`✅ ${t.no} "${nm}" → ${hit.url} (${hit.명})`);
+    }
     else { fail++; console.log(`·  ${t.no} "${nm}" → 미해결(통합검색 폴백)`); }
   }
-  console.log(`\n해결 ${ok} · 미해결 ${fail} / ${targets.length} (미해결은 사이트에서 통합검색으로 노출)`);
+  saveCache(geo);
+  console.log(`\n해결 ${ok} · 미해결 ${fail} / ${targets.length} (미해결은 사이트에서 통합검색으로 노출) · 좌표캐시 +${geoNew}`);
 }

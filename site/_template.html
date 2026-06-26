@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>내 집 찾기 · 공공임대·분양 매칭</title>
+<style>/*__LEAFLET_CSS__*/</style>
 <style>
   :root{
     --bg:#f6f7f9; --surface:#fff; --surface-2:#fbfcfd; --line:#e7e9ee; --line-2:#eef0f4;
@@ -333,6 +334,35 @@
   @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:600px){.grid{grid-template-columns:1fr}.hero h2{font-size:20px}
     .profile-chip span.full{display:none}.controls{top:60px}}
+
+  /* ── 지도 연동 ── */
+  .toolbar{flex-wrap:wrap}
+  .view-toggle{display:flex;align-items:center;gap:12px;margin-left:auto}
+  .vbtn{display:none;align-items:center;gap:5px;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer}
+  .vbtn.on{background:var(--accent-ink,#2563eb);color:#fff;border-color:transparent}
+  .boundschk{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2);cursor:pointer;user-select:none}
+  .boundschk input{accent-color:var(--accent-ink,#2563eb);width:15px;height:15px}
+  .mainsplit{display:flex;gap:16px;align-items:flex-start}
+  .mapwrap{flex:0 0 42%;position:sticky;top:72px;height:calc(100vh - 96px);min-height:420px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#e9eef2}
+  #map{width:100%;height:100%}
+  #list{flex:1 1 0;min-width:0}
+  body.nomap .mapwrap{display:none}
+  .map-note{position:absolute;left:10px;bottom:10px;z-index:500;background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:11.5px;color:var(--ink-2);max-width:75%;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .pin{width:16px;height:16px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4);box-sizing:border-box}
+  .pin.지원가능{background:#16a34a}.pin.확인필요{background:#d97706}.pin.지원불가{background:#dc2626}
+  .pin.sel{width:22px;height:22px;z-index:1000!important;box-shadow:0 0 0 3px rgba(37,99,235,.45),0 1px 4px rgba(0,0,0,.5)}
+  .leaflet-popup-content{margin:9px 11px;font-size:12.5px;line-height:1.45}
+  .leaflet-popup-content b{font-size:13px}
+  .leaflet-popup-content .pp-type{color:var(--faint,#888);font-size:11px}
+  .card.mapsel{outline:2px solid var(--accent-ink,#2563eb);outline-offset:1px}
+  @media(max-width:1023px){
+    .mainsplit{display:block}
+    .vbtn{display:inline-flex}
+    .mapwrap{position:static;height:62vh;min-height:0;margin-bottom:12px;display:none}
+    body.mapview .mapwrap{display:block}
+    body.mapview #list{display:none}
+    .map-note{max-width:60%}
+  }
 </style>
 </head>
 <body>
@@ -390,9 +420,20 @@
     <div class="chips" id="chips"></div>
   </section>
 
-  <div class="toolbar"><div class="count" id="count">—</div></div>
-  <section class="grid" id="list"></section>
-  <div class="empty" id="empty" style="display:none"><div class="big">🔍</div><div>조건에 맞는 공고가 없습니다.</div></div>
+  <div class="toolbar">
+    <div class="count" id="count">—</div>
+    <div class="view-toggle">
+      <label class="boundschk" title="지도를 움직이면 화면에 보이는 공고만 목록에 표시"><input type="checkbox" id="boundsChk"> 이 지도 영역만</label>
+      <button class="vbtn" id="mapToggle" type="button">🗺 지도</button>
+    </div>
+  </div>
+  <div class="mainsplit" id="mainsplit">
+    <div class="mapwrap" id="mapwrap"><div id="map"></div><div class="map-note" id="mapNote"></div></div>
+    <div style="flex:1 1 0;min-width:0">
+      <section class="grid" id="list"></section>
+      <div class="empty" id="empty" style="display:none"><div class="big">🔍</div><div>조건에 맞는 공고가 없습니다.</div></div>
+    </div>
+  </div>
 </main>
 
 <div class="ov" id="ov"><div class="modal" id="modal"></div></div>
@@ -428,6 +469,7 @@
   <div class="disc" id="footDisc"></div>
 </div></footer>
 
+<script>/*__LEAFLET_JS__*/</script>
 <script>const DATA = /*__DATA__*/ {meta:{},profile:{},reqs:[]};</script>
 <script>/*__CORE__*/</script>
 <script>
@@ -498,6 +540,7 @@
         상세링크:(req.원문링크&&req.원문링크.상세페이지)||null,
         공고PDF:(req.원문링크&&req.원문링크.공고문PDF)||null,
         마감시각:req.마감시각||null, 참고분석:req.참고분석||null,
+        좌표목록:req.좌표목록||[],
         시도목록:siList(r.지역||req.지역)}, extras(req));
     });
   }
@@ -705,7 +748,7 @@
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModal(); closeDrawer(); closeWizard(); } });
 
   // ── 필터/정렬 ──
-  const state={판정:'',supply:'',sector:'',type:'',region:'',q:'',sort:'smart',regionOnly:false,분양류:false,activeOnly:true};
+  const state={판정:'',supply:'',sector:'',type:'',region:'',q:'',sort:'smart',regionOnly:false,분양류:false,activeOnly:true,mapBoundsOn:false,mapBounds:null};
   const ACTIVE=new Set(['접수중','공고중','정정공고중','접수예정']);
   // 마감일 당일 컷오프 — 공고문 본문에서 뽑은 실제 마감시각(x.마감시각) 우선, 없으면 소스별 관행시각 폴백.
   //   본문에 시각 없는 청약홈(API·날짜만)·미추출분은 휴리스틱: LH 16:00·SH/GH 17:00·청약홈 17:30·그 외 18:00. viewer 실시간 기준.
@@ -744,8 +787,11 @@
     if(except!=='regionOnly'&&state.regionOnly&&x.희망지역매칭!==true)return false;
     if(except!=='분양류'&&state.분양류&&!(x.공급형태==='분양'||x.분양전환===true))return false;
     if(except!=='q'&&state.q){ const q=state.q.toLowerCase(); if(!(x.공고명+' '+x.지역+' '+x.유형).toLowerCase().includes(q))return false; }
+    if(except!=='mapBounds'&&state.mapBoundsOn&&state.mapBounds&&!inBounds(x))return false;
     return true;
   }
+  // 지도 가시영역 내 핀 보유 여부('이 지도 영역만' ON일 때만 적용). 좌표 없는 공고는 영역필터 시 제외(어느 영역에도 안 속함).
+  function inBounds(x){ return (x.좌표목록||[]).some(p=>p.lat!=null&&state.mapBounds.contains([p.lat,p.lng])); }
   function apply(){
     let r=LIST.filter(x=>pass(x,null));
     buildControls(); buildStats();   // 카운트(칩·셀렉트)·KPI카드를 현재 필터 기준으로 재계산
@@ -760,6 +806,7 @@
       new:(a,b)=>String(b.공고일||'').localeCompare(String(a.공고일||'')),
     }[state.sort];
     r.sort(cmp); render(r);
+    updateMap(LIST.filter(x=>pass(x,'mapBounds')));   // 핀=영역필터 제외(패닝하면 목록만 따라옴, 핀은 영역 밖도 유지)
   }
   function render(r){
     $('#list').innerHTML=r.map(card).join('');
@@ -768,6 +815,66 @@
     const total=LIST.filter(x=>!state.activeOnly||isActive(x)).length;
     $('#count').innerHTML='<b>'+r.length+'</b>건'+(r.length!==total?' / 전체 '+total+'건':'');
     $$('.card').forEach(c=>c.onclick=()=>{ const x=LIST.find(y=>y.id===c.dataset.id); if(x) modal(x); });
+  }
+
+  // ── 지도(Leaflet, 키 0·벤더 인라인) ── 핀=단지 좌표, 클릭→카드 하이라이트+상세. 타일만 네트워크 필요.
+  const hasL=typeof L!=='undefined';
+  let map=null, mLayer=null, mById=new Map();
+  function initMap(){
+    if(!hasL||map) return;
+    map=L.map('map',{zoomControl:true}).setView([36.4,127.8],7);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+    mLayer=L.layerGroup().addTo(map);
+    // '이 지도 영역만' ON일 때만 가시영역으로 목록 필터. apply는 지도를 움직이지 않으므로 재귀 없음.
+    map.on('moveend',()=>{ if(state.mapBoundsOn){ state.mapBounds=map.getBounds(); apply(); } });
+    setTimeout(()=>map&&map.invalidateSize(),60);
+  }
+  // 시군구 centroid 핀 겹침 완화 — id 해시 기반 결정론 미세 지터(±~0.5km). 건물 좌표는 손대지 않음.
+  function jitter(id,확정도){
+    if(확정도!=='시군구') return [0,0];
+    let h=0; for(let i=0;i<id.length;i++) h=(h*31+id.charCodeAt(i))|0;
+    const a=((h%360)+360)%360*Math.PI/180, r=0.004+(((h>>9)&7)*0.0006);
+    return [Math.sin(a)*r, Math.cos(a)*r];
+  }
+  const pinIcon=(판정,sel)=>L.divIcon({className:'',html:'<div class="pin '+판정+(sel?' sel':'')+'"></div>',iconSize:[16,16],iconAnchor:[8,16],popupAnchor:[0,-15]});
+  function updateMap(items){
+    if(!hasL) return;
+    initMap(); if(!map) return;
+    mLayer.clearLayers(); mById.clear();
+    let pins=0;
+    items.forEach(x=>{
+      (x.좌표목록||[]).forEach(p=>{
+        if(p.lat==null) return;
+        const [dla,dln]=jitter(x.id,p.확정도);
+        const mk=L.marker([p.lat+dla,p.lng+dln],{icon:pinIcon(x.판정,false),riseOnHover:true});
+        mk.bindPopup('<b>'+esc(x.공고명||'')+'</b><br><span class="pp-type">'+esc(x.유형||'')+(p.단지명&&p.단지명!==x.공고명?' · '+esc(p.단지명):'')+(p.확정도==='시군구'?' · 위치 대략(시군구)':'')+'</span>');
+        mk.on('click',()=>{ selectCard(x.id); modal(x); });
+        mk.on('mouseover',function(){ this.openPopup(); });
+        mLayer.addLayer(mk);
+        if(!mById.has(x.id)) mById.set(x.id,[]); mById.get(x.id).push(mk);
+        pins++;
+      });
+    });
+    const noPin=items.length-mById.size;
+    $('#mapNote').innerHTML='🗺 '+mById.size+'개 공고 표시'+(noPin>0?' · 위치정보 없음 '+noPin+'건':'');
+  }
+  // 핀 클릭 → 해당 카드 하이라이트·스크롤(모바일은 목록뷰로 전환).
+  function selectCard(id){
+    if(window.innerWidth<1024 && document.body.classList.contains('mapview')) toggleMapView(false);
+    let target=null;
+    $$('.card').forEach(c=>{ const on=c.dataset.id===id; c.classList.toggle('mapsel',on); if(on) target=c; });
+    if(target) target.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+  // 현재 핀들에 맞춰 지도 줌(지역 선택 시). moveend 1회는 progMove로 흡수(영역필터 재귀 방지).
+  function fitToPins(){
+    if(!map||!mLayer) return;
+    const pts=[]; mLayer.eachLayer(m=>pts.push(m.getLatLng()));
+    if(pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.18),{maxZoom:14});
+  }
+  function toggleMapView(on){
+    document.body.classList.toggle('mapview',on);
+    $('#mapToggle').classList.toggle('on',on);
+    if(on&&map) setTimeout(()=>map.invalidateSize(),60);
   }
 
   function buildStats(){
@@ -1102,8 +1209,17 @@
   $('#supplySel').addEventListener('change',e=>{ state.supply=e.target.value; apply(); });
   $('#sectorSel').addEventListener('change',e=>{ state.sector=e.target.value; apply(); });
   $('#typeSel').addEventListener('change',e=>{ state.type=e.target.value; apply(); });
-  $('#regionSel').addEventListener('change',e=>{ state.region=e.target.value; apply(); });
+  $('#regionSel').addEventListener('change',e=>{ state.region=e.target.value; apply(); if(e.target.value) fitToPins(); else if(map) map.setView([36.4,127.8],7); });
   $('#sortSel').addEventListener('change',e=>{ state.sort=e.target.value; apply(); });
+
+  // 지도 토글(모바일) · '이 지도 영역만'(양방향 영역필터)
+  $('#mapToggle').addEventListener('click',()=>toggleMapView(!document.body.classList.contains('mapview')));
+  $('#boundsChk').addEventListener('change',e=>{
+    state.mapBoundsOn=e.target.checked;
+    if(e.target.checked){ if(window.innerWidth<1024) toggleMapView(true); initMap(); state.mapBounds=map?map.getBounds():null; }
+    else state.mapBounds=null;
+    apply();
+  });
 
   // ── 첫 방문 단계별 마법사(카드뉴스식) — 한 번에 하나씩, 모르면 건너뛰기 ──
   const WIZ_INTRO={intro:true,emoji:'🏠',q:'내 조건으로 딱 맞는 공고 찾기',

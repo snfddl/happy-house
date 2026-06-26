@@ -3,12 +3,34 @@
 //   템플릿=site/_template.html (placeholder: /*__DATA__*/ , /*__CORE__*/)
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { loadCache, normKey, regionOf } from './geo.mjs';
 
 // 빌드 전 드리프트 가드 — 계층 캐논 함수(match-core canonTier ↔ normalize canonTierKey) 본문 동일성 assert.
 //   match-core는 브라우저 인라인용이라 import 불가 → 코드 공유 대신 빌드 게이트로 차단(드리프트 시 빌드 실패).
 execFileSync(process.execPath, ['check-canon-drift.mjs'], { cwd: new URL('./', import.meta.url), stdio: 'inherit' });
 
 const ROOT = new URL('./data/', import.meta.url);
+const geo = loadCache();   // 좌표 사이드카(주소/지역 키) — 지도 핀용. 미존재 시 빈 객체(좌표목록 전부 [], 빌드 무결).
+
+// 좌표 조인 — req → 단지별 핀 목록. 단지 주소 정밀좌표 우선, 미스 시 시군구 centroid 폴백, 둘 다 없으면 핀 없음.
+//   build-site는 node라 geo.mjs import 가능(match-core처럼 브라우저 인라인 아님). normKey/regionOf로 seed·geocode와 키 일치.
+function coordsFor(r) {
+  const out = [];
+  const 단지 = Array.isArray(r.단지) ? r.단지 : [];
+  if (단지.length) {
+    for (const d of 단지) {
+      const addr = d.주소 || '';
+      const hit = addr && geo[normKey(addr)];
+      if (hit && hit.lat != null) { out.push({ 단지명: d.단지명 || r.공고명 || '', lat: hit.lat, lng: hit.lng, 확정도: hit.확정도 || '건물' }); continue; }
+      const reg = geo[normKey(regionOf(addr))];
+      if (reg && reg.lat != null) out.push({ 단지명: d.단지명 || r.공고명 || '', lat: reg.lat, lng: reg.lng, 확정도: '시군구' });
+    }
+  } else {
+    const reg = geo[normKey(regionOf(r.지역 || ''))];
+    if (reg && reg.lat != null) out.push({ 단지명: r.공고명 || '', lat: reg.lat, lng: reg.lng, 확정도: '시군구' });
+  }
+  return out;
+}
 const SRC = [['lh', new URL('derived/lh/', ROOT)], ['applyhome', new URL('derived/applyhome/', ROOT)], ['myhome', new URL('derived/myhome/', ROOT)], ['sh', new URL('derived/sh/', ROOT)], ['gh', new URL('derived/gh/', ROOT)]];
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -43,6 +65,7 @@ for (const [src, base] of SRC) {
     // SH 등 날짜 자체가 없는 활성건: 거짓 '공고중' 대신 '마감일 미상'으로 정직 표시(수시모집은 접수시작이 있어 제외).
     if (!r.마감일 && !r.접수시작 && ACTIVE.has(r.상태)) r.마감일미상 = true;
     r.__src = src; r.__id = `${src}:${r.panId || r.no || n}`;
+    r.좌표목록 = coordsFor(r);   // 지도 핀(단지 단위). 빈 배열이면 '위치 표기 없음' 폴백.
     reqs.push(r);
   }
 }
@@ -73,16 +96,22 @@ const EMPTY_PROFILE = {
 };
 const seed = process.argv.includes('--seed');
 const P = seed ? JSON.parse(readFileSync(new URL('profile.json', import.meta.url), 'utf8')) : EMPTY_PROFILE;
-const meta = { 기준일: TODAY, 건수: reqs.length, seed };
+const geoOK = reqs.filter(r => (r.좌표목록 || []).length).length;   // 핀 있는 공고 수(지도 표시율)
+const meta = { 기준일: TODAY, 건수: reqs.length, seed, 지도표시: geoOK, 지도미표시: reqs.length - geoOK };
 
 // 3) match-core 인라인용 소스(export 제거 → createMatcher 전역)
 const core = readFileSync(new URL('match-core.mjs', import.meta.url), 'utf8').replace(/\bexport\s+/g, '');
 
-// 4) 템플릿 주입
+// 4) 템플릿 주입 — Leaflet 벤더 인라인(자체완결 단일 HTML 철학: file:// 더블클릭서도 라이브러리 로드 네트워크 불필요, 타일만 네트워크).
+//    함수형 replace로 $& 등 특수치환 회피(Leaflet 코드에 $ 다수).
+const leafletJs = readFileSync(new URL('data/vendor/leaflet.js', import.meta.url), 'utf8');
+const leafletCss = readFileSync(new URL('data/vendor/leaflet.css', import.meta.url), 'utf8');
 const tpl = readFileSync(new URL('site/_template.html', import.meta.url), 'utf8');
 const html = tpl
-  .replace('/*__CORE__*/', core)
-  .replace('/*__DATA__*/ {meta:{},profile:{},reqs:[]}', JSON.stringify({ meta, profile: P, reqs }));
+  .replace('/*__CORE__*/', () => core)
+  .replace('/*__LEAFLET_CSS__*/', () => leafletCss)
+  .replace('/*__LEAFLET_JS__*/', () => leafletJs)
+  .replace('/*__DATA__*/ {meta:{},profile:{},reqs:[]}', () => JSON.stringify({ meta, profile: P, reqs }));
 writeFileSync(new URL('site/index.html', import.meta.url), html);
 
 const kb = Math.round(Buffer.byteLength(html) / 1024);

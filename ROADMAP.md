@@ -8,6 +8,11 @@
    - 신규공고 + D-day 변화 감지 → 발송(이메일/카톡/웹푸시). **임대+분양 통합**(둘 다 index.json·match-result.json에 들어옴).
    - "다이제스트형"으로 설계: 백로그 즉시 + 주간요약 + 예상빈도 안내(공고 드물어도 안 죽게). 빈도 실측: 전국 8.6건/주, 수도권 1.1건/주, 특정 시군구 ≈0.
 
+## 완료 (지도 연동 조회 · 2026-06-27)
+- ✅ **Leaflet 지도 + 카드 목록 양방향 연동**(키 0·벤더 인라인·자체완결 유지): 핀↔카드 클릭 하이라이트, 지역 select→해당 지역 줌(`fitToPins`), **'이 지도 영역만' 토글→가시영역(bounds)으로 목록 필터**(`state.mapBoundsOn`+`pass()` 술어+moveend), 판정 색 핀, 데스크탑 좌지도/우목록·모바일 토글. 좌표없음 공고는 핀 생략(목록 유지).
+- ✅ **좌표 파이프라인**: `geo.mjs`(사이드카 캐시·제공자 추상화) + `geocode.mjs`(Kakao Local·로컬 키·증분·멱등) + `resolve-naver` 분양 좌표 무료 시드. 좌표는 requirements 아닌 **주소키 사이드카**(`geo-cache.json`)에 → 재derive 면역. CI 키-0(캐시+시군구 centroid 폴백). build-site가 `좌표목록` 조인·임베드.
+- 교훈: 키리스 Nominatim은 한국 상세주소 지오코딩 불가(전국중심 폴백·무작위 POI) → Kakao Local 키 채택(무과금·서비스 ON 필요). 상세: `ARCHITECTURE.md` 모듈지도 · `SCHEMA.md` §7 · `DEPLOY.md`.
+
 ## 완료 (웹 조회 UI)
 - ✅ `build-site.mjs` → `site/index.html` 자체완결 정적(requirements+프로필+`match-core` 인라인, 서버 불필요). 임대+분양 통합, 판정 배지·필터·검색·정렬·상세 모달. **브라우저 내 조건 수정 패널→실시간 재계산**(매칭 로직=`match-core.mjs` 단일소스 공유, localStorage 저장). 신뢰감: 출처·기준일·**검증된 원문링크**·"확인필요/참고/추정" 정직표기·판정기준 안내. 템플릿=`site/_template.html`.
 - 교훈: LH 상세페이지 GET은 깨짐(POST 전용)→공고문 PDF로 교체. **링크는 항상 접근성 검증 후 노출**(curl).
