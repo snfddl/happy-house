@@ -5,6 +5,9 @@ import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { loadCache, normKey, regionOf } from './geo.mjs';
 
+// .env 로드(Node는 자동 로드 안 함) — SUPABASE_URL/ANON_KEY 등 주입용. 없으면(CI) 무시, 실제 env 우선.
+try { process.loadEnvFile(new URL('.env', import.meta.url)); } catch { /* .env 없음 → 실제 env만 사용 */ }
+
 // 빌드 전 드리프트 가드 — 계층 캐논 함수(match-core canonTier ↔ normalize canonTierKey) 본문 동일성 assert.
 //   match-core는 브라우저 인라인용이라 import 불가 → 코드 공유 대신 빌드 게이트로 차단(드리프트 시 빌드 실패).
 execFileSync(process.execPath, ['check-canon-drift.mjs'], { cwd: new URL('./', import.meta.url), stdio: 'inherit' });
@@ -99,6 +102,12 @@ const P = seed ? JSON.parse(readFileSync(new URL('profile.json', import.meta.url
 const geoOK = reqs.filter(r => (r.좌표목록 || []).length).length;   // 핀 있는 공고 수(지도 표시율)
 const meta = { 기준일: TODAY, 건수: reqs.length, seed, 지도표시: geoOK, 지도미표시: reqs.length - geoOK };
 
+// 알림 구독(Supabase) 공개설정 — env 있을 때만 주입. anon 키는 공개 의도(RLS로 INSERT만 허용).
+//   미설정(CI·타인 빌드)이면 null → 템플릿이 '알림 받기' UI를 숨김(무결).
+const notifyCfg = (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY)
+  ? { url: process.env.SUPABASE_URL, anonKey: process.env.SUPABASE_ANON_KEY }
+  : null;
+
 // 3) match-core 인라인용 소스(export 제거 → createMatcher 전역)
 const core = readFileSync(new URL('match-core.mjs', import.meta.url), 'utf8').replace(/\bexport\s+/g, '');
 
@@ -121,8 +130,17 @@ const html = tpl
   .replace('/*__CORE__*/', () => core)
   .replace('/*__LEAFLET_CSS__*/', () => leafletCss)
   .replace('/*__LEAFLET_JS__*/', () => leafletJs)
-  .replace('/*__DATA__*/ {meta:{},profile:{},reqs:[]}', () => JSON.stringify({ meta, profile: P, reqs }));
+  .replace('/*__DATA__*/ {meta:{},profile:{},reqs:[]}', () => JSON.stringify({ meta, profile: P, reqs, notify: notifyCfg }));
 writeFileSync(new URL('site/index.html', import.meta.url), html);
+
+// notify.mjs 소비용 — 신선도/슬림 반영된 최종 reqs(브라우저가 매칭하는 것과 동일). gitignore(재생성 가능).
+writeFileSync(new URL('data/reqs-built.json', import.meta.url), JSON.stringify(reqs));
+
+// 알림 해지 페이지 — notifyCfg 있을 때만 생성(공개설정 주입). 없으면 미생성(이메일 링크도 안 나감).
+if (notifyCfg) {
+  const ut = readFileSync(new URL('site/_unsubscribe.html', import.meta.url), 'utf8');
+  writeFileSync(new URL('site/unsubscribe.html', import.meta.url), ut.replace('const NOTIFY=/*__NOTIFY__*/null;', () => `const NOTIFY=${JSON.stringify(notifyCfg)};`));
+}
 
 const kb = Math.round(Buffer.byteLength(html) / 1024);
 console.log(`✅ site/index.html 생성 — 공고 ${reqs.length}건 인라인, ${kb}KB · 기본프로필=${seed ? '내 profile.json(개인용)' : '빈값(공유용·방문자 입력)'}`);

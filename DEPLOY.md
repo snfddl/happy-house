@@ -39,6 +39,8 @@ push 트리거 경로: `site/**`, `*.mjs`, `data/derived/**`, `.github/workflows
 
 **키(Secret)**: data.go.kr 키를 `gh secret set DATA_GO_KR_SERVICE_KEY`로 등록해야 LH(refresh)·마이홈(refresh)·청약홈(collect+derive)이 CI에서 동작. 미설정 시 키 필요 소스만 graceful 생략, SH/GH는 키 불필요라 항상 동작.
 
+**알림 가입 UI(공개 anon)**: 발송(`notify.mjs`)은 비밀키(`SUPABASE_SERVICE_KEY`·`RESEND_API_KEY`) 필요 → **로컬 전용**(CI에 안 둠). 단 공개 사이트에 '🔔 알림 받기' UI를 노출하려면 build-site가 공개 anon 설정을 임베드해야 하므로 `SUPABASE_URL`·`SUPABASE_ANON_KEY`를 **repo Variables**(`gh variable set` — Secret 아님, anon키는 공개 의도·RLS로 INSERT만)로 등록한다. refresh.yml의 build-site 단계가 이를 주입. 미설정이면 notify=null → 가입 UI 숨김(무결).
+
 **지도 좌표(geocode)도 동일한 "로컬 키 / CI 키-0" 모델.** 단지 주소→좌표는 Kakao Local 키(`.env`의 `KAKAO_REST_KEY`, gitignore)로 **로컬에서만** 채우고(`node geocode.mjs`, 증분·멱등) `geo-cache.json` 결과만 커밋. CI(`process-all`/`build-site`)는 키 없이 **캐시+시군구 centroid 폴백**으로 핀을 그린다(키-0). 분양 좌표는 `resolve-naver`가 무료 시드. 키 발급: developers.kakao.com REST 키 + 그 앱의 "카카오맵(Local)" 서비스 ON(무과금·도메인 등록 불필요).
 
 ## 일상 운영

@@ -426,6 +426,7 @@
       <span class="dot"></span>
       <span id="profileText">—</span>
       <button class="ghost" id="howBtn">판정 기준</button>
+      <button id="notifyBtn" style="display:none">🔔 알림 받기</button>
       <button id="editBtn">⚙ 내 조건 수정</button>
     </div>
   </div>
@@ -827,6 +828,68 @@
   $('#ov').addEventListener('click',e=>{ if(e.target===$('#ov')) closeModal(); });
   $('#ov').addEventListener('keydown',e=>trapTabIn($('#modal'),e));
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModal(); closeDrawer(); closeWizard(); } });
+
+  // ── 이메일 알림 구독(Supabase) — DATA.notify(빌드때 SUPABASE env로 주입) 있을 때만 노출 ──
+  //   브라우저가 현재 localStorage 프로필(P)+이메일+코스필터를 anon키로 INSERT. RLS가 INSERT만 허용(읽기 차단).
+  const NOTIFY=DATA.notify;
+  if(NOTIFY&&NOTIFY.url&&NOTIFY.anonKey){ const nb=$('#notifyBtn'); if(nb){ nb.style.display=''; nb.onclick=openNotify; } }
+  const PRIMARY='background:var(--accent);color:#fff;border:0;border-radius:10px;padding:12px;font-weight:680;cursor:pointer;font-family:inherit';
+  function profileReady(){ return P.무주택!=null && (P.월평균소득!=null || P.거주지?.시도); }   // 매칭 불가한 빈 프로필 차단
+  function openNotify(){
+    modalReturnFocus=document.activeElement;
+    if(!profileReady()){
+      $('#modal').innerHTML='<div class="m-head"><button class="m-close" onclick="closeModal()" aria-label="닫기">✕</button>'
+        +'<h2 id="modalTitle">먼저 내 조건을 입력해주세요</h2></div>'
+        +'<div class="m-body"><p style="margin:0 0 16px">알림은 입력한 <b>내 조건</b>(무주택·소득·지역 등)에 맞는 공고만 골라 보내드려요. 조건이 비어 있으면 매칭할 수 없어요.</p>'
+        +'<button style="width:100%;'+PRIMARY+'" onclick="closeModal();window.openDrawer&&window.openDrawer()">⚙ 내 조건 입력하러 가기</button></div>';
+      $('#ov').classList.add('show'); document.body.style.overflow='hidden';
+      const cb=$('#modal').querySelector('.m-close'); if(cb) cb.focus(); return;
+    }
+    $('#modal').innerHTML=notifyFormHtml();
+    $('#ov').classList.add('show'); document.body.style.overflow='hidden';
+    wireNotifyForm(); const em=$('#nfEmail'); if(em) em.focus();
+  }
+  const nfChk=(grp,val,label)=>'<label style="display:flex;gap:6px;align-items:center;cursor:pointer">'
+    +'<input type="checkbox" data-grp="'+grp+'" value="'+val+'" checked>'+label+'</label>';
+  function notifyFormHtml(){
+    return '<div class="m-head"><button class="m-close" onclick="closeModal()" aria-label="닫기">✕</button>'
+      +'<h2 id="modalTitle">🔔 새 공고 이메일 알림</h2>'
+      +'<div class="mloc">내 조건에 맞는 공고가 올라오면 메일로 받아요</div></div>'
+      +'<div class="m-body"><form id="nfForm" novalidate>'
+      +'<label for="nfEmail" style="display:block;font-size:13px;font-weight:680;margin:0 0 4px">이메일</label>'
+      +'<input id="nfEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required '
+        +'style="width:100%;box-sizing:border-box;padding:11px;border:1px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit">'
+      +'<div style="font-size:13px;font-weight:680;margin:16px 0 6px">받을 유형</div>'
+      +'<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:13.5px">'+nfChk('상품군','임대','임대')+nfChk('상품군','분양','분양')+'</div>'
+      +'<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:13.5px;margin-top:8px">'+nfChk('공급자','공공','공공(LH·SH 등)')+nfChk('공급자','민간','민간분양')+'</div>'
+      +'<label style="display:flex;gap:8px;align-items:flex-start;margin:18px 0 0;font-size:12.5px;color:var(--muted);cursor:pointer">'
+        +'<input id="nfConsent" type="checkbox" required style="margin-top:2px">'
+        +'<span>입력한 <b>내 조건(소득·자산 등)과 이메일</b>을 알림 발송 목적으로 수집·보관하는 데 동의합니다. 언제든 메일 하단 링크로 해지할 수 있어요.</span></label>'
+      +'<button type="submit" id="nfSubmit" style="width:100%;'+PRIMARY+';margin-top:16px">알림 받기</button>'
+      +'<div id="nfMsg" role="status" style="font-size:13px;margin-top:10px"></div>'
+      +'</form></div>';
+  }
+  function wireNotifyForm(){
+    const f=$('#nfForm'); if(!f) return;
+    f.onsubmit=async ev=>{
+      ev.preventDefault();
+      const email=$('#nfEmail').value.trim(), msg=$('#nfMsg');
+      const fail=t=>{ msg.style.color='#d33'; msg.textContent=t; };
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail('이메일 형식을 확인해주세요.');
+      if(!$('#nfConsent').checked) return fail('수집·보관 동의가 필요해요.');
+      const grp=g=>[...f.querySelectorAll('input[data-grp="'+g+'"]:checked')].map(c=>c.value);
+      const filters={상품군:grp('상품군'),공급자:grp('공급자')};
+      const btn=$('#nfSubmit'); btn.disabled=true; msg.style.color='var(--muted)'; msg.textContent='등록 중…';
+      try{
+        const r=await fetch(NOTIFY.url+'/rest/v1/subscribers',{method:'POST',
+          headers:{apikey:NOTIFY.anonKey,Authorization:'Bearer '+NOTIFY.anonKey,'Content-Type':'application/json',Prefer:'return=minimal'},
+          body:JSON.stringify({email,profile:P,filters})});
+        if(r.ok){ msg.style.color='var(--ok)'; msg.innerHTML='✅ 등록 완료! 조건에 맞는 공고가 올라오면 메일로 보내드릴게요.'; btn.style.display='none'; }
+        else if(r.status===409){ msg.style.color='var(--accent-ink)'; msg.textContent='이미 이 이메일로 구독 중이에요.'; btn.disabled=false; }
+        else { const t=await r.text().catch(()=>''); fail('등록 실패('+r.status+'). 잠시 후 다시 시도해주세요.'); console.warn('subscribe',r.status,t); btn.disabled=false; }
+      }catch(err){ fail('네트워크 오류 — 잠시 후 다시 시도해주세요.'); btn.disabled=false; }
+    };
+  }
 
   // ── 필터/정렬 ──
   const state={판정:'',supply:'',sector:'',type:'',region:'',q:'',sort:'smart',regionOnly:false,분양류:false,favOnly:false,activeOnly:true,mapBoundsOn:false,mapBounds:null};

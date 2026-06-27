@@ -74,6 +74,9 @@ if (!NO_BUILD) {
   hr('◆ build-site');
   try { execFileSync('node', [p('build-site.mjs'), ...argv.filter(a => a === '--seed')], { stdio: 'inherit', cwd: p('.') }); }
   catch (e) { log(`  ⚠️ build-site 실패: ${e.message.split('\n')[0]}`); summary.push({ src: 'build', ok: false, note: e.message.split('\n')[0] }); }
+  hr('◆ notify (구독자 알림 — Supabase/Resend env 있을 때만)');  // env 없으면 notify.mjs가 스스로 skip(exit 0)
+  try { execFileSync('node', [p('notify.mjs')], { stdio: 'inherit', cwd: p('.') }); }
+  catch (e) { log(`  ⚠️ notify 실패(계속): ${e.message.split('\n')[0]}`); }
 } else log(`\n(빌드 생략 — ${SEMI ? '--semi' : '--no-build'})`);
 
 hr('요약');

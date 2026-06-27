@@ -56,6 +56,11 @@ jobs:
         run: node prune-expired.mjs || true   # 마감 후 60일(기본) 지난 derived 삭제 + index tombstone. 결정론·멱등
 
       - name: 사이트 빌드 (빈 프로필·공유용)
+        env:
+          # 알림 가입 UI 노출용 공개 설정(anon키는 공개 의도 — RLS로 INSERT만). repo Variables에 등록.
+          # 미설정이면 build-site가 notify=null → 가입 UI 숨김(무결). 발송 비밀키(SERVICE/RESEND)는 CI에 두지 않음.
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
         run: node build-site.mjs
 
       - name: 갱신된 index.json 커밋
