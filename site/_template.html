@@ -217,6 +217,7 @@
     background:var(--accent-soft);border-radius:999px;padding:5px 12px;margin-bottom:14px}
   .wiz-emoji{font-size:46px;line-height:1;margin-bottom:12px}
   .wiz-q{font-size:21px;font-weight:780;letter-spacing:-.03em;margin:0 0 8px;line-height:1.35}
+  .wiz-q:focus{outline:none}   /* 프로그램 포커스(단계 전환 SR 안내)용 — 시각 링 불필요 */
   .wiz-sub{color:var(--muted);font-size:13.5px;line-height:1.65;margin:0 auto 20px;max-width:38ch}
   .wiz-fields{text-align:left;max-width:340px;margin:0 auto}
   .wiz .field input,.wiz .field select{font-size:16px;padding:12px 13px;border-radius:11px}
@@ -286,9 +287,10 @@
 
   /* Drawer (프로필 편집) */
   .drawer{position:fixed;top:0;right:0;bottom:0;width:400px;max-width:94vw;background:#fff;z-index:60;
-    box-shadow:-14px 0 44px rgba(16,24,40,.2);transform:translateX(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);
+    box-shadow:-14px 0 44px rgba(16,24,40,.2);transform:translateX(100%);visibility:hidden;
+    transition:transform .26s cubic-bezier(.4,0,.2,1),visibility 0s .26s;   /* 닫힘=visibility:hidden(탭/SR 제외), 슬라이드아웃 후 숨김 */
     overflow:auto;display:flex;flex-direction:column}
-  .drawer.show{transform:none}
+  .drawer.show{transform:none;visibility:visible;transition:transform .26s cubic-bezier(.4,0,.2,1),visibility 0s 0s}
   .drawer-h{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);padding:18px 22px;
     display:flex;justify-content:space-between;align-items:center;z-index:2}
   .drawer-h h3{margin:0;font-size:16px;font-weight:760}
@@ -489,7 +491,7 @@
 
 <div class="ov" id="ov"><div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"></div></div>
 
-<div class="ov" id="wizard"><div class="wiz">
+<div class="ov" id="wizard"><div class="wiz" role="dialog" aria-modal="true" aria-labelledby="wizTitle">
   <div class="wiz-top">
     <div class="wiz-prog" id="wizProg"></div>
     <button class="wiz-skip" id="wizSkip" type="button">건너뛰고 전체 보기 ✕</button>
@@ -503,10 +505,10 @@
 </div></div>
 
 <div class="drawer-ov" id="drawerOv"></div>
-<aside class="drawer" id="drawer">
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle">
   <div class="drawer-h">
-    <div><h3>내 조건 수정</h3><p>바꾸면 즉시 다시 매칭됩니다 · 이 기기에 저장</p></div>
-    <button class="m-close" onclick="closeDrawer()">✕</button>
+    <div><h3 id="drawerTitle">내 조건 수정</h3><p>바꾸면 즉시 다시 매칭됩니다 · 이 기기에 저장</p></div>
+    <button class="m-close" onclick="closeDrawer()" aria-label="닫기">✕</button>
   </div>
   <div class="drawer-b" id="form"></div>
   <div class="drawer-f">
@@ -710,6 +712,15 @@
     return '<ul class="anal-list">'+parts.map(t=>{const [ic,lb]=label(t);
       return '<li><span class="al-ic">'+ic+'</span><div>'+(lb?'<b class="al-lb">'+lb+'</b> ':'')+hl(esc(t))+'</div></li>';}).join('')+'</ul>';
   }
+  // 포커스 트랩 — 컨테이너 안에서 Tab이 밖으로 새지 않도록 순환(컨테이너에 포커스 있을 때만 발화). 모달·드로어·위저드 공유.
+  function trapTabIn(container,e){
+    if(e.key!=='Tab') return;
+    const f=[...container.querySelectorAll('button,a[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(el=>el.offsetParent!==null&&!el.disabled);
+    if(!f.length) return;
+    const first=f[0], last=f[f.length-1];
+    if(e.shiftKey&&document.activeElement===first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey&&document.activeElement===last){ e.preventDefault(); first.focus(); }
+  }
   let modalReturnFocus=null;   // 모달 열기 전 포커스 → 닫을 때 복귀(키보드 동선)
   function modal(x){
     modalReturnFocus=document.activeElement;
@@ -814,15 +825,7 @@
     modalReturnFocus=null;
   };
   $('#ov').addEventListener('click',e=>{ if(e.target===$('#ov')) closeModal(); });
-  // 포커스 트랩 — 모달 안에서 Tab이 밖으로 새지 않도록 순환(#ov에 포커스 있을 때만 발화)
-  $('#ov').addEventListener('keydown',e=>{
-    if(e.key!=='Tab') return;
-    const f=[...$('#modal').querySelectorAll('button,a[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(el=>el.offsetParent!==null);
-    if(!f.length) return;
-    const first=f[0], last=f[f.length-1];
-    if(e.shiftKey&&document.activeElement===first){ e.preventDefault(); last.focus(); }
-    else if(!e.shiftKey&&document.activeElement===last){ e.preventDefault(); first.focus(); }
-  });
+  $('#ov').addEventListener('keydown',e=>trapTabIn($('#modal'),e));
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModal(); closeDrawer(); closeWizard(); } });
 
   // ── 필터/정렬 ──
@@ -1303,10 +1306,12 @@
     $('#missFix').onclick=openDrawer;
   }
 
-  window.openDrawer=()=>{ buildForm(); $('#drawer').classList.add('show'); $('#drawerOv').classList.add('show'); };
-  window.closeDrawer=()=>{ $('#drawer').classList.remove('show'); $('#drawerOv').classList.remove('show'); };
+  let drawerReturnFocus=null;
+  window.openDrawer=()=>{ drawerReturnFocus=document.activeElement; buildForm(); $('#drawer').classList.add('show'); $('#drawerOv').classList.add('show'); const f=$('#drawer').querySelector('.m-close'); if(f) f.focus(); };
+  window.closeDrawer=()=>{ $('#drawer').classList.remove('show'); $('#drawerOv').classList.remove('show'); if(drawerReturnFocus&&drawerReturnFocus.focus) drawerReturnFocus.focus(); drawerReturnFocus=null; };
   $('#editBtn').onclick=openDrawer;
   $('#drawerOv').onclick=closeDrawer;
+  $('#drawer').addEventListener('keydown',e=>trapTabIn($('#drawer'),e));
   $('#resetBtn').onclick=()=>{ if(confirm('빌드 시 기본 프로필로 되돌립니다.')){ P=structuredClone(DATA.profile); saveP(); buildForm(); refresh(); syncProfileChip(); } };
 
   const isIncomplete=()=>!P.생년월일 && P.월평균소득==null;
@@ -1393,7 +1398,7 @@
     const step=WIZ[wizI], last=wizI===WIZ.length-1;
     $('#wizProg').innerHTML=WIZARD.map((_,i)=>'<span class="dot'+(i===wizI-1?' on':i<wizI-1?' done':'')+'"></span>').join('');
     let h=(step.sec==='want'?'<div class="wiz-sectag">🎯 원하는 조건 · 자격과 별개</div>':'')
-      +'<div class="wiz-emoji">'+step.emoji+'</div><h2 class="wiz-q">'+esc(step.q)+'</h2><p class="wiz-sub">'+esc(step.sub)+'</p>';
+      +'<div class="wiz-emoji">'+step.emoji+'</div><h2 class="wiz-q" id="wizTitle" tabindex="-1">'+esc(step.q)+'</h2><p class="wiz-sub">'+esc(step.sub)+'</p>';
     if(!step.intro) h+='<div class="wiz-fields" id="wizStep">'+renderFields(step.fields)+'</div>';
     $('#wizBody').innerHTML=h;
     if(!step.intro) bindFields('#wizStep');
@@ -1401,14 +1406,17 @@
     $('#wizNext').textContent=step.intro?'시작하기 →':last?'내 맞춤 목록 보기 →':'다음 →';
     $('#wizPeek').style.display=(wizI>=2&&!last)?'block':'none';
     $('#wizBody').scrollTop=0;
+    if($('#wizard').classList.contains('show')){ const t=$('#wizTitle'); if(t) t.focus(); }   // 단계 전환 시 새 질문에 포커스(SR 안내·포커스 유지)
   }
-  const openWizard=()=>{ wizI=0; $('#wizard').classList.add('show'); document.body.style.overflow='hidden'; renderWiz(); };
-  const closeWizard=()=>{ $('#wizard').classList.remove('show'); document.body.style.overflow=''; };
+  let wizReturnFocus=null;
+  const openWizard=()=>{ wizReturnFocus=document.activeElement; wizI=0; $('#wizard').classList.add('show'); document.body.style.overflow='hidden'; renderWiz(); };
+  const closeWizard=()=>{ $('#wizard').classList.remove('show'); document.body.style.overflow=''; if(wizReturnFocus&&wizReturnFocus.focus) wizReturnFocus.focus(); wizReturnFocus=null; };
   $('#wizNext').onclick=()=>{ if(wizI<WIZ.length-1){ wizI++; renderWiz(); } else closeWizard(); };
   $('#wizBack').onclick=()=>{ if(wizI>0){ wizI--; renderWiz(); } };
   $('#wizSkip').onclick=closeWizard;
   $('#wizPeek').onclick=closeWizard;
   $('#wizard').addEventListener('click',e=>{ if(e.target===$('#wizard')) closeWizard(); });
+  $('#wizard').addEventListener('keydown',e=>trapTabIn($('#wizard').querySelector('.wiz'),e));
 
   // init
   const firstVisit=!(()=>{try{return localStorage.getItem(LSKEY);}catch{return null;}})();
