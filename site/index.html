@@ -1699,7 +1699,7 @@ function createMatcher(P, todayStr) {
 
     // 공고문 표서 결정론 추출된 전매/실거주/재당첨은 사실로 노출(헤지 대체). inject-applyhome-notice가 채움.
     const 확정 = v => v && typeof v === 'object' && v.기간;
-    const fact = (label, v) => { if (확정(v)) 참고.push(`${label}: ${v.적용 === false ? '없음' : v.기간} (공고문)`); };
+    const fact = (label, v) => { if (확정(v)) 참고.push(`${label}: ${v.적용 === false ? '없음' : v.기간}`); };
     fact('전매제한', req.전매제한); fact('실거주의무', req.실거주의무); fact('재당첨제한', req.재당첨제한);
     for (const g of (req._갭 || [])) {
       if (g === '가점추첨비율') 참고.push('가점/추첨 비율 원문확인(면적·규제별)');
