@@ -4,7 +4,8 @@
 //   (본문엔 당첨발표·서류제출 등 다른 시각이 많아, 마감 날짜에 붙은 시각만 잡아야 오추출이 없음.)
 //   여러 후보면 접수/신청/~ 문맥 우선, 그래도 복수면 가장 늦은 시각(접수 종료시각) 채택.
 // applyhome(청약홈)은 본문 없음(API 날짜만) → notice_sliced.txt 부재로 자동 스킵 → 템플릿이 소스 휴리스틱 폴백.
-import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readdirSync, readFileSync, existsSync } from 'node:fs';
+import { writeJSONIfChanged } from './collect-util.mjs';
 
 const ROOT = new URL('./data/derived/', import.meta.url);
 const argv = process.argv.slice(2);
@@ -69,10 +70,10 @@ for (const src of SOURCES) {
     const t = extractTime(readFileSync(np, 'utf8'), due.slice(5, 7), due.slice(8, 10));
     if (t) {
       stat[src].hit++;
-      if (!REPORT) { r.마감시각 = t; writeFileSync(rp, JSON.stringify(r, null, 2)); }
+      if (!REPORT) { r.마감시각 = t; writeJSONIfChanged(rp, r); }
     } else {
       stat[src].miss.push(`${no}(${due})`);
-      if (!REPORT && '마감시각' in r) { delete r.마감시각; writeFileSync(rp, JSON.stringify(r, null, 2)); } // 멱등: 이전 오추출 제거
+      if (!REPORT && '마감시각' in r) { delete r.마감시각; writeJSONIfChanged(rp, r); } // 멱등: 이전 오추출 제거
     }
   }
 }

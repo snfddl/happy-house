@@ -5,7 +5,8 @@
 //     --source= : 정규화할 소스 디렉터리(data/derived/<source>/). 기본 lh.
 //     --report  : 쓰지 않고 변경 요약만 출력
 //     panId 인자 : 해당 공고만(없으면 data/derived/<source> 전체)
-import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { writeJSONIfChanged } from './collect-util.mjs';
 
 const HERE = new URL('./', import.meta.url);
 const args = process.argv.slice(2);
@@ -159,7 +160,7 @@ for (const pan of pans) {
   if (cb && !Array.isArray(cb)) for (const [k, e] of Object.entries(cb)) { keySet.add(k); Object.keys(e || {}).forEach(x => fieldSet.add(x)); }
   if (ch) {
     changed++;
-    if (!REPORT) writeFileSync(f, JSON.stringify(r, null, 2));
+    if (!REPORT) writeJSONIfChanged(f, r);
     if (REPORT) console.log(`  ~ ${pan}  ${(r.공고명 || '').slice(0, 30)}`);
   }
 }

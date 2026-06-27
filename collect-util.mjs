@@ -61,6 +61,15 @@ export const makePanId = (src, rawId) => `${SRC_PREFIX[src] ?? ''}${rawId}`;
 // index.json 로드(없거나 깨졌으면 {}). idxUrl = 각 수집기의 IDX(URL/경로).
 export function loadIndex(idxUrl) { try { return JSON.parse(readFileSync(idxUrl, 'utf8')); } catch { return {}; } }
 
+// 직렬화 결과가 디스크와 같으면 안 씀(불변 diff 노이즈 방지). 반환: 실제로 썼으면 true.
+//   inject-*·normalize가 매번 전 파일을 다시 쓰면, 키순서·포맷이 코드로 한 번 바뀔 때 전 파일이 diff로 잡힌다 → 내용 동일 시 skip.
+export function writeJSONIfChanged(pathOrUrl, obj, indent = 2) {
+  const next = JSON.stringify(obj, null, indent);
+  try { if (readFileSync(pathOrUrl, 'utf8') === next) return false; } catch { /* 없으면 새로 씀 */ }
+  writeFileSync(pathOrUrl, next);
+  return true;
+}
+
 // 동시성 워커풀 — items를 최대 n개 병렬로 fn 처리, 입력순 결과 배열 반환. pipeline·myhome-pipeline의 동일 구현 1벌로.
 //   (extractOne 본문은 소스별 후처리가 달라 각 파일에 둠 — 여기선 스케줄링만 공유.)
 export async function pool(items, n, fn) {

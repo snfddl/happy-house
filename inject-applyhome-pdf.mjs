@@ -5,6 +5,7 @@
 //   atchmnflSeqNo가 API엔 없어 페이지 fetch·파싱 필요(결정론·외부 LLM 0). raw detail.json의 PBLANC_URL을 상세페이지로 사용.
 import { readdirSync, readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { Buffer } from 'node:buffer';
+import { writeJSONIfChanged } from './collect-util.mjs';
 
 const ROOT = new URL('./data/', import.meta.url);
 const DER = new URL('derived/applyhome/', ROOT);
@@ -40,7 +41,7 @@ for (const no of dirs) {
     try {
       const res = await fetch(url, { headers: UA });
       pdf = parsePdf(await res.text());
-      if (pdf) { r.원문링크 = { ...(r.원문링크 || {}), 공고문PDF: pdf }; writeFileSync(rp, JSON.stringify(r, null, 2)); ok++; }
+      if (pdf) { r.원문링크 = { ...(r.원문링크 || {}), 공고문PDF: pdf }; writeJSONIfChanged(rp, r); ok++; }
       else { miss++; }
     } catch { miss++; }
     await new Promise(r => setTimeout(r, 120));

@@ -8,8 +8,9 @@
 // raw notice.pdf는 gitignore라 로컬에만 존재 → 없는 건 fail-safe로 건너뜀(null 유지).
 //   CI는 PDF 없어 채우지 않음(기존 inject-applyhome-pdf --links-only 한계와 동일). 로컬 /update에서 채워 커밋.
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { writeJSONIfChanged } from './collect-util.mjs';
 
 const RAW = new URL('./data/raw/applyhome/', import.meta.url);
 const DERIVED = new URL('./data/derived/applyhome/', import.meta.url);
@@ -134,7 +135,7 @@ for (const no of dirs) {
     } else noPdf++;
   } else if (req.상품군 === '분양') noPdf++; // raw PDF 없음(CI/미다운로드) — 전매/거주 null 유지(건물유형은 API서 처리됨)
 
-  if (changed && !DRY) writeFileSync(reqp, JSON.stringify(req, null, 2));
+  if (changed && !DRY) writeJSONIfChanged(reqp, req);
 }
 console.log(`청약홈 공고문 주입${DRY ? '(dry)' : ''} — 전매/거주 채움 ${filled} · 건물유형 보강 ${bldg} · PDF없음 ${noPdf} · 표없음 ${noTable}(오피스텔/보류지)`);
 console.log('→ requirements.json : 전매제한·실거주의무(+재당첨제한){기간·개월·적용·원문·출처} · 건물유형(아파트/오피스텔/도시형생활주택/생활숙박시설)');

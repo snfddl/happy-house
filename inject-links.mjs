@@ -3,7 +3,8 @@
 //  - 공고문PDF : lhFile.do?fileid (공고문 PDF 직접 다운로드)
 //  - 로컬PDF  : data/raw 보관 원본 경로
 //  - 첨부     : 팸플릿 제외 전체 첨부 다운로드 링크
-import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { writeJSONIfChanged } from './collect-util.mjs';
 
 const ROOT = new URL('./data/', import.meta.url);
 const BASE = 'https://apply.lh.or.kr/lhapply';
@@ -43,7 +44,7 @@ for (const panId of panIds) {
     로컬PDF: localPdf,
     첨부: realFiles.map(f => ({ name: f.name, ext: f.ext, 다운로드: dl(f.fileid) })),
   };
-  writeFileSync(reqPath, JSON.stringify(req, null, 2));
+  writeJSONIfChanged(reqPath, req);
   ok++;
 }
 console.log(`원문링크 주입: ${ok}/${panIds.length}`);
