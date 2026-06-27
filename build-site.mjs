@@ -102,6 +102,16 @@ const meta = { 기준일: TODAY, 건수: reqs.length, seed, 지도표시: geoOK,
 // 3) match-core 인라인용 소스(export 제거 → createMatcher 전역)
 const core = readFileSync(new URL('match-core.mjs', import.meta.url), 'utf8').replace(/\bexport\s+/g, '');
 
+// 3.5) 인라인 페이로드 슬림 — 매처·템플릿이 읽지 않는 내부/감수 필드 제거(전수 grep 검증, ~27% 절감).
+//   source(requirements.json)는 불변 보존, 빌드 산출(index.html)만 슬림. 새 표시필드 추가 시 깨지지 않도록 allowlist가 아닌 blocklist.
+//   원문링크.로컬PDF는 절대경로(홈 디렉터리) 공개 누출 방지 겸 제거.
+const STRIP_KEYS = ['특별공급접수', '선정방식상세', '우선배정', '_검증노트', '공급기관', '공고구분', '접수방법', '분양전환상세', '특이사항', 'files', '__pdf추출', '모집유형', '선정순서', '주택관리번호', '임대료체계', '우선공급_배정호수', '자격요건_원본주'];
+for (const r of reqs) {
+  for (const k of STRIP_KEYS) delete r[k];
+  if (r.원문링크) { delete r.원문링크.로컬PDF; if (Array.isArray(r.원문링크.첨부)) r.원문링크.첨부.forEach(a => delete a.name); }
+  if (r.참고분석) delete r.참고분석.검증노트;
+}
+
 // 4) 템플릿 주입 — Leaflet 벤더 인라인(자체완결 단일 HTML 철학: file:// 더블클릭서도 라이브러리 로드 네트워크 불필요, 타일만 네트워크).
 //    함수형 replace로 $& 등 특수치환 회피(Leaflet 코드에 $ 다수).
 const leafletJs = readFileSync(new URL('data/vendor/leaflet.js', import.meta.url), 'utf8');
