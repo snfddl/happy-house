@@ -116,8 +116,12 @@
   .dday.urgent{color:#fff;background:var(--no);border-color:var(--no);animation:ddayblink 1.2s ease-in-out infinite}
   @keyframes ddayblink{50%{opacity:.55}}
   .dday.closed{color:var(--faint)}
-  .card h3{font-size:15.5px;font-weight:720;margin:0;letter-spacing:-.02em;line-height:1.32;
-    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .card h3{font-size:15.5px;font-weight:720;margin:0;letter-spacing:-.02em;line-height:1.32}
+  /* 제목 버튼 — 키보드/SR로 상세 모달 진입(heading 안에 button: heading 탐색 + 실제 액션). 시각은 기존 h3와 동일 */
+  .cardttl{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+    background:none;border:none;padding:0;margin:0;font:inherit;color:inherit;letter-spacing:inherit;text-align:left;width:100%;cursor:pointer}
+  .cardttl:hover{color:var(--accent-ink)}
+  .cardttl:focus-visible,.fav:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:5px}
   .loc{font-size:12.5px;color:var(--muted);font-weight:560;display:flex;align-items:center;gap:5px;margin-top:-3px}
   .price{background:var(--surface-2);border:1px solid var(--line-2);border-radius:var(--radius-sm);padding:11px 13px}
   .price .k{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:3px}
@@ -483,7 +487,7 @@
   </div>
 </main>
 
-<div class="ov" id="ov"><div class="modal" id="modal"></div></div>
+<div class="ov" id="ov"><div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"></div></div>
 
 <div class="ov" id="wizard"><div class="wiz">
   <div class="wiz-top">
@@ -677,7 +681,7 @@
     const 면적H=x.면적?'<div class="cfact"><span>희망면적</span><b class="'+(x.면적.startsWith('맞음')?'hl':'')+'">'+esc(x.면적)+'</b></div>':'';
     return '<article class="card j-'+x.판정+'" data-id="'+esc(x.id)+'">'
       +'<div class="card-top"><span class="badge b-'+x.판정+'">'+x.판정+'</span>'+typeTag(x)+ddayHtml(x)+'</div>'
-      +'<h3>'+esc(x.공고명)+'</h3>'
+      +'<h3><button type="button" class="cardttl" aria-haspopup="dialog">'+esc(x.공고명)+'</button></h3>'
       +'<div class="loc">📍 '+esc(x.지역||'-')+(x.희망지역매칭?' · <b style="color:var(--accent-ink)">희망지역</b>':'')+'</div>'
       +'<div class="gates">'+gateChips(x)+'</div>'
       +selectBlock(x)
@@ -706,7 +710,9 @@
     return '<ul class="anal-list">'+parts.map(t=>{const [ic,lb]=label(t);
       return '<li><span class="al-ic">'+ic+'</span><div>'+(lb?'<b class="al-lb">'+lb+'</b> ':'')+hl(esc(t))+'</div></li>';}).join('')+'</ul>';
   }
+  let modalReturnFocus=null;   // 모달 열기 전 포커스 → 닫을 때 복귀(키보드 동선)
   function modal(x){
+    modalReturnFocus=document.activeElement;
     const pb=priceBlock(x);
     let unitsT='';
     if(x.공급형&&x.공급형.length){
@@ -792,17 +798,31 @@
       +'<div class="anal-disc">⚠ '+(an.생성일?esc(an.생성일)+' 기준 ':'')+'AI가 외부 웹을 검색해 정리한 참고 정보입니다. 분양가·세대수·일정 등은 시점·출처에 따라 다를 수 있으니 반드시 원문 공고로 확인하세요.</div>'
       +'</div>':'';
     $('#modal').innerHTML=
-      '<div class="m-head"><button class="m-close" onclick="closeModal()">✕</button>'
+      '<div class="m-head"><button class="m-close" onclick="closeModal()" aria-label="닫기">✕</button>'
       +'<div class="row1"><span class="badge b-'+x.판정+'">'+x.판정+'</span>'+typeTag(x)+ddayHtml(x)+'</div>'
-      +'<h2>'+esc(x.공고명)+'</h2><div class="mloc">📍 '+esc(x.지역||'-')+' · '+srcLabel(x.source)+'</div></div>'
+      +'<h2 id="modalTitle">'+esc(x.공고명)+'</h2><div class="mloc">📍 '+esc(x.지역||'-')+' · '+srcLabel(x.source)+'</div></div>'
       +'<div class="m-body">'+verdictH
       +'<div class="sec"><h4>'+pb.k+'</h4><div class="price" style="display:inline-block;min-width:200px"><div class="v" style="font-size:20px">'+esc(pb.v)+(pb.unit?' <small>'+esc(pb.unit)+'</small>':'')+'</div></div></div>'
       +anH+rentH+metaH+scoreH+schedH+(unitsT?'<div class="sec"><h4>주택형별</h4>'+unitsT+'</div>':'')+spctH+links+ext
       +'<div class="note">⚠ 자동 매칭 결과입니다. 최종 신청자격·일정·금액은 반드시 원문 공고로 확인하세요. "확인필요/참고/추정"은 시스템이 단정하지 않은 항목입니다.</div></div>';
     $('#ov').classList.add('show'); document.body.style.overflow='hidden';
+    const cb=$('#modal').querySelector('.m-close'); if(cb) cb.focus();   // 포커스를 모달 안으로
   }
-  window.closeModal=()=>{ $('#ov').classList.remove('show'); document.body.style.overflow=''; };
+  window.closeModal=()=>{
+    $('#ov').classList.remove('show'); document.body.style.overflow='';
+    if(modalReturnFocus&&modalReturnFocus.focus) modalReturnFocus.focus();   // 연 카드(제목 버튼)로 복귀
+    modalReturnFocus=null;
+  };
   $('#ov').addEventListener('click',e=>{ if(e.target===$('#ov')) closeModal(); });
+  // 포커스 트랩 — 모달 안에서 Tab이 밖으로 새지 않도록 순환(#ov에 포커스 있을 때만 발화)
+  $('#ov').addEventListener('keydown',e=>{
+    if(e.key!=='Tab') return;
+    const f=[...$('#modal').querySelectorAll('button,a[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(el=>el.offsetParent!==null);
+    if(!f.length) return;
+    const first=f[0], last=f[f.length-1];
+    if(e.shiftKey&&document.activeElement===first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey&&document.activeElement===last){ e.preventDefault(); first.focus(); }
+  });
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeModal(); closeDrawer(); closeWizard(); } });
 
   // ── 필터/정렬 ──
@@ -884,7 +904,7 @@
       c.onmouseleave=()=>highlightPin(selId);       // 원복(선택 카드 있으면 그 핀 강조 유지)
       const fav=c.querySelector('[data-fav]'); if(fav) fav.onclick=e=>{ e.stopPropagation(); toggleFav(x.id,fav); };
       const more=c.querySelector('.more'); if(more) more.onclick=e=>{ e.stopPropagation(); modal(x); };  // 상세
-      const h=c.querySelector('h3'); if(h){ h.style.cursor='pointer'; h.onclick=e=>{ e.stopPropagation(); modal(x); }; }
+      const ttl=c.querySelector('.cardttl'); if(ttl) ttl.onclick=e=>{ e.stopPropagation(); modal(x); };  // 제목 버튼 = 키보드 진입점
     });
   }
 
