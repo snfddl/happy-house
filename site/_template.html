@@ -862,7 +862,7 @@
     $('#count').innerHTML='<b>'+r.length+'</b>건'+(r.length!==total?' / 전체 '+total+'건':'');
     $$('.card').forEach(c=>{
       const x=LIST.find(y=>y.id===c.dataset.id); if(!x) return;
-      c.onclick=()=>highlightPin(x.id);                              // 카드 클릭 → 지도에서 해당 핀 강조(이동 없음)
+      c.onclick=()=>{ $$('.card').forEach(k=>k.classList.toggle('mapsel',k===c)); highlightPin(x.id); };  // 카드 클릭 → 카드 선택표시(outline)+해당 핀 강조(이동 없음)
       const more=c.querySelector('.more'); if(more) more.onclick=e=>{ e.stopPropagation(); modal(x); };  // 상세
       const h=c.querySelector('h3'); if(h){ h.style.cursor='pointer'; h.onclick=e=>{ e.stopPropagation(); modal(x); }; }
     });
