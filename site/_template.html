@@ -270,6 +270,11 @@
   table.units tbody tr:nth-child(even){background:var(--surface-2)}
   table.units tbody tr:last-child td{border-bottom:0}
   .tbl-note{font-size:11px;color:var(--faint);margin-top:6px}
+  /* 배점 테이블: 숫자(내 점수·만점) 컬럼은 내용폭만 차지, 항목명에 남는 폭 다 배정(잘림 방지) */
+  table.score-tbl{table-layout:auto}
+  table.score-tbl th:first-child,table.score-tbl td:first-child{width:auto}
+  table.score-tbl th:nth-child(2),table.score-tbl td:nth-child(2),
+  table.score-tbl th:last-child,table.score-tbl td:last-child{width:1%;white-space:nowrap;padding-left:16px}
   .spct{display:flex;flex-wrap:wrap;gap:6px}
   .spct span{font-size:12px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:7px;padding:5px 9px;font-weight:560;color:var(--ink-2)}
   .spct span b{font-family:var(--mono);color:var(--accent-ink)}
@@ -799,7 +804,7 @@
     // 예상배점 근거: 배점표 항목별 만점·내 점수(자동계산 항목만 채움). 만점 합이 곧 '예상배점'의 분모.
     const bd=x.배점내역;
     const scoreH=(bd&&bd.length)?'<div class="sec"><h4>예상 배점 내역'+(x.예상배점?' <small>'+esc(String(x.예상배점).split(' ')[0])+'</small>':'')+'</h4>'
-      +'<div class="tbl-wrap"><table class="units"><thead><tr><th style="text-align:left">배점 항목</th><th>내 점수</th><th>만점</th></tr></thead><tbody>'
+      +'<div class="tbl-wrap"><table class="units score-tbl"><thead><tr><th style="text-align:left">배점 항목</th><th>내 점수</th><th>만점</th></tr></thead><tbody>'
       +bd.map(it=>'<tr><td style="text-align:left">'+esc(it.항목)+'</td><td>'+(it.자동?(it.최소?'<span class="muted" title="미입력 — 배점표 최저구간 기준 최소 보장점수. 거주기간 등 입력 시 상향">최소 <b>'+it.점수+'</b></span>':'<b>'+it.점수+'</b>'):'<span class="muted">미입력</span>')+'</td><td>'+it.만점+'</td></tr>').join('')
       +'<tr><td style="text-align:left"><b>'+(bd.some(it=>it.최소)?'최소 합계':'합계')+'</b></td><td><b>'+bd.reduce((s,it)=>s+(it.자동?it.점수:0),0)+'</b></td><td><b>'+bd.reduce((s,it)=>s+it.만점,0)+'</b></td></tr>'
       +'</tbody></table></div><div class="tbl-note">자동계산은 거주기간·자녀수·청약납입·무주택기간 항목만. <b>미입력 항목은 최저구간 기준 ‘최소 보장점’으로 표시</b>(값 입력 시 상향). 그 외(수급·장애·부양 등)는 해당 시 가산되며 원문 기준 확인.</div></div>':'';
