@@ -1564,16 +1564,25 @@ function createMatcher(P, todayStr) {
     if (hit.length) return { rank: Math.min(...hit), maxRank: Math.max(...rules.map(r => r.순위)) };
     return { rank: null, maxRank: Math.max(...rules.map(r => r.순위)) };
   }
+  const fmtArea = ([a, b]) => { const x = Math.round(a), y = Math.round(b); return x === y ? `${x}` : `${x}~${y}`; };   // 정수㎡로 표시(사이트 면적표기와 통일), 맞는 평형 1개면 단일값(46~46→46)
   function areaMatch(req) {
     const wMin = P.희망?.전용면적?.min, wMax = P.희망?.전용면적?.max;
     if (wMin == null && wMax == null) return null;   // 면적 희망 미입력 → 매칭/표시 안 함
     const areas = (req.공급형 || []).map(f => f.전용면적).filter(a => typeof a === 'number' && a > 0);
-    let min = areas.length ? Math.min(...areas) : null, max = areas.length ? Math.max(...areas) : null;
     const hl = req.주택목록?.전용면적;
-    if (hl?.최소 != null) { min = min == null ? hl.최소 : Math.min(min, hl.최소); max = max == null ? hl.최대 : Math.max(max, hl.최대); }
-    if (min == null) return { ok: null, range: null };
-    const ok = !((wMin != null && max < wMin) || (wMax != null && min > wMax));   // 한쪽만 입력해도 그 조건만 적용
-    return { ok, range: [min, max] };
+    const hasHl = hl?.최소 != null;
+    if (!areas.length && !hasHl) return { ok: null, range: null };   // 면적정보없음
+    // 공고 전체범위(안맞음일 때 "공고에 뭐가 있는지" 표시용)
+    let min = areas.length ? Math.min(...areas) : null, max = areas.length ? Math.max(...areas) : null;
+    if (hasHl) { min = min == null ? hl.최소 : Math.min(min, hl.최소); max = max == null ? hl.최대 : Math.max(max, hl.최대); }
+    // 전체범위 겹침이 아니라, 희망구간에 실제로 들어오는 개별 평형이 1개라도 있어야 맞음(한쪽만 입력해도 그 조건만 적용).
+    const inRange = a => (wMin == null || a >= wMin) && (wMax == null || a <= wMax);
+    const hits = areas.filter(inRange);
+    if (hits.length) return { ok: true, range: [Math.min(...hits), Math.max(...hits)] };   // 맞음: 실제 맞는 평형 범위만 표시
+    // 주택목록(매입형)은 개별 평형값이 없어 범위만 보유 → 희망구간과 겹치면 맞음(보수적 폴백)
+    const hlOverlap = hasHl && !((wMin != null && hl.최대 < wMin) || (wMax != null && hl.최소 > wMax));
+    if (hlOverlap) return { ok: true, range: [hl.최소, hl.최대] };
+    return { ok: false, range: [min, max] };
   }
   function regionMatch(req) {
     const want = P.희망?.지역; if (!want?.length) return null;
@@ -1803,7 +1812,7 @@ function createMatcher(P, todayStr) {
       거주지순위: 청약지역줄,
       선정방식: req.선정방식,
       예상배점: 배점, 가점: gp ? gp.total : null,
-      면적: area ? (area.ok == null ? '면적정보없음' : area.ok ? `맞음(${area.range[0]}~${area.range[1]}㎡)` : `안맞음(공고 ${area.range[0]}~${area.range[1]}㎡)`) : null,
+      면적: area ? (area.ok == null ? '면적정보없음' : area.ok ? `맞음(${fmtArea(area.range)}㎡)` : `안맞음(공고 ${fmtArea(area.range)}㎡)`) : null,
       지역희망: region ? (region.ok ? `맞음(${region.hit.join(',')})` : '희망지역 아님') : null,
       희망지역매칭: region ? region.ok : null,
       링크: pickLink(req).url, 링크라벨: pickLink(req).label,
@@ -1845,7 +1854,7 @@ function createMatcher(P, todayStr) {
       배점내역: score ? score.items : null,
       임대뷰: rentView(req),
       가점: null,
-      면적: area ? (area.ok == null ? '면적정보없음' : area.ok ? `맞음(${area.range[0]}~${area.range[1]}㎡)` : `안맞음(공고 ${area.range[0]}~${area.range[1]}㎡)`) : null,
+      면적: area ? (area.ok == null ? '면적정보없음' : area.ok ? `맞음(${fmtArea(area.range)}㎡)` : `안맞음(공고 ${fmtArea(area.range)}㎡)`) : null,
       지역희망: region ? (region.ok ? `맞음(${region.hit.join(',')})` : '희망지역 아님') : null,
       희망지역매칭: region ? region.ok : null,
       링크: pickLink(req).url, 링크라벨: pickLink(req).label,
