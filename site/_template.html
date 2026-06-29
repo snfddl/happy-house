@@ -83,6 +83,14 @@
     border-radius:11px;padding:11px 32px 11px 13px;font-size:13.5px;font-family:inherit;color:var(--ink-2);
     font-weight:560;cursor:pointer;box-shadow:var(--shadow)}
   select.sel:focus{outline:none;border-color:var(--accent)}
+  /* 필터 묶음 — 데스크톱은 래퍼 투명(셀렉트가 ctrl-row 직속처럼 흐름), 토글 버튼 숨김. 모바일서만 접기. */
+  .sel-group{display:contents}
+  .filt-toggle{display:none;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);
+    border-radius:11px;padding:11px 14px;font-size:13.5px;font-family:inherit;color:var(--ink-2);
+    font-weight:600;cursor:pointer;box-shadow:var(--shadow);white-space:nowrap}
+  .filt-toggle.has{border-color:var(--accent);color:var(--accent-ink)}
+  .filt-toggle .fcount{background:var(--accent);color:#fff;font-size:11px;font-weight:700;border-radius:999px;
+    min-width:17px;height:17px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px}
   .chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
   .chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 13px;
     font-size:12.5px;font-weight:600;color:var(--ink-2);cursor:pointer;box-shadow:var(--shadow);transition:.12s;
@@ -369,7 +377,13 @@
     .profile-chip .dot{display:none}
     #profileText{display:none}
     .profile-chip button{padding:8px 9px;font-size:11.5px}
-    .profile-chip button .bl{display:none}}
+    .profile-chip button .bl{display:none}
+    /* 모바일 필터 — 기본은 검색 + '필터' 토글만, 셀렉트는 접어 두고 탭하면 2열로 펼침 */
+    .controls .search{min-width:0}
+    .filt-toggle{display:inline-flex}
+    .sel-group{display:none;flex-basis:100%;flex-wrap:wrap;gap:8px;margin-top:2px}
+    .sel-group.open{display:flex}
+    .sel-group .sel{flex:1 1 calc(50% - 4px);min-width:0}}
 
   /* ── 지도 연동 ── */
   .chips-bar{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin-top:9px}
@@ -475,6 +489,8 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
         <input id="q" type="search" placeholder="공고명 · 지역 검색" autocomplete="off">
       </div>
+      <button class="filt-toggle" id="filtToggle" type="button" aria-expanded="false" aria-controls="selGroup"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h18l-7 8.2V20l-4 1.5v-9.3z"/></svg> 필터<span class="fcount" id="filtCount" style="display:none"></span></button>
+      <div class="sel-group" id="selGroup">
       <select class="sel" id="supplySel">
         <option value="">전체 공급형태</option>
         <option value="분양">분양</option>
@@ -494,6 +510,7 @@
         <option value="gajeom">가점 높은순(분양)</option>
         <option value="new">공고 최신순</option>
       </select>
+      </div>
     </div>
     <div class="chips-bar">
       <span class="count" id="count">—</span>
@@ -1443,18 +1460,25 @@
     +'개인 조건으로 자동 계산한 매칭 결과이며, 데이터는 공식 출처에서 수집했으나 공고 정정·마감 등 실시간 변동이 있을 수 있으니 최종 신청자격·금액·일정은 반드시 원문 공고로 확인하세요. ‘확인필요/참고/추정’은 시스템이 단정하지 않은 항목입니다.';
   $('#howBtn').onclick=()=>alert('판정 기준\n\n✅ 지원가능 — 무주택·소득·자산·청약통장 등 "확정 가능한" 자격요건을 모두 충족.\n\n⚠️ 확인필요 — 공식 데이터에 없거나 자유텍스트라(예: 특공 소득컷, 공공분양 소득·자산) 시스템이 단정할 수 없는 항목이 있음.\n\n⛔ 지원불가 — 무주택/청약통장 등 필수 요건 미충족.\n\n· 분양 가점(민영)은 무주택기간·부양가족수·통장기간으로 계산한 추정치입니다. 가점/추첨 비율·전매제한은 원문 확인.');
 
+  // 모바일 필터 접기 토글 + 적용된 필터 개수 배지(접혀 있어도 활성 표시)
+  const updateFiltCount=()=>{
+    const n=['#supplySel','#sectorSel','#typeSel','#regionSel'].filter(s=>{const el=$(s);return el&&el.value;}).length;
+    const b=$('#filtCount'); if(b){ b.textContent=n; b.style.display=n?'':'none'; }
+    const ft=$('#filtToggle'); if(ft) ft.classList.toggle('has',n>0);
+  };
+  $('#filtToggle').onclick=()=>{ const g=$('#selGroup'); const open=g.classList.toggle('open'); $('#filtToggle').setAttribute('aria-expanded',open); };
   $('#q').addEventListener('input',e=>{ state.q=e.target.value.trim(); apply(); });
-  $('#supplySel').addEventListener('change',e=>{ state.supply=e.target.value; apply(); });
-  $('#sectorSel').addEventListener('change',e=>{ state.sector=e.target.value; apply(); });
-  $('#typeSel').addEventListener('change',e=>{ state.type=e.target.value; apply(); });
-  $('#regionSel').addEventListener('change',e=>{ state.region=e.target.value; apply(); if(e.target.value) fitToPins(); else if(map) map.setView([36.4,127.8],7); });
+  $('#supplySel').addEventListener('change',e=>{ state.supply=e.target.value; apply(); updateFiltCount(); });
+  $('#sectorSel').addEventListener('change',e=>{ state.sector=e.target.value; apply(); updateFiltCount(); });
+  $('#typeSel').addEventListener('change',e=>{ state.type=e.target.value; apply(); updateFiltCount(); });
+  $('#regionSel').addEventListener('change',e=>{ state.region=e.target.value; apply(); updateFiltCount(); if(e.target.value) fitToPins(); else if(map) map.setView([36.4,127.8],7); });
   $('#sortSel').addEventListener('change',e=>{ state.sort=e.target.value; apply(); });
   // 빈 상태 탈출구 — 모든 필터를 기본값으로 되돌리고 재적용(정렬은 유지).
   $('#emptyReset').onclick=()=>{
     Object.assign(state,{판정:'',supply:'',sector:'',type:'',region:'',q:'',regionOnly:false,분양류:false,favOnly:false,activeOnly:true});
     $('#q').value=''; ['#supplySel','#sectorSel','#typeSel','#regionSel'].forEach(s=>{ const el=$(s); if(el) el.value=''; });
     if(map) map.setView([36.4,127.8],7);
-    apply();
+    apply(); updateFiltCount();
   };
 
   // 지도 토글(모바일) · '이 지도 영역만'(양방향 영역필터)
@@ -1526,7 +1550,7 @@
 
   // init
   const firstVisit=!(()=>{try{return localStorage.getItem(LSKEY);}catch{return null;}})();
-  refresh(); syncProfileChip();
+  refresh(); syncProfileChip(); updateFiltCount();
   if(firstVisit) openWizard();
 })();
 </script>
