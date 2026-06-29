@@ -55,8 +55,11 @@
   .profile-chip button.ghost:hover{background:#e2e6fd}
 
   .hero{padding:26px 0 6px}
-  .hero h2{font-size:23px;font-weight:780;margin:0 0 4px;letter-spacing:-.03em}
-  .hero .sub{color:var(--muted);font-size:13.5px;margin:0 0 18px}
+  /* 제목 + 통계칩을 한 행에(넓은 화면): 칩은 우측으로. 좁아지면 칩이 다음 줄로. */
+  .hero-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;row-gap:10px}
+  .hero h2{font-size:23px;font-weight:780;margin:0;letter-spacing:-.03em}
+  .hero .sub{color:var(--muted);font-size:13.5px;margin:8px 0 18px}
+  .hero-head .stats{margin-left:auto}
   /* 컴팩트 통계 칩 — 내용폭만 차지해 좌측에 모임(한눈에). 숫자+라벨 인라인. */
   .stats{display:flex;flex-wrap:wrap;gap:8px}
   .stat{background:var(--surface);border:1px solid var(--line);border-radius:11px;
@@ -385,7 +388,14 @@
     .filt-toggle{display:inline-flex}
     .sel-group{display:none;flex-basis:100%;flex-wrap:wrap;gap:8px;margin-top:2px}
     .sel-group.open{display:flex}
-    .sel-group .sel{flex:1 1 calc(50% - 4px);min-width:0}}
+    .sel-group .sel{flex:1 1 calc(50% - 4px);min-width:0}
+    /* 모바일 통계칩: 제목 아래 한 줄(가로 스크롤)·더 작게 */
+    .hero-head{gap:8px;row-gap:8px}
+    .hero-head .stats{margin-left:0;width:100%;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+    .stats::-webkit-scrollbar{display:none}
+    .stat{flex:0 0 auto;padding:7px 11px}
+    .stat .n{font-size:17px}
+    .stat .l{font-size:11px}}
 
   /* ── 지도 연동 ── */
   .chips-bar{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin-top:9px}
@@ -422,7 +432,7 @@
     .hero{padding:8px 0 0}
     .hero h2{font-size:16px;margin:0}
     .hero .sub{display:none}
-    .stats{margin-top:6px}
+    .hero-head{margin:0}
     .stat{padding:6px 12px 6px 14px;box-shadow:none}
     .stat .n{font-size:18px}
     .notice-missing{padding:7px 12px;margin:8px 0 0;font-size:12px}
@@ -477,9 +487,11 @@
 
 <main class="wrap">
   <section class="hero">
-    <h2>내 조건에 맞는 공고</h2>
+    <div class="hero-head">
+      <h2>내 조건에 맞는 공고</h2>
+      <div class="stats" id="stats"></div>
+    </div>
     <p class="sub" id="heroSub">—</p>
-    <div class="stats" id="stats"></div>
   </section>
 
   <div class="notice-missing" id="missingNotice" style="display:none" role="alert"></div>
