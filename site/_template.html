@@ -58,7 +58,7 @@
   /* 제목 + 통계칩을 한 행에(넓은 화면): 칩은 우측으로. 좁아지면 칩이 다음 줄로. */
   .hero-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;row-gap:10px}
   .hero h2{font-size:23px;font-weight:780;margin:0;letter-spacing:-.03em}
-  .hero .sub{color:var(--muted);font-size:13.5px;margin:8px 0 18px}
+  .hero .sub{color:var(--muted);font-size:13.5px;margin:8px 0 16px;line-height:1.45}
   .hero-head .stats{margin-left:auto}
   /* 컴팩트 통계 칩 — 내용폭만 차지해 좌측에 모임(한눈에). 숫자+라벨 인라인. */
   .stats{display:flex;flex-wrap:wrap;gap:8px}
@@ -69,6 +69,7 @@
   .stat.active{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
   .stat .n{font-size:19px;font-weight:780;font-family:var(--mono);letter-spacing:-.03em;line-height:1}
   .stat .l{font-size:12px;color:var(--muted);font-weight:560}
+  .stat .l-short{display:none}
   .stat .bar{position:absolute;left:0;top:0;bottom:0;width:4px}
   .stat.s-all .bar{background:var(--accent)} .stat.s-all .n{color:var(--accent-ink)}
   .stat.s-ok .bar{background:var(--ok)} .stat.s-ok .n{color:var(--ok)}
@@ -389,13 +390,17 @@
     .sel-group{display:none;flex-basis:100%;flex-wrap:wrap;gap:8px;margin-top:2px}
     .sel-group.open{display:flex}
     .sel-group .sel{flex:1 1 calc(50% - 4px);min-width:0}
-    /* 모바일 통계칩: 제목 아래 한 줄(가로 스크롤)·더 작게 */
+    /* 모바일 통계칩: 제목 아래 한 줄·축약 라벨로 4개 다 보이게(필요시 스크롤) */
+    .hero{padding:14px 0 4px}
+    .hero .sub{margin:6px 0 10px}
     .hero-head{gap:8px;row-gap:8px}
-    .hero-head .stats{margin-left:0;width:100%;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+    .hero-head .stats{margin-left:0;width:100%;flex-wrap:nowrap;overflow-x:auto;gap:6px;padding-bottom:2px;scrollbar-width:none}
     .stats::-webkit-scrollbar{display:none}
-    .stat{flex:0 0 auto;padding:7px 11px}
+    .stat{flex:0 0 auto;padding:6px 10px;gap:6px}
     .stat .n{font-size:17px}
-    .stat .l{font-size:11px}}
+    .stat .l{font-size:11px}
+    .stat .l-full{display:none}
+    .stat .l-short{display:inline}}
 
   /* ── 지도 연동 ── */
   .chips-bar{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin-top:9px}
@@ -1146,8 +1151,8 @@
     // 판정 외 활성필터(지역·유형·검색 등)로 거른 모수 기준 — KPI카드도 필터 연동(판정 자신은 제외: 카드가 곧 판정 선택기).
     const base=LIST.filter(x=>pass(x,'판정'));
     const c={all:base.length,지원가능:0,확인필요:0,지원불가:0}; base.forEach(x=>c[x.판정]++);
-    const items=[['','s-all',c.all,'접수중·예정'],['지원가능','s-ok',c.지원가능,'지원가능'],['확인필요','s-warn',c.확인필요,'확인필요'],['지원불가','s-no',c.지원불가,'지원불가']];
-    $('#stats').innerHTML=items.map(i=>'<div class="stat '+i[1]+(state.판정===i[0]&&i[0]?' active':'')+'" data-v="'+i[0]+'"><span class="bar"></span><div class="n">'+i[2]+'</div><div class="l">'+i[3]+'</div></div>').join('');
+    const items=[['','s-all',c.all,'접수중·예정','전체'],['지원가능','s-ok',c.지원가능,'지원가능','가능'],['확인필요','s-warn',c.확인필요,'확인필요','확인'],['지원불가','s-no',c.지원불가,'지원불가','불가']];
+    $('#stats').innerHTML=items.map(i=>'<div class="stat '+i[1]+(state.판정===i[0]&&i[0]?' active':'')+'" data-v="'+i[0]+'"><span class="bar"></span><div class="n">'+i[2]+'</div><div class="l"><span class="l-full">'+i[3]+'</span><span class="l-short">'+i[4]+'</span></div></div>').join('');
     $$('.stat').forEach(s=>s.onclick=()=>{ state.판정=(state.판정===s.dataset.v)?'':s.dataset.v; buildStats(); apply(); });
   }
   function buildControls(){
@@ -1432,12 +1437,11 @@
   function syncMissingNotice(){
     const el=$('#missingNotice'); if(!el) return;
     const miss=[];
-    if(P.무주택==null) miss.push('주택 소유 여부');
-    if(P.청약저축?.가입==null) miss.push('청약통장 보유 여부');
+    if(P.무주택==null) miss.push('주택 소유');
+    if(P.청약저축?.가입==null) miss.push('청약통장');
     if(!miss.length){ el.style.display='none'; return; }
     el.style.display='flex';
-    el.innerHTML='<span class="nm-txt">⚠ <b>'+miss.join(' · ')+'</b> 미입력 — 거의 모든 공고의 핵심 자격이라, '
-      +'지금은 관련 공고가 <b>‘확인필요’</b>로 표시됩니다. 입력하면 ‘지원가능/불가’로 정확히 판정해요.</span>'
+    el.innerHTML='<span class="nm-txt">⚠ <b>'+miss.join(' · ')+'</b> 미입력 — 입력하면 ‘지원가능/불가’로 정확히 판정해요.</span>'
       +'<button type="button" id="missFix">지금 입력 '+ICON.gear+'</button>';
     $('#missFix').onclick=openDrawer;
   }
