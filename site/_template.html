@@ -31,10 +31,15 @@
     position:sticky;top:0;z-index:30;backdrop-filter:saturate(1.2) blur(6px)}
   .top-in{display:flex;align-items:center;gap:16px;padding:14px 0}
   .brand{display:flex;align-items:center;gap:11px;min-width:0}
-  .logo{width:36px;height:36px;border-radius:10px;flex:0 0 auto;
-    background:radial-gradient(120% 120% at 30% 20%,#6366f1,#4338ca 60%,#3730a3);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 2px 8px rgba(67,56,202,.35);
-    display:grid;place-items:center;color:#fff;font-size:18px}
+  .logo{width:36px;height:36px;border-radius:11px;flex:0 0 auto;
+    background:linear-gradient(145deg,#6d6cf2,#4f46e5 55%,#3730a3);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 2px 10px rgba(67,56,202,.32);
+    display:grid;place-items:center;color:#fff}
+  .logo svg{width:21px;height:21px;display:block}
+  .profile-chip .bi{width:14px;height:14px;flex:0 0 auto;display:block}
+  /* 인라인 라인 아이콘 — 본문·카드·칩 공용(이모지 대체) */
+  .ic{width:13px;height:13px;flex:0 0 auto;display:inline-block;vertical-align:-2px}
+  .fav .ic{width:16px;height:16px;vertical-align:-3px}
   .brand h1{font-size:16.5px;font-weight:760;margin:0;letter-spacing:-.02em}
   .brand p{margin:1px 0 0;font-size:12px;color:var(--muted);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .top-spacer{flex:1}
@@ -278,7 +283,8 @@
   .anal{font-size:13.5px;line-height:1.55;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
   .anal-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
   .anal-list li{display:flex;gap:9px;align-items:flex-start}
-  .al-ic{flex:0 0 auto;font-size:15px;line-height:1.4}
+  .al-ic{flex:0 0 auto;font-size:15px;line-height:1.4;color:var(--accent-ink)}
+  .al-ic .ic{width:15px;height:15px;vertical-align:0;margin-top:2px}
   .al-lb{color:var(--accent-ink);font-weight:730}
   .anal .hl{color:var(--no);font-weight:740}
   .anal-src{font-size:11.5px;color:var(--faint);margin-top:7px;word-break:break-all}
@@ -347,7 +353,18 @@
 
   @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:600px){.grid{grid-template-columns:1fr}.hero h2{font-size:20px}
-    .profile-chip span.full{display:none}.controls{top:60px}}
+    .profile-chip span.full{display:none}.controls{top:60px}
+    /* 모바일 헤더 컴팩트 — 칩이 타이틀을 가리지 않게: 칩 배경/상태텍스트 제거, 버튼은 아이콘만 */
+    .top-in{gap:10px;padding:11px 0}
+    .brand p{display:none}
+    .brand h1{font-size:15px}
+    .logo{width:32px;height:32px;border-radius:9px}
+    .logo svg{width:19px;height:19px}
+    .profile-chip{background:none;border:0;box-shadow:none;padding:0;gap:7px}
+    .profile-chip .dot{display:none}
+    #profileText{display:none}
+    .profile-chip button{padding:8px 9px;font-size:11.5px}
+    .profile-chip button .bl{display:none}}
 
   /* ── 지도 연동 ── */
   .chips-bar{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin-top:9px}
@@ -418,7 +435,13 @@
 <header class="top">
   <div class="wrap top-in">
     <div class="brand">
-      <div class="logo">🏠</div>
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3.6 11.3 12 4l8.4 7.3"/>
+          <path d="M5.7 9.6V19a1 1 0 0 0 1 1h10.6a1 1 0 0 0 1-1V9.6"/>
+          <path d="M9.8 20v-4.7a1 1 0 0 1 1-1h2.4a1 1 0 0 1 1 1V20"/>
+        </svg>
+      </div>
       <div><h1>내 집 찾기</h1><p>공공임대 · 분양 매칭</p></div>
     </div>
     <div class="top-spacer"></div>
@@ -426,8 +449,8 @@
       <span class="dot"></span>
       <span id="profileText">—</span>
       <button class="ghost" id="howBtn">판정 기준</button>
-      <button id="notifyBtn" style="display:none">🔔 알림 받기</button>
-      <button id="editBtn">⚙ 내 조건 수정</button>
+      <button id="notifyBtn" aria-label="알림 받기" style="display:none"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="bl">알림 받기</span></button>
+      <button id="editBtn" aria-label="내 조건 수정"><svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="bl">내 조건 수정</span></button>
     </div>
   </div>
 </header>
@@ -472,7 +495,7 @@
       <div class="chips" id="chips"></div>
       <div class="view-toggle">
         <label class="boundschk" title="지도를 움직이면 화면에 보이는 공고만 목록에 표시"><input type="checkbox" id="boundsChk"> 이 지도 영역만</label>
-        <button class="vbtn" id="mapToggle" type="button">🗺 지도</button>
+        <button class="vbtn" id="mapToggle" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 4-6 2.5v14L9 18l6 2.5 6-2.5v-14L15 6.5 9 4z"/><path d="M9 4v14M15 6.5v14"/></svg> 지도</button>
       </div>
     </div>
   </section>
@@ -524,6 +547,21 @@
 <script>
 (function(){
   const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+  // 인라인 라인 아이콘(이모지 대체) — currentColor 상속, .ic로 크기·정렬 통일.
+  const ICON={
+    map:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 4-6 2.5v14L9 18l6 2.5 6-2.5v-14L15 6.5 9 4z"/><path d="M9 4v14M15 6.5v14"/></svg>',
+    list:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.6" cy="6" r="1"/><circle cx="3.6" cy="12" r="1"/><circle cx="3.6" cy="18" r="1"/></svg>',
+    pin:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>',
+    key:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="3.5"/><path d="m10 13 7.8-7.8M14.5 5.5 17 8l2.5-2.5L17 3z"/></svg>',
+    bldg:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5a1 1 0 0 1 1-1h7a1 1 0 0 1 1 1v16"/><path d="M13 9h6a1 1 0 0 1 1 1v11"/><path d="M7.5 8h2M7.5 12h2M7.5 16h2M16 13h1M16 17h1M2 21h20"/></svg>',
+    ruler:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 2.5 21.5 8 8 21.5 2.5 16z"/><path d="m6.5 9 2 2m1-4 2 2m1-4 2 2"/></svg>',
+    homes:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 5l9 6.5"/><path d="M5 10v9h14v-9"/><path d="M10 19v-4h4v4"/></svg>',
+    gear:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+    starOn:'<svg class="ic" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="m12 3.2 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17.8l-5.5 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>',
+    starOff:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.2 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17.8l-5.5 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>',
+    doc:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7z"/><path d="M14 3v4h4"/><path d="M9 12.5h6M9 16h4"/></svg>',
+    won:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m7 8.5 2.2 7L12 9.5l2.8 6 2.2-7"/><path d="M6.4 12.2h11.2"/></svg>'
+  };
   const M=DATA.meta||{};
   const esc=s=>(s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const baseYear=Number((M.기준일||'2026-01-01').slice(0,4));
@@ -663,10 +701,10 @@
       ? rows.reduce((s,u)=>s+(u.일반||0)+(u.특공||0),0)
       : rows.reduce((s,u)=>s+(u.세대||0),0);
     const parts=[];
-    if(areaT) parts.push('📐 '+areaT);
-    if(units>0) parts.push('🏘 '+units.toLocaleString()+'세대');
-    if(rows.length>1) parts.push(rows.length+'개 주택형');
-    return parts.length?'<div class="spec-line">'+parts.map(p=>'<span>'+esc(p)+'</span>').join('')+'</div>':'';
+    if(areaT) parts.push(ICON.ruler+' '+esc(areaT));
+    if(units>0) parts.push(ICON.homes+' '+esc(units.toLocaleString()+'세대'));
+    if(rows.length>1) parts.push(esc(rows.length+'개 주택형'));
+    return parts.length?'<div class="spec-line">'+parts.map(p=>'<span>'+p+'</span>').join('')+'</div>':'';
   }
   const srcLabel=s=>({lh:'LH',applyhome:'청약홈',myhome:'마이홈',sh:'SH',gh:'GH'}[s]||(s||'').toUpperCase());
   // 구글 캘린더 '일정 추가' 템플릿 URL — 접수마감일 종일 이벤트(인증·API 불필요, 링크만으로 추가).
@@ -685,14 +723,14 @@
     return '<article class="card j-'+x.판정+'" data-id="'+esc(x.id)+'">'
       +'<div class="card-top"><span class="badge b-'+x.판정+'">'+x.판정+'</span>'+typeTag(x)+ddayHtml(x)+'</div>'
       +'<h3><button type="button" class="cardttl" aria-haspopup="dialog">'+esc(x.공고명)+'</button></h3>'
-      +'<div class="loc">📍 '+esc(x.지역||'-')+(x.희망지역매칭?' · <b style="color:var(--accent-ink)">희망지역</b>':'')+'</div>'
+      +'<div class="loc">'+ICON.pin+' '+esc(x.지역||'-')+(x.희망지역매칭?' · <b style="color:var(--accent-ink)">희망지역</b>':'')+'</div>'
       +'<div class="gates">'+gateChips(x)+'</div>'
       +selectBlock(x)
       +(면적H?'<div class="cfacts">'+면적H+'</div>':'')
       +priceLine(x)
       +specLine(x)
-      +'<div class="card-foot"><span class="src">'+(x.상품구조==='분양'?'🏗️':'🔑')+' '+srcLabel(x.source)+'</span>'
-      +'<span class="foot-r"><button class="fav'+(FAV.has(x.id)?' on':'')+'" data-fav title="관심 공고 찜" aria-label="관심 공고 찜">'+(FAV.has(x.id)?'★':'☆')+'</button><span class="more">주택형별 ▸</span>'
+      +'<div class="card-foot"><span class="src">'+(x.상품구조==='분양'?ICON.bldg:ICON.key)+' '+srcLabel(x.source)+'</span>'
+      +'<span class="foot-r"><button class="fav'+(FAV.has(x.id)?' on':'')+'" data-fav title="관심 공고 찜" aria-label="관심 공고 찜">'+(FAV.has(x.id)?ICON.starOn:ICON.starOff)+'</button><span class="more">주택형별 ▸</span>'
       +(x.상세링크?'<a href="'+esc(x.상세링크)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+(x.source==='applyhome'?'청약홈':'공고·청약')+' ↗</a>':'')+'</span></div>'
       +'</article>';
   }
@@ -702,10 +740,10 @@
     const parts=String(s).split(/[①②③④⑤⑥⑦⑧⑨\n]+/).map(t=>t.trim()).filter(t=>t.length>1);
     // 카테고리별 키워드 매칭 점수 최다로 분류(청크가 여러 주제 언급해도 주된 주제 채택. 동점은 배열 순서).
     const cats=[
-      ['🔑','공급 사유', /경쟁률|미달|잔여|취소분|임의공급|무순위|선착순|통장|동.?호\s*지정/g],
-      ['📋','전매·규제', /전매|실거주|재당첨|상한제|거주의무|규제지역/g],
-      ['💰','주변 시세', /시세|실거래|호가|인근|비교/g],
-      ['🏢','단지 개요', /세대|가구|브랜드|입주|지상|개동|시공|시행|단지/g],
+      [ICON.key,'공급 사유', /경쟁률|미달|잔여|취소분|임의공급|무순위|선착순|통장|동.?호\s*지정/g],
+      [ICON.doc,'전매·규제', /전매|실거주|재당첨|상한제|거주의무|규제지역/g],
+      [ICON.won,'주변 시세', /시세|실거래|호가|인근|비교/g],
+      [ICON.bldg,'단지 개요', /세대|가구|브랜드|입주|지상|개동|시공|시행|단지/g],
     ];
     const label=t=>{ let best=['·',''], n=0; for(const c of cats){ const m=(t.match(c[2])||[]).length; if(m>n){ n=m; best=[c[0],c[1]]; } } return best; };
     // 임팩트 수치 강조: 경쟁률·미달·잔여비율·퍼센트
@@ -792,11 +830,11 @@
       //   기존 m.land/search/result(매매 DB 검색)는 분양단지가 그 DB에 없어 '못찾음' 막다른길 → 폐기. 매입·전세임대는 호별 산재라 제외.
       const 단지형L=['행복주택','행복주택(신혼희망)','국민임대','영구임대','통합공공임대','공공임대','50년공공임대'];
       if(x.상품구조==='분양'||단지형L.indexOf(x.유형)>=0){
-        if(x.네이버부동산){ extA.push('<a class="outline" target="_blank" rel="noopener" href="'+x.네이버부동산+'">🏠 네이버 부동산(시세)</a>'); }
+        if(x.네이버부동산){ extA.push('<a class="outline" target="_blank" rel="noopener" href="'+x.네이버부동산+'">'+ICON.homes+' 네이버 부동산(시세)</a>'); }
         else {
           const nbase=nm.replace(/\([^)]*\)|\[[^\]]*\]|[A-Z]{1,3}-?\d{1,2}BL|블록|무순위|잔여세대|잔여|조합원\s*취소분|취소분|일반공급|특별공급|추가모집|사후접수|선착순|계약취소|보류지|임의공급|공공분양주택|공공분양|민영|본청약|\d+차/g,' ').replace(/\s+/g,' ').trim();
           const sgg=((x.단지주소||'').match(/([가-힣]{2,}(?:시|군))/)||[])[1]||'';
-          extA.push('<a class="outline" target="_blank" rel="noopener" href="https://m.search.naver.com/search.naver?query='+encodeURIComponent((sgg?sgg+' ':'')+nbase)+'">🏠 네이버 부동산(시세)</a>');
+          extA.push('<a class="outline" target="_blank" rel="noopener" href="https://m.search.naver.com/search.naver?query='+encodeURIComponent((sgg?sgg+' ':'')+nbase)+'">'+ICON.homes+' 네이버 부동산(시세)</a>');
         }
       }
     }
@@ -982,7 +1020,7 @@
     if(FAV.has(id)) FAV.delete(id); else FAV.add(id);
     saveFav();
     const on=FAV.has(id);
-    if(btn){ btn.classList.toggle('on',on); btn.textContent=on?'★':'☆'; }
+    if(btn){ btn.classList.toggle('on',on); btn.innerHTML=on?ICON.starOn:ICON.starOff; }
     if(state.favOnly) apply(); else buildControls();
   }
   function initMap(){
@@ -1023,7 +1061,7 @@
       });
     });
     const noPin=items.length-mById.size;
-    $('#mapNote').innerHTML='🗺 '+mById.size+'개 공고 표시'+(noPin>0?' · 위치정보 없음 '+noPin+'건':'');
+    $('#mapNote').innerHTML=ICON.map+' '+mById.size+'개 공고 표시'+(noPin>0?' · 위치정보 없음 '+noPin+'건':'');
   }
   // 핀 강조 — 지정 id의 핀만 sel 아이콘(나머지 원복).
   function highlightPin(id){
@@ -1058,14 +1096,14 @@
   function toggleMapView(on){   // 모바일: 지도/목록 전환
     document.body.classList.toggle('mapview',on);
     $('#mapToggle').classList.toggle('on',on);
-    $('#mapToggle').textContent=on?'📋 목록':'🗺 지도';
+    $('#mapToggle').innerHTML=on?ICON.list+' 목록':ICON.map+' 지도';
     if(on&&map) setTimeout(()=>map.invalidateSize(),60);
   }
   function toggleMapDesktop(){   // 데스크탑: 지도 패널 숨김/표시(숨기면 목록 멀티컬럼)
     const hide=!document.body.classList.contains('nomap');
     document.body.classList.toggle('nomap',hide);
     $('#mapToggle').classList.toggle('on',!hide);
-    $('#mapToggle').textContent=hide?'🗺 지도 보기':'🗺 지도 숨기기';
+    $('#mapToggle').innerHTML=hide?ICON.map+' 지도 보기':ICON.map+' 지도 숨기기';
     if(!hide&&map) setTimeout(()=>map.invalidateSize(),60);
   }
 
@@ -1114,7 +1152,7 @@
       {id:'regionOnly',label:'희망지역만',c:LIST.filter(x=>pass(x,'regionOnly')&&x.희망지역매칭===true).length},
       {id:'분양류',label:'분양(전환)',c:LIST.filter(x=>pass(x,'분양류')&&(x.공급형태==='분양'||x.분양전환===true)).length},
       {id:'activeOnly',label:'접수중·예정만',c:LIST.filter(x=>pass(x,'activeOnly')&&isActive(x)).length},
-      {id:'favOnly',label:'⭐ 찜',c:LIST.filter(x=>pass(x,'favOnly')&&FAV.has(x.id)).length},
+      {id:'favOnly',label:ICON.starOff+' 찜',c:LIST.filter(x=>pass(x,'favOnly')&&FAV.has(x.id)).length},
     ];
     $('#chips').innerHTML=chips.map(c=>'<button class="chip'+(state[c.id]?' on':'')+'" data-id="'+c.id+'">'+c.label+(c.c!=null?' <span class="c">'+c.c+'</span>':'')+'</button>').join('');
     $$('#chips .chip').forEach(btn=>btn.onclick=()=>{ state[btn.dataset.id]=!state[btn.dataset.id]; btn.classList.toggle('on',state[btn.dataset.id]); apply(); });
@@ -1365,7 +1403,7 @@
     el.style.display='flex';
     el.innerHTML='<span class="nm-txt">⚠ <b>'+miss.join(' · ')+'</b> 미입력 — 거의 모든 공고의 핵심 자격이라, '
       +'지금은 관련 공고가 <b>‘확인필요’</b>로 표시됩니다. 입력하면 ‘지원가능/불가’로 정확히 판정해요.</span>'
-      +'<button type="button" id="missFix">지금 입력 ⚙</button>';
+      +'<button type="button" id="missFix">지금 입력 '+ICON.gear+'</button>';
     $('#missFix').onclick=openDrawer;
   }
 
@@ -1381,12 +1419,12 @@
   function syncProfileChip(){
     if(isIncomplete()){
       $('#profileText').innerHTML='<span style="color:var(--accent-ink);font-weight:700">내 조건 미입력</span>';
-      $('#editBtn').textContent='⚙ 내 조건 입력';
+      $('#editBtn .bl').textContent='내 조건 입력'; $('#editBtn').setAttribute('aria-label','내 조건 입력');
       return;
     }
     const age=P.생년월일?Math.floor((new Date(M.기준일)-new Date(P.생년월일))/(365.25*864e5)):null;
     const 거주=P.거주지?((P.거주지.시도||'')+' '+(P.거주지.시군구||'')).trim():'';
-    $('#editBtn').textContent='⚙ 내 조건 수정';
+    $('#editBtn .bl').textContent='내 조건 수정'; $('#editBtn').setAttribute('aria-label','내 조건 수정');
     $('#profileText').innerHTML='<b>'+(age?age+'세':'')+'</b>'+(P.세대원수?' · '+P.세대원수+'인':'')
       +(거주?' · <span class="full">'+esc(거주)+'</span>':'')+(P.무주택===true?' · 무주택':P.무주택===false?' · 유주택':'');
   }
@@ -1416,7 +1454,7 @@
 
   // 지도 토글(모바일) · '이 지도 영역만'(양방향 영역필터)
   $('#mapToggle').addEventListener('click',()=>{ if(window.innerWidth>=1024) toggleMapDesktop(); else toggleMapView(!document.body.classList.contains('mapview')); });
-  if(window.innerWidth>=1024) $('#mapToggle').textContent='🗺 지도 숨기기';   // 데스크탑 초기: 지도 표시중
+  if(window.innerWidth>=1024) $('#mapToggle').innerHTML=ICON.map+' 지도 숨기기';   // 데스크탑 초기: 지도 표시중
   $('#boundsChk').addEventListener('change',e=>{
     state.mapBoundsOn=e.target.checked;
     if(e.target.checked){ if(window.innerWidth<1024) toggleMapView(true); initMap(); state.mapBounds=map?map.getBounds():null; }
