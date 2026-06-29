@@ -718,13 +718,15 @@ svg.leaflet-image-layer.leaflet-interactive path {
   .hero{padding:26px 0 6px}
   .hero h2{font-size:23px;font-weight:780;margin:0 0 4px;letter-spacing:-.03em}
   .hero .sub{color:var(--muted);font-size:13.5px;margin:0 0 18px}
-  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-  .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
-    padding:15px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden;cursor:pointer;transition:.15s}
+  /* 컴팩트 통계 칩 — 내용폭만 차지해 좌측에 모임(한눈에). 숫자+라벨 인라인. */
+  .stats{display:flex;flex-wrap:wrap;gap:8px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:11px;
+    padding:8px 13px 8px 14px;box-shadow:var(--shadow);position:relative;overflow:hidden;cursor:pointer;transition:.15s;
+    display:inline-flex;align-items:baseline;gap:7px}
   .stat:hover{border-color:#d3d7e0;transform:translateY(-1px)}
   .stat.active{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-  .stat .n{font-size:27px;font-weight:780;font-family:var(--mono);letter-spacing:-.03em;line-height:1}
-  .stat .l{font-size:12.5px;color:var(--muted);margin-top:6px;font-weight:560}
+  .stat .n{font-size:19px;font-weight:780;font-family:var(--mono);letter-spacing:-.03em;line-height:1}
+  .stat .l{font-size:12px;color:var(--muted);font-weight:560}
   .stat .bar{position:absolute;left:0;top:0;bottom:0;width:4px}
   .stat.s-all .bar{background:var(--accent)} .stat.s-all .n{color:var(--accent-ink)}
   .stat.s-ok .bar{background:var(--ok)} .stat.s-ok .n{color:var(--ok)}
@@ -1025,7 +1027,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
   .foot-in .srcs b{color:var(--ink-2)}
   .disc{background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;padding:12px 14px;color:var(--ink-2);font-size:11.5px}
 
-  @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:600px){.grid{grid-template-columns:1fr}.hero h2{font-size:20px}
     .profile-chip span.full{display:none}.controls{top:60px}
     /* 모바일 헤더 컴팩트 — 칩이 타이틀을 가리지 않게: 칩 배경/상태텍스트 제거, 버튼은 아이콘만 */
@@ -1081,10 +1083,9 @@ svg.leaflet-image-layer.leaflet-interactive path {
     .hero{padding:8px 0 0}
     .hero h2{font-size:16px;margin:0}
     .hero .sub{display:none}
-    .stats{gap:8px;margin-top:6px}
-    .stat{padding:6px 12px 6px 15px;display:flex;align-items:baseline;gap:7px;box-shadow:none}
+    .stats{margin-top:6px}
+    .stat{padding:6px 12px 6px 14px;box-shadow:none}
     .stat .n{font-size:18px}
-    .stat .l{margin-top:0;font-size:11.5px}
     .notice-missing{padding:7px 12px;margin:8px 0 0;font-size:12px}
     .controls{position:static;margin:8px 0 0;padding:8px 0}
     .mainsplit{flex:1 1 auto;min-height:0;align-items:stretch;margin-bottom:0}
