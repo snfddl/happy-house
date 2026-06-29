@@ -1061,7 +1061,16 @@ svg.leaflet-image-layer.leaflet-interactive path {
     .stat .n{font-size:17px}
     .stat .l{font-size:11px}
     .stat .l-full{display:none}
-    .stat .l-short{display:inline}}
+    .stat .l-short{display:inline}
+    /* 필터 칩·지도토글 압축 + 행간 축소: 지도토글을 '건수' 행 우측으로 올리고 칩은 아래로 */
+    .notice-missing{margin:0 0 10px}
+    .controls{margin:8px 0 2px;padding:8px 0}
+    .chips-bar{gap:6px;margin-top:6px}
+    .chips-bar .count{border-right:0;padding-right:0}
+    .view-toggle{order:1;margin-left:auto;gap:8px}
+    .chips{order:2;flex-basis:100%;gap:6px}
+    .chip{padding:5px 11px;font-size:12px}
+    .vbtn{padding:6px 10px;font-size:12.5px}}
 
   /* ── 지도 연동 ── */
   .chips-bar{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin-top:9px}
