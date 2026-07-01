@@ -1243,7 +1243,7 @@
   const 청약opts=[[null,'아직 선택 안 함'],[true,'청약통장이 있어요'],[false,'없어요(미가입)']];
   const FORM=[
     {g:'기본 정보',f:[
-      {k:'생년월일',t:'date'},
+      {k:'생년월일',t:'date',dflt:'1990-01-01'},
       {k:'무주택',t:'tri',opts:무주택opts,label:'주택 소유 여부',hint:'분양권·입주권 보유도 주택으로 봅니다. 선택 전에는 ‘확인필요’로 표시됩니다(추측 안 함).'},
       {k:'무주택기간구간',t:'sel',opts:무주택구간,label:'무주택 기간(분양 가점)',hint:'분양 가점은 1년 단위 구간으로 산정됩니다. 그대로 두면 만 30세(혼인 시 혼인신고일)부터 자동 계산 — 직전에 집을 처분했다면 실제 무주택 기간 구간을 직접 고르세요.'},
       {k:'세대원수',t:'num',suf:'인',hint:'주민등록표상 세대원(태아 포함)'},
@@ -1318,7 +1318,7 @@
       else if(t==='sido'){ el.onchange=()=>{ const sgg=$(root+' [data-k="거주지.시군구"]'); if(sgg) sgg.innerHTML=sggOptions(el.value,''); commit(root); }; }
       else if(t==='sigungu'){ el.onchange=()=>commit(root); }
       else if(t==='tri'){ el.onchange=()=>commit(root); }
-      else el.oninput=()=>commitDebounced(root);
+      else el.oninput=()=>{ el.removeAttribute('data-default'); commitDebounced(root); };
     });
     wireHope(root);
     syncPayLock(root);
@@ -1383,8 +1383,10 @@
     if(f.t==='sel') inner='<select data-k="'+f.k+'" data-t="sel">'+f.opts.map(o=>'<option'+(o===val?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
     else{
       const type=f.t==='date'?'date':f.t==='month'?'month':(f.t==='num'||f.t==='man')?'number':'text';
+      const useDflt=(val===''||val==null)&&f.dflt;   // 빈 값이면 기본값을 피커 시작점으로 표시(사용자가 건드리기 전엔 저장 안 함)
+      const dv=useDflt?f.dflt:val, ddef=useDflt?' data-default="1"':'';
       const suf=f.suf?' suf':''; const sufA=f.suf?' data-suf="'+f.suf+'"':'';
-      inner='<div class="'+(suf?'suf':'')+'"'+sufA+'><input type="'+type+'" data-k="'+f.k+'" data-t="'+f.t+'" value="'+esc(val)+'"'+(f.suf?' style="padding-right:'+(f.suf.length*7+14)+'px"':'')+'></div>';
+      inner='<div class="'+(suf?'suf':'')+'"'+sufA+'><input type="'+type+'" data-k="'+f.k+'" data-t="'+f.t+'" value="'+esc(dv)+'"'+ddef+(f.suf?' style="padding-right:'+(f.suf.length*7+14)+'px"':'')+'></div>';
     }
     return '<div class="field"><label>'+esc(label)+'</label>'+inner+hint+'</div>';
   }
@@ -1396,6 +1398,7 @@
     $$(root+' [data-k]').forEach(el=>{
       const k=el.dataset.k, t=el.dataset.t;
       if(k.startsWith('__')) return;
+      if(el.hasAttribute('data-default')) return;   // 미입력 기본값(예:생년월일 1990) — 사용자가 고르기 전엔 저장 안 함
       let v;
       if(t==='bool') v=el.classList.contains('on');
       else if(t==='tri') v=el.value===''?null:(el.value==='1');
@@ -1521,7 +1524,7 @@
   const WIZ_INTRO={intro:true,emoji:'🏠',q:'내 조건으로 딱 맞는 공고 찾기',
     sub:'몇 가지만 차근차근 여쭤볼게요. 모르는 항목은 건너뛰어도 됩니다. 입력 내용은 이 기기에만 저장되고 서버로 전송되지 않아요.'};
   const WIZARD=[
-    {emoji:'🎂',q:'생년월일을 알려주세요',sub:'나이로 일부 자격·가점을 계산합니다',fields:[{k:'생년월일',t:'date'}]},
+    {emoji:'🎂',q:'생년월일을 알려주세요',sub:'나이로 일부 자격·가점을 계산합니다',fields:[{k:'생년월일',t:'date',dflt:'1990-01-01'}]},
     {emoji:'🏠',q:'지금 소유한 집이 있나요?',sub:'분양권·입주권도 주택으로 봅니다',fields:[
       {k:'무주택',t:'tri',opts:무주택opts,label:'주택 소유 여부'},
       {k:'무주택기간구간',t:'sel',opts:무주택구간,label:'무주택 기간(분양 가점)',hint:'그대로 두면 만 30세·혼인 기준 자동. 직전에 집을 팔았다면 실제 구간을 고르세요.'}
