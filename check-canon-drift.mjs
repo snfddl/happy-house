@@ -45,4 +45,26 @@ if (a !== b) {
   process.exit(1);
 }
 
-console.log('✓ canonTier 동일성 OK (match-core ↔ normalize-requirements)');
+// 2) 금액 필드 동의어 드리프트 — match-core TIER_ALIAS ↔ normalize FIELD_SYN(자산상한·자동차상한).
+//    normalize가 새 동의어를 배우고 매처가 못 배우면 비정규화 데이터에서 자산 게이트가 조용히 새는(#6) 재발 경로 — 목록 동일성 assert.
+function extractAliasArr(src, blockName, key) {
+  const bi = src.indexOf(blockName);
+  if (bi < 0) throw new Error(`${blockName} 을(를) 찾지 못함`);
+  const seg = src.slice(bi, src.indexOf('};', bi) + 2);
+  const m = new RegExp(`${key}:\\s*\\[([^\\]]*)\\]`).exec(seg);
+  if (!m) throw new Error(`${blockName}.${key} 배열을 찾지 못함`);
+  return m[1].split(',').map(s => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean).join('|');
+}
+for (const key of ['자산상한', '자동차상한']) {
+  const ma = extractAliasArr(matchCore, 'TIER_ALIAS', key);
+  const nb = extractAliasArr(normalize, 'FIELD_SYN', key);
+  if (ma !== nb) {
+    console.error(`✗ 금액 동의어 드리프트 감지 — ${key}`);
+    console.error(`  match-core TIER_ALIAS : ${ma}`);
+    console.error(`  normalize FIELD_SYN   : ${nb}`);
+    console.error('  두 목록(순서 포함)을 일치시키세요 — 한쪽만 배우면 비정규화 데이터에서 자산/자동차 게이트가 조용히 샙니다.');
+    process.exit(1);
+  }
+}
+
+console.log('✓ canonTier·금액동의어 동일성 OK (match-core ↔ normalize-requirements)');

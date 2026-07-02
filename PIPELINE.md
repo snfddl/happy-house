@@ -22,7 +22,7 @@ node pipeline.mjs --skip-collect --force --only=020038,020094   # 특정 공고(
 | # | 단계 | 도구 | 성격 | 비고 |
 |---|---|---|---|---|
 | 0 | 수집 | `lh-collect.mjs` | 결정론 | index.json diff로 **신규만** 다운로드. 팸플릿 제외. raw 불변 |
-| 1 | 타깃선정 | (내장) | 결정론 | 접수중·공고중·정정 − **접수마감**(+유형별 활성0이면 최근 마감 1건 백필) → `extract-targets.json` |
+| 1 | 타깃선정 | (내장) | 결정론 | **LH만**(index는 5소스 공유 — `source` 없거나 'lh'인 항목만) 접수중·공고중·정정 − **접수마감**(+유형별 활성0이면 최근 마감 1건 백필) → `extract-targets.json` |
 | 2 | 신규판별+슬라이스 | `slice-notice.mjs` | 결정론 | **requirements.json 없는 건만**. pdftotext→보일러플레이트 제거→`notice_sliced.txt`. PDF없음/실패는 격리 |
 | 3 | 요건추출 | **워크플로우**(권장) 또는 `claude -p` (Sonnet) | **에이전트** | 신규만. `schema-v1.jsonc`+`extract-rules.txt`로 프롬프트. 각자 requirements.json 기록. ↓경로 비교 |
 | 4 | xlsx파싱 | `parse-housing-xlsx.py` | 결정론 | 신규 中 xlsx 보유분. `housing_list.json` + `주택목록` 주입 |

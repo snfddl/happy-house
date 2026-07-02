@@ -113,10 +113,19 @@ export function toQueueItem({ mode, source, slug, slicedPath, reqPath, header, l
 
 // 전소스 통합 큐(extract-queue.json)에 해당 source 몫을 교체 기록(다른 소스 항목 보존). mergeNewPending과 동일 패턴.
 //   대화형 /update 워크플로우가 이 파일을 읽어 병렬 추출. 재생성물(gitignore).
+//   자가정리: 쓸 때마다 이미 추출완료된 잔존 항목(어느 소스든)을 걸러낸다 — 큐를 아무도 비우지 않아
+//   완료분이 남고, 그 큐로 워크플로우를 재실행하면 불필요한 재추출이 나던 문제 차단.
+const queueItemDone = x => {
+  try {
+    if (!existsSync(x.reqPath)) return false;
+    if (x.mode !== 'merge') return true;
+    return JSON.parse(readFileSync(x.reqPath, 'utf8')).__pdf추출 === true;
+  } catch { return false; }
+};
 export function mergeQueue(rootUrl, source, items) {
   const f = new URL('extract-queue.json', rootUrl);
   let q = []; try { q = JSON.parse(readFileSync(f, 'utf8')); } catch {}
-  q = q.filter(x => x.source !== source).concat(items);
+  q = q.filter(x => x.source !== source && !queueItemDone(x)).concat(items);
   writeFileSync(f, JSON.stringify(q, null, 2));
   return q;
 }

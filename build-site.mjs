@@ -4,6 +4,7 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { loadCache, normKey, regionOf } from './geo.mjs';
+import { validateReq } from './validate-requirements.mjs';
 
 // .env 로드(Node는 자동 로드 안 함) — SUPABASE_URL/ANON_KEY 등 주입용. 없으면(CI) 무시, 실제 env 우선.
 try { process.loadEnvFile(new URL('.env', import.meta.url)); } catch { /* .env 없음 → 실제 env만 사용 */ }
@@ -52,12 +53,17 @@ const liveIdx = existsSync(idxPath) ? JSON.parse(readFileSync(idxPath, 'utf8')) 
 
 // 1) requirements 수집(원문 그대로 + source/id 태깅)
 let reqs = [];
+const gateDropped = [];   // 게이트 fail(필수필드 누락·enum 위반·JSON 깨짐)은 사이트에 싣지 않음 — 리포트-only 게이트의 노출 구멍 차단
 for (const [src, base] of SRC) {
   if (!existsSync(base)) continue;
   for (const n of readdirSync(base)) {
     const f = new URL(`${n}/requirements.json`, base);
     if (!existsSync(f)) continue;
-    const r = JSON.parse(readFileSync(f, 'utf8'));
+    let r;
+    try { r = JSON.parse(readFileSync(f, 'utf8')); }
+    catch { gateDropped.push(`${src}:${n} JSON 파싱 실패`); continue; }
+    const gate = validateReq(r);
+    if (gate.status === 'fail') { gateDropped.push(`${src}:${n} ${gate.사유}`); continue; }
     if (r.원문링크) delete r.원문링크.로컬PDF; // 개인 절대경로(/Users/…) 공개 site 유출 방지
     // index 신선도 오버레이 — 전 소스 일반화(panId 불변식으로 liveIdx[r.panId] 어느 소스든 해소; 과거 {lh,gh} 하드코딩은 CI refresh하는 sh 등 누락).
     //   수집/refresh가 매 실행 index의 상태·마감일을 갱신 → 빌드 때 requirements에 덮어 신선도 유지. 미존재 키는 freshStatus 백스톱만.
@@ -87,6 +93,7 @@ reqs = reqs.filter(r => {
   return true;
 });
 if (dupDropped.length) console.log(`정정공고 원본 ${dupDropped.length}건 제외(정정본 존재): ${dupDropped.join(', ')}`);
+if (gateDropped.length) console.log(`⚠️ 게이트 fail ${gateDropped.length}건 사이트 제외(리포트/원문 확인 필요):\n  ${gateDropped.join('\n  ')}`);
 
 // 2) 프로필 — 기본은 빈 스켈레톤(공유용: 방문자가 직접 입력). --seed 면 내 profile.json 주입(개인용)
 const EMPTY_PROFILE = {

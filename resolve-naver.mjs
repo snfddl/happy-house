@@ -33,8 +33,11 @@ function tryQuery(base, region) {
   const dt = (html.match(/data-title="([^"]+)"/) || [])[1] || '';
   const sy = html.match(/SYMap=([\d.]+):([\d.]+)/);
   // 검증게이트: 등록명이 우리명과 토큰일치(서로 포함) + 좌표 존재(실재 분양 보증). 실패=오매칭 의심 → null.
+  //   부분포함 오탐 가드: 짧은 쪽이 4자 미만이거나 긴 쪽의 절반 미만이면 기각("힐스"⊂"힐스테이트" 류 인접단지 오매칭).
+  //   기각돼도 사이트는 통합검색 폴백이라 안전(정밀도 우선, 좌표·딥링크 오지정이 더 해로움).
   const ours = strip(base), theirs = strip(dt.split('\n')[0]);
-  const nameOk = dt && (theirs.includes(ours) || ours.includes(theirs));
+  const shorter = Math.min(ours.length, theirs.length), longer = Math.max(ours.length, theirs.length);
+  const nameOk = dt && shorter >= 4 && shorter / longer >= 0.5 && (theirs.includes(ours) || ours.includes(theirs));
   if (!nameOk || !sy) return null;
   return { url: `https://pre.land.naver.com/complexes/${m[1]}/${m[2]}`, 명: dt.split('\n')[0], 좌표: [+sy[1], +sy[2]] };
 }

@@ -119,8 +119,8 @@ export function createMatcher(P, todayStr) {
     return null;
   }
   // tier 금액 필드 동의어 내성(#6): normalize 미적용/스킵 시 '총자산상한' 등 비캐논 키로 남아도 본인 계층값을 읽어 #1 우선규칙이 유효.
-  //   normalize-requirements FIELD_SYN(자산/자동차)과 동기화 — 미상 필드는 normalize가 '비고'로 흡수하므로 여기선 금액 2종만.
-  const TIER_ALIAS = { 자산상한: ['자산상한', '총자산상한', '총자산', '자산'], 자동차상한: ['자동차상한', '자동차'] };
+  //   normalize-requirements FIELD_SYN(자산/자동차)과 동기화(순서까지 동일 유지) — check-canon-drift가 빌드 전 assert. 미상 필드는 normalize가 '비고'로 흡수하므로 여기선 금액 2종만.
+  const TIER_ALIAS = { 자산상한: ['자산상한', '총자산상한', '총자산', '자산', '가산자산표'], 자동차상한: ['자동차상한', '자동차'] };
   const tierFieldVal = (obj, canon) => {
     for (const a of (TIER_ALIAS[canon] || [canon])) if (obj && !isMissing(obj[a])) return obj[a];
     return undefined;

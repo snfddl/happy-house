@@ -58,7 +58,9 @@ if (!SKIP_COLLECT) {
 // ── 1. 타깃선정: 활성 + 빈유형 백필 ───────────────────────────
 hr('[1/6] 타깃선정 — 접수중/공고중/정정 − 접수마감 (+빈유형 백필)');
 const index = JSON.parse(readFileSync(new URL('index.json', ROOT), 'utf8'));
-const all = Object.entries(index).filter(([, v]) => v.done).map(([panId, v]) => ({ panId, ...v }));
+// index.json은 5소스 공유 — LH 파이프라인은 LH만(무접두 항목엔 source 필드 없음). 타 소스가 섞이면
+// raw/lh에 PDF가 없어 noPdf 목록을 수십 건 노이즈로 채우고 실제 LH 실패를 매몰시킨다.
+const all = Object.entries(index).filter(([, v]) => v.done && (!v.source || v.source === 'lh')).map(([panId, v]) => ({ panId, ...v }));
 
 // 공고문 PDF fileid 추출(meta.json)
 function noticeFileid(panId) {
