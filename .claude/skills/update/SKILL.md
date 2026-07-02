@@ -66,6 +66,7 @@ node inject-applyhome-notice.mjs                 # 청약홈 공고문 표→전
 node inject-deadline-time.mjs                    # 공고문 본문→마감시각 추출(당일 컷오프용). 결정론·LLM0·멱등
 node geocode.mjs                                 # 단지 주소→좌표(지도 핀). Kakao 로컬 키(.env KAKAO_REST_KEY)·증분·멱등. 키 없으면 skip→캐시/centroid 폴백
 node prune-expired.mjs                           # 마감 후 60일(기본) 지난 derived 정리. 멱등
+node run-gate.mjs                                # 검증 게이트(lh·myhome·sh·gh 전건) — 워크플로우 추출은 파이프라인 내장 게이트를 안 타므로 필수. 리포트 갱신·멱등
 node build-site.mjs                              # 드리프트 가드 + 5소스 통합 → site/index.html (Leaflet·geo-cache 조인)
 ```
 - 모두 결정론·멱등이라 전체 재실행 안전(신규만 골라낼 필요 없음).
