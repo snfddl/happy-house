@@ -15,6 +15,7 @@ PRECISION_TEST.md
 data/reqs-built.json
 data/new-pending.json
 data/pipeline-report.json
+data/*-report.json
 data/extract-targets.json
 data/wf-args.json
 data/extract-queue.json

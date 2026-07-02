@@ -82,6 +82,7 @@ gh workflow run "refresh & deploy"
 ## 트러블슈팅
 
 - **Actions 빨간불 / `lh-collect --refresh` 실패**: LH가 Actions IP를 막거나 목록 셀렉터 변경 가능 → `gh run view --log-failed`로 확인. 라이브 스크래핑은 환경 의존적이라 첫 실행 로그를 꼭 본다.
+- **CI 단계 실패 알림**: 수집/주입 단계는 격리 실행(한 소스 실패가 배포를 안 막음)하되 침묵하지 않는다 — 실패 명령이 `ci-failures.txt`에 기록되고 '수집 실패 알림' 스텝이 Step Summary + `⚠️ CI 수집 실패` 이슈(중복 방지: 열린 이슈 있으면 생략)로 알린다.
 - **push했는데 라이브 안 바뀜**: 변경 경로가 push 트리거 paths에 없으면 배포 안 됨. `gh workflow run`으로 수동 트리거.
 - **봇 커밋과 충돌**: schedule이 `index.json`을 커밋·push하므로 로컬 작업 전 `git pull --rebase`.
 - **신규 공고가 사이트에 안 보임**: requirements.json이 없으면(추출 전) 사이트에 안 뜬다 — 로컬 `node pipeline.mjs` 필요.

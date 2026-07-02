@@ -37,23 +37,44 @@ jobs:
         with:
           node-version: 20
 
+      # 단계 격리 원칙 유지(한 소스 실패가 나머지·배포를 막지 않음)하되, 실패를 침묵시키지 않는다:
+      #   t 헬퍼가 실패 명령을 ci-failures.txt에 기록 → 아래 '수집 실패 알림' 스텝이 요약·이슈화.
       - name: 상태/마감일 갱신 (다운로드 없음)
         if: github.event_name != 'push'   # push 배포 땐 스크래핑 생략(빠르게)
         env:
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}   # 미설정이면 키 필요 소스는 graceful 생략
         run: |
-          node lh-collect.mjs --refresh || true        # LH 상태갱신(청약플러스 공개 API), 신규는 new-pending
-          node sh-collect.mjs --refresh || true        # SH — 라이브 스크래핑(키 불필요). 한 소스 실패가 나머지 막지 않게 || true
-          node gh-collect.mjs --refresh || true        # GH — 라이브 스크래핑+인라인 인증서(키 불필요)
-          node myhome-collect.mjs --refresh || true    # 마이홈 상태갱신(키 필요·없으면 graceful), 신규는 new-pending
-          node applyhome-collect.mjs && node applyhome-derive.mjs || true   # 청약홈: 결정론 완전(키 필요). 신규 분양까지 자동 반영
-          node inject-applyhome-pdf.mjs --links-only || true   # 공고문 PDF 직링크 주입(상세페이지 파싱). CI는 링크만(다운로드X)
+          t(){ "$@" || { rc=$?; echo "- \`$*\` (exit $rc)" >> ci-failures.txt; echo "::warning::$* 실패(exit $rc)"; }; }
+          t node lh-collect.mjs --refresh              # LH 상태갱신(청약플러스 공개 API), 신규는 new-pending
+          t node sh-collect.mjs --refresh              # SH — 라이브 스크래핑(키 불필요)
+          t node gh-collect.mjs --refresh              # GH — 라이브 스크래핑+인라인 인증서(키 불필요)
+          t node myhome-collect.mjs --refresh          # 마이홈 상태갱신(키 필요·없으면 graceful), 신규는 new-pending
+          t node applyhome-collect.mjs                 # 청약홈: 결정론 완전(키 필요). 신규 분양까지 자동 반영
+          t node applyhome-derive.mjs
+          t node inject-applyhome-pdf.mjs --links-only # 공고문 PDF 직링크 주입(상세페이지 파싱). CI는 링크만(다운로드X)
 
       - name: 공고문 마감시각 주입 (당일 컷오프용)
-        run: node inject-deadline-time.mjs || true   # notice_sliced.txt에서 실제 마감시각 추출→requirements. 결정론·LLM0·멱등
+        run: |
+          t(){ "$@" || { rc=$?; echo "- \`$*\` (exit $rc)" >> ci-failures.txt; echo "::warning::$* 실패(exit $rc)"; }; }
+          t node inject-deadline-time.mjs   # notice_sliced.txt에서 실제 마감시각 추출→requirements. 결정론·LLM0·멱등
 
       - name: 마감 경과 derived 정리 (인라인 비대 방지)
-        run: node prune-expired.mjs || true   # 마감 후 60일(기본) 지난 derived 삭제 + index tombstone. 결정론·멱등
+        run: |
+          t(){ "$@" || { rc=$?; echo "- \`$*\` (exit $rc)" >> ci-failures.txt; echo "::warning::$* 실패(exit $rc)"; }; }
+          t node prune-expired.mjs   # 마감 후 60일(기본) 지난 derived 삭제 + index tombstone. 결정론·멱등
+
+      - name: 수집 실패 알림 (침묵 방지 — 격리는 유지, 배포는 계속)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -f ci-failures.txt ] || { echo "단계 실패 없음"; exit 0; }
+          { echo "## ⚠️ CI 단계 실패"; cat ci-failures.txt; } >> "$GITHUB_STEP_SUMMARY"
+          cat ci-failures.txt
+          open=$(gh issue list --state open --search "CI 수집 실패 in:title" --json number --jq 'length')
+          [ "$open" = "0" ] || { echo "이미 열린 CI 실패 이슈 있음 — 생략"; exit 0; }
+          { echo "이번 실행에서 아래 단계가 실패했습니다(격리되어 나머지·배포는 진행됨):"; echo; cat ci-failures.txt; \
+            echo; echo "실행 로그: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"; } \
+            | gh issue create --title "⚠️ CI 수집 실패" --body-file - || true
 
       - name: 사이트 빌드 (빈 프로필·공유용)
         env:
