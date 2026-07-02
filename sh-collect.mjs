@@ -42,7 +42,7 @@ const downUrl = f => `${ORIGIN}/main/com/file/innoFD.do?brdId=${encodeURICompone
 // 모집공고만(당첨자발표·경쟁률·계약·점검·안내문류 배제). 정정공고 포함.
 const KEEP_PAT = /모집\s*공고|입주자\s*모집|예비입주자|공급\s*공고|우선\s*공급/;
 // 발표·결과류 배제. '…대상자 발표'(입주대상자/서류심사대상자 발표 등)는 모집공고 본문을 인용해도 글 자체는 결과발표 → 제외.
-const SKIP_TITLE = /당첨자|경쟁률|계약\s*체결|계약\s*안내|선정\s*결과|결과\s*발표|발표\s*및|대상자\s*발표|최종\s*청약|명단|점검|환급|반환|중단\s*안내|시스템|연기|취소된/;
+const SKIP_TITLE = /당첨자|경쟁률|계약\s*체결|계약\s*안내|선정\s*결과|결과\s*발표|발표\s*및|대상자\s*발표|예비자\s*발표|최종\s*청약|명단|점검|환급|반환|중단\s*안내|시스템|연기|취소된/;
 async function getText(url) { const r = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'ko-KR,ko;q=0.9' } }); return await r.text(); }
 
 // 목록 한 페이지 파싱 → [{seq, title, 공고일}]
